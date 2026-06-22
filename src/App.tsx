@@ -10,6 +10,7 @@ import ResearchDetail from "@/pages/ResearchDetail";
 import Rolodex from "@/pages/Rolodex";
 import TalentMap from "@/pages/TalentMap";
 import Opportunities from "@/pages/Opportunities";
+import PlacementAgent from "@/pages/PlacementAgent";
 import Partners from "@/pages/Partners";
 import PartnerDetail from "@/pages/PartnerDetail";
 import AskMoksha from "@/pages/AskMoksha";
@@ -52,6 +53,7 @@ export default function App() {
           <Route path="/rolodex" element={<Rolodex />} />
           <Route path="/talent" element={<TalentMap />} />
           <Route path="/opportunities" element={<Opportunities />} />
+          <Route path="/placement" element={<PlacementAgent />} />
           <Route path="/partners" element={<Partners />} />
           <Route path="/partners/:partnerId" element={<PartnerDetail />} />
           <Route path="/ask" element={<AskMoksha />} />

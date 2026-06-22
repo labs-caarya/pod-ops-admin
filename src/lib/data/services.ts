@@ -118,6 +118,7 @@ function inferServices(member: Partial<TalentMember>): PodServiceId[] {
 export function normalizeTalent(member: TalentMember): TalentMember {
   return {
     ...member,
+    skills: Array.isArray(member.skills) ? member.skills : [],
     talentRole: member.talentRole ?? inferRole(member),
     serviceOfferings: inferServices(member),
   };

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Briefcase,
   Plus,
@@ -8,6 +9,9 @@ import {
   Users2,
   Share2,
   Megaphone,
+  UserCheck,
+  Building2,
+  Microscope,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatCard } from "@/components/ui/StatCard";
@@ -18,39 +22,49 @@ import { Input, Select } from "@/components/ui/Field";
 import { EmptyState } from "@/components/ui/Misc";
 import { useCollection } from "@/lib/store";
 import { jobStore } from "@/lib/data/collections";
-import { JOB_STATUS_TONE } from "@/lib/constants";
+import { normalizeJob, opportunitySourceLabel } from "@/lib/data/placement";
+import { JOB_STATUS_TONE, OPPORTUNITY_SOURCE_TONE } from "@/lib/constants";
 import { makeId } from "@/lib/utils";
-import type { JobOpportunity } from "@/lib/types";
+import type { JobOpportunity, OpportunitySource } from "@/lib/types";
 import { JobDrawer } from "@/components/jobs/JobDrawer";
+import { cn } from "@/lib/utils";
+
+type SourceTab = "all" | OpportunitySource;
 
 export default function Opportunities() {
   const jobs = useCollection(jobStore);
+  const normalizedJobs = useMemo(() => jobs.map(normalizeJob), [jobs]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [sourceTab, setSourceTab] = useState<SourceTab>("all");
   const [editing, setEditing] = useState<JobOpportunity | "new" | null>(null);
 
   const filtered = useMemo(() => {
-    return jobs.filter((j) => {
+    return normalizedJobs.filter((j) => {
+      if (sourceTab !== "all" && j.source !== sourceTab) return false;
       if (statusFilter !== "all" && j.status !== statusFilter) return false;
       if (!search) return true;
       const q = search.toLowerCase();
       return j.title.toLowerCase().includes(q) || j.company.toLowerCase().includes(q);
     });
-  }, [jobs, search, statusFilter]);
+  }, [normalizedJobs, search, statusFilter, sourceTab]);
 
   const stats = useMemo(
     () => ({
-      live: jobs.filter((j) => j.status === "Open" || j.status === "Shared").length,
-      seats: jobs.reduce((a, j) => a + j.seats, 0),
-      applicants: jobs.reduce((a, j) => a + j.applicants, 0),
+      live: normalizedJobs.filter((j) => j.status === "Open" || j.status === "Shared").length,
+      partner: normalizedJobs.filter((j) => j.source === "partner").length,
+      researched: normalizedJobs.filter((j) => j.source === "researched").length,
+      seats: normalizedJobs.reduce((a, j) => a + j.seats, 0),
+      applicants: normalizedJobs.reduce((a, j) => a + j.applicants, 0),
     }),
-    [jobs],
+    [normalizedJobs],
   );
 
   const newJob = (): JobOpportunity => ({
     id: makeId("job"),
     title: "",
     company: "",
+    source: "researched",
     type: "Internship",
     status: "Draft",
     location: "",
@@ -68,23 +82,53 @@ export default function Opportunities() {
     jobStore.upsert({ id: j.id, status: "Shared", sharedChannels: channels });
   };
 
+  const sourceTabs: { key: SourceTab; label: string; count: number }[] = [
+    { key: "all", label: "All", count: normalizedJobs.length },
+    { key: "partner", label: "Partner", count: stats.partner },
+    { key: "researched", label: "Researched", count: stats.researched },
+  ];
+
   return (
     <div>
       <PageHeader
         icon={Briefcase}
         title="Opportunity Canvas"
-        description="Pump in jobs, internships and gigs, then share them with fellow students across your channels."
+        description="Partner opportunities come directly from industry partners. Researched opportunities are built from HIVE research."
         actions={
-          <Button onClick={() => setEditing("new")}>
-            <Plus className="h-4 w-4" /> New opportunity
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link to="/placement">
+              <Button variant="secondary"><UserCheck className="h-4 w-4" /> Placement Agent</Button>
+            </Link>
+            <Button onClick={() => setEditing("new")}>
+              <Plus className="h-4 w-4" /> New opportunity
+            </Button>
+          </div>
         }
       />
 
-      <div className="mb-4 grid grid-cols-3 gap-3">
+      <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="Live opportunities" value={stats.live} icon={Megaphone} tone="amber" />
+        <StatCard label="Partner direct" value={stats.partner} icon={Building2} tone="good" />
+        <StatCard label="Researched" value={stats.researched} icon={Microscope} tone="info" />
         <StatCard label="Total seats" value={stats.seats} icon={Users2} tone="ruby" />
-        <StatCard label="Applicants" value={stats.applicants} icon={Share2} tone="good" />
+      </div>
+
+      <div className="mb-3 flex flex-wrap gap-2">
+        {sourceTabs.map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => setSourceTab(tab.key)}
+            className={cn(
+              "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+              sourceTab === tab.key
+                ? "border-ruby/40 bg-ruby/15 text-ruby-bright"
+                : "border-line bg-surface-2 text-ink-muted hover:border-line-strong",
+            )}
+          >
+            {tab.label} <span className="text-ink-faint">({tab.count})</span>
+          </button>
+        ))}
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -102,7 +146,7 @@ export default function Opportunities() {
         <EmptyState
           icon={Briefcase}
           title="No opportunities yet"
-          description="Post an internship, gig or project to share with your students."
+          description="Post a partner opportunity or convert HIVE research into a researched gig."
           action={<Button onClick={() => setEditing("new")}><Plus className="h-4 w-4" /> New opportunity</Button>}
         />
       ) : (
@@ -118,6 +162,10 @@ export default function Opportunities() {
               </div>
 
               <div className="mt-3 flex flex-wrap gap-1.5">
+                <Badge tone={OPPORTUNITY_SOURCE_TONE[j.source] ?? "muted"}>
+                  {j.source === "partner" ? <Building2 className="mr-1 inline h-3 w-3" /> : <Microscope className="mr-1 inline h-3 w-3" />}
+                  {opportunitySourceLabel(j.source)}
+                </Badge>
                 <Badge tone="ruby">{j.type}</Badge>
                 <span className="flex items-center gap-1 rounded-full bg-surface-3 px-2 py-0.5 text-[11px] text-ink-muted">
                   <MapPin className="h-3 w-3" /> {j.workMode}

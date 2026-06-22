@@ -3,6 +3,7 @@ import type {
   Contact,
   JobOpportunity,
   Partner,
+  PlacementOffer,
   PodGoal,
   ResearchProfile,
   TalentMember,
@@ -321,7 +322,8 @@ const jobsSeed: JobOpportunity[] = [
     id: "job_1",
     title: "Campus Activation Promoter",
     company: "Zomato District",
-    researchId: "res_3",
+    source: "partner",
+    partnerId: "par_4",
     type: "Freelance",
     status: "Shared",
     location: "Delhi-NCR",
@@ -338,6 +340,7 @@ const jobsSeed: JobOpportunity[] = [
     id: "job_2",
     title: "UGC Content Creator",
     company: "Suta",
+    source: "researched",
     researchId: "res_1",
     type: "Internship",
     status: "Open",
@@ -355,6 +358,8 @@ const jobsSeed: JobOpportunity[] = [
     id: "job_3",
     title: "Sleep Research Associate",
     company: "Wakefit",
+    source: "researched",
+    researchId: "res_2",
     type: "Part-time",
     status: "Draft",
     location: "Bengaluru / Remote",
@@ -365,6 +370,47 @@ const jobsSeed: JobOpportunity[] = [
     seats: 4,
     applicants: 0,
     sharedChannels: [],
+  },
+  {
+    id: "job_4",
+    title: "Going-out Campus Crew Lead",
+    company: "Zomato District",
+    source: "partner",
+    partnerId: "par_4",
+    type: "Part-time",
+    status: "Open",
+    location: "Delhi-NCR",
+    workMode: "Hybrid",
+    stipend: "₹12,000/mo",
+    skills: ["Events", "Outreach", "Leadership"],
+    description: "Lead a squad of campus promoters for District events. Coordinate schedules, briefings and on-ground quality.",
+    seats: 3,
+    applicants: 2,
+    sharedChannels: [],
+    postedAt: new Date(Date.now() - 2 * 86400000).toISOString(),
+  },
+];
+
+/* ----------------------------- Placement offers --------------------------- */
+
+const placementOfferSeed: PlacementOffer[] = [
+  {
+    id: "offer_1",
+    jobId: "job_1",
+    talentId: "tal_9",
+    status: "Sent",
+    matchScore: 88,
+    matchReason: "Available now · Skills: Events, On-ground · Nano-influencer / promotion service",
+    sentAt: new Date(Date.now() - 2 * 86400000).toISOString(),
+  },
+  {
+    id: "offer_2",
+    jobId: "job_2",
+    talentId: "tal_2",
+    status: "Accepted",
+    matchScore: 92,
+    matchReason: "Available now · Skills: Reels, Copywriting · Content creator fit",
+    sentAt: new Date(Date.now() - 4 * 86400000).toISOString(),
   },
 ];
 
@@ -542,5 +588,6 @@ export const researchStore = createCollection<ResearchProfile>("research", resea
 export const contactStore = createCollection<Contact>("contacts", contactsSeed);
 export const talentStore = createCollection<TalentMember>("talent", talentSeed);
 export const jobStore = createCollection<JobOpportunity>("jobs", jobsSeed);
+export const placementOfferStore = createCollection<PlacementOffer>("placementOffers", placementOfferSeed);
 export const partnerStore = createCollection<Partner>("partners", partnersSeed);
 export const goalStore = createCollection<PodGoal>("goals", goalsSeed);

@@ -102,7 +102,6 @@ export default function Resources() {
   return (
     <div>
       <PageHeader
-        icon={BookOpen}
         title="Resources"
         description="Playbooks, templates, and quick links for running your pod — research, outreach, talent, and partners."
       />

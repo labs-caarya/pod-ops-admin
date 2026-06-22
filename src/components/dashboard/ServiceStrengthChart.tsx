@@ -39,7 +39,17 @@ const tooltipStyle = {
   color: "#f6ece9",
 };
 
-export function ServiceStrengthChart({ talent }: { talent: TalentMember[] }) {
+export function ServiceStrengthChart({
+  talent,
+  title = "Service strength",
+  subtitle = "Mapped students opted in per service — taller bars = stronger delivery capacity.",
+  hideLink = false,
+}: {
+  talent: TalentMember[];
+  title?: string;
+  subtitle?: string;
+  hideLink?: boolean;
+}) {
   const data = getServiceStrength(talent).map((row) => ({
     ...row,
     chartLabel: CHART_LABELS[row.id],
@@ -52,14 +62,14 @@ export function ServiceStrengthChart({ talent }: { talent: TalentMember[] }) {
     <Card className="lg:col-span-2 p-5">
       <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="font-display text-lg font-bold text-ink">Service strength</h2>
-          <p className="mt-0.5 text-sm text-ink-muted">
-            Mapped students opted in per service — taller bars = stronger delivery capacity.
-          </p>
+          <h2 className="font-display text-lg font-bold text-ink">{title}</h2>
+          <p className="mt-0.5 text-sm text-ink-muted">{subtitle}</p>
         </div>
-        <Link to="/talent" className="flex items-center gap-1 text-sm text-ruby-bright hover:underline">
-          Manage talent <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
+        {!hideLink && (
+          <Link to="/talent" className="flex items-center gap-1 text-sm text-ruby-bright hover:underline">
+            Manage talent <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        )}
       </div>
 
       <div className="mb-3 flex flex-wrap gap-3 text-[10px] font-semibold uppercase tracking-wide text-ink-faint">

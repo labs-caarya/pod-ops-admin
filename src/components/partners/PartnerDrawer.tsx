@@ -109,7 +109,7 @@ export function PartnerDrawer({
             onChange={(e) => set("sponsorshipEnabled")(e.target.checked)}
             className="h-4 w-4 accent-[#e11d48]"
           />
-          Enable Sponsorship Leverage dashboard for this partner
+          Enable the full Sponsorship Leverage dashboard — capability map, talent roster, and sponsorship inventory for industry partners
         </label>
       )}
     </Drawer>

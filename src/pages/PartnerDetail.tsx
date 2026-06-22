@@ -9,43 +9,27 @@ import {
   Phone,
   Users2,
   IndianRupee,
-  Plus,
-  Trash2,
-  Sparkles,
-  Rocket,
-  Megaphone,
   Pencil,
+  Rocket,
+  Plus,
 } from "lucide-react";
-import {
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-} from "recharts";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
-import { Badge, type Tone } from "@/components/ui/Badge";
+import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { StatCard } from "@/components/ui/StatCard";
-import { Input, Select } from "@/components/ui/Field";
 import { EmptyState } from "@/components/ui/Misc";
 import { useCollection } from "@/lib/store";
 import { partnerStore, talentStore } from "@/lib/data/collections";
+import { buildLeverageSnapshot } from "@/lib/data/sponsorshipLeverage";
 import { PARTNER_STAGE_TONE } from "@/lib/constants";
 import { makeId } from "@/lib/utils";
 import type { SponsorshipAsset, TalentMember } from "@/lib/types";
 import { PartnerDrawer } from "@/components/partners/PartnerDrawer";
-import { TalentGrid } from "@/components/talent/TalentGrid";
+import { SponsorshipLeverageDashboard } from "@/components/partners/SponsorshipLeverageDashboard";
 import { TalentDrawer } from "@/components/talent/TalentDrawer";
+import { TalentGrid } from "@/components/talent/TalentGrid";
 
-const ASSET_STATUS_TONE: Record<string, Tone> = {
-  Available: "good",
-  Committed: "amber",
-  Delivered: "info",
-};
-
-type Tab = "overview" | "sponsorship" | "talent";
+type Tab = "overview" | "leverage" | "talent";
 
 export default function PartnerDetail() {
   const { partnerId } = useParams();
@@ -78,9 +62,10 @@ export default function PartnerDetail() {
   const isCampusCompany = partner.type === "Campus Company";
   const PartnerIcon = isAcademic ? GraduationCap : isCampusCompany ? Rocket : Factory;
   const typeTone = isAcademic ? "ruby" : isCampusCompany ? "info" : "amber";
-  const totalLeverage = partner.sponsorshipAssets.reduce((s, a) => s + a.value, 0);
-  const committed = partner.sponsorshipAssets.filter((a) => a.status !== "Available").reduce((s, a) => s + a.value, 0);
-  const totalAudience = partner.sponsorshipAssets.reduce((s, a) => s + a.audience, 0);
+
+  const leverageSnapshot = isAcademic
+    ? buildLeverageSnapshot(partner, partnerTalent)
+    : null;
 
   const updateAsset = (id: string, patch: Partial<SponsorshipAsset>) => {
     partnerStore.upsert({
@@ -94,7 +79,7 @@ export default function PartnerDetail() {
   const addAsset = () => {
     const asset: SponsorshipAsset = {
       id: makeId("sa"),
-      label: "New leverage asset",
+      label: "New sponsorship asset",
       value: 50000,
       audience: 500,
       format: "On-ground",
@@ -118,14 +103,9 @@ export default function PartnerDetail() {
     availability: "",
   });
 
-  const pieData = [
-    { name: "Available", value: totalLeverage - committed, fill: "#34d399" },
-    { name: "Committed / Delivered", value: committed, fill: "#fb3a63" },
-  ].filter((d) => d.value > 0);
-
   const tabs: { key: Tab; label: string; show: boolean }[] = [
     { key: "overview", label: "Overview", show: true },
-    { key: "sponsorship", label: "Sponsorship Leverage", show: isAcademic },
+    { key: "leverage", label: "Sponsorship Leverage", show: isAcademic },
     { key: "talent", label: "Talent Map", show: isAcademic },
   ];
 
@@ -138,7 +118,11 @@ export default function PartnerDetail() {
       <PageHeader
         icon={PartnerIcon}
         title={partner.name}
-        description={`${partner.kind} · ${partner.city}`}
+        description={
+          isAcademic
+            ? `${partner.kind} · ${partner.city} · Capability & talent dashboard for industry sponsors`
+            : `${partner.kind} · ${partner.city}`
+        }
         actions={
           <Button variant="secondary" onClick={() => setEditing(true)}>
             <Pencil className="h-4 w-4" /> Edit
@@ -152,11 +136,11 @@ export default function PartnerDetail() {
         {partner.tags.map((t) => <Badge key={t} tone="muted">{t}</Badge>)}
       </div>
 
-      {/* Tabs */}
       <div className="mb-5 flex gap-1 border-b border-line">
         {tabs.filter((t) => t.show).map((t) => (
           <button
             key={t.key}
+            type="button"
             onClick={() => setTab(t.key)}
             className={
               tab === t.key
@@ -169,7 +153,6 @@ export default function PartnerDetail() {
         ))}
       </div>
 
-      {/* Overview */}
       {tab === "overview" && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <Card className="lg:col-span-2 p-5">
@@ -199,22 +182,24 @@ export default function PartnerDetail() {
             <h3 className="font-display text-lg font-bold text-ink">At a glance</h3>
             <div className="mt-3 space-y-3">
               <Info label="Type" value={`${partner.type} · ${partner.kind}`} />
-              {isAcademic && (
+              {isAcademic && leverageSnapshot && (
                 <>
-                  <Info label="Students mapped" value={String(partnerTalent.length)} />
+                  <Info label="Students mapped" value={String(leverageSnapshot.mappedTalent)} />
+                  <Info label="Services ready" value={String(leverageSnapshot.activeServices)} />
                   <Info
-                    label="Sponsorship leverage"
-                    value={partner.sponsorshipEnabled ? `₹${(totalLeverage / 100000).toFixed(1)}L` : "Not enabled"}
+                    label="Sponsorship inventory"
+                    value={partner.sponsorshipEnabled ? `₹${(leverageSnapshot.totalLeverage / 100000).toFixed(1)}L` : "Not enabled"}
                   />
+                  <Info label="Combined reach" value={leverageSnapshot.totalAudience.toLocaleString("en-IN")} />
                 </>
               )}
             </div>
             {isAcademic && (
               <div className="mt-4 flex flex-col gap-2">
-                <Button size="sm" variant="secondary" onClick={() => setTab("sponsorship")}>
-                  <IndianRupee className="h-4 w-4" /> Sponsorship dashboard
+                <Button size="sm" variant="secondary" className="w-full" onClick={() => setTab("leverage")}>
+                  <IndianRupee className="h-4 w-4" /> Sponsorship leverage dashboard
                 </Button>
-                <Button size="sm" variant="secondary" onClick={() => setTab("talent")}>
+                <Button size="sm" variant="secondary" className="w-full" onClick={() => setTab("talent")}>
                   <Users2 className="h-4 w-4" /> Talent map
                 </Button>
               </div>
@@ -223,114 +208,28 @@ export default function PartnerDetail() {
         </div>
       )}
 
-      {/* Sponsorship leverage */}
-      {tab === "sponsorship" && (
-        <div>
-          {!partner.sponsorshipEnabled ? (
-            <EmptyState
-              icon={Sparkles}
-              title="Sponsorship leverage not enabled"
-              description="Enable a sponsorship-leverage dashboard to show this academic partner the value your pod can mobilise for them."
-              action={<Button onClick={enableSponsorship}><Sparkles className="h-4 w-4" /> Enable dashboard</Button>}
-            />
-          ) : (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                <StatCard label="Total leverage" value={`₹${(totalLeverage / 100000).toFixed(2)}L`} icon={IndianRupee} tone="ruby" />
-                <StatCard label="Committed" value={`₹${(committed / 100000).toFixed(2)}L`} icon={Megaphone} tone="amber" />
-                <StatCard label="Combined reach" value={totalAudience.toLocaleString("en-IN")} icon={Users2} tone="info" />
-                <StatCard label="Assets" value={partner.sponsorshipAssets.length} icon={Building2} tone="good" />
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                <Card className="lg:col-span-2 p-5">
-                  <div className="mb-3 flex items-center justify-between">
-                    <h3 className="font-display text-lg font-bold text-ink">Leverage assets</h3>
-                    <Button size="sm" onClick={addAsset}><Plus className="h-4 w-4" /> Add asset</Button>
-                  </div>
-                  <div className="space-y-2">
-                    {partner.sponsorshipAssets.length === 0 && (
-                      <p className="py-6 text-center text-sm text-ink-faint">No assets yet — add one to start.</p>
-                    )}
-                    {partner.sponsorshipAssets.map((a) => (
-                      <div key={a.id} className="rounded-xl border border-line bg-surface-2 p-3">
-                        <div className="flex items-start justify-between gap-3">
-                          <Input
-                            value={a.label}
-                            onChange={(e) => updateAsset(a.id, { label: e.target.value })}
-                            className="flex-1 border-transparent bg-transparent px-0 font-semibold focus:border-transparent focus:ring-0"
-                          />
-                          <button onClick={() => removeAsset(a.id)} className="rounded-lg p-1 text-ink-faint hover:text-bad">
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                          <label className="text-xs">
-                            <span className="text-ink-faint">Value (₹)</span>
-                            <Input type="number" value={a.value} onChange={(e) => updateAsset(a.id, { value: Number(e.target.value) })} className="mt-1 h-8 px-2 py-1" />
-                          </label>
-                          <label className="text-xs">
-                            <span className="text-ink-faint">Audience</span>
-                            <Input type="number" value={a.audience} onChange={(e) => updateAsset(a.id, { audience: Number(e.target.value) })} className="mt-1 h-8 px-2 py-1" />
-                          </label>
-                          <label className="text-xs">
-                            <span className="text-ink-faint">Format</span>
-                            <Input value={a.format} onChange={(e) => updateAsset(a.id, { format: e.target.value })} className="mt-1 h-8 px-2 py-1" />
-                          </label>
-                          <label className="text-xs">
-                            <span className="text-ink-faint">Status</span>
-                            <Select
-                              value={a.status}
-                              onChange={(e) => updateAsset(a.id, { status: e.target.value as SponsorshipAsset["status"] })}
-                              className="mt-1 h-8 px-2 py-1"
-                            >
-                              <option value="Available">Available</option>
-                              <option value="Committed">Committed</option>
-                              <option value="Delivered">Delivered</option>
-                            </Select>
-                          </label>
-                        </div>
-                        <div className="mt-2">
-                          <Badge tone={ASSET_STATUS_TONE[a.status] ?? "muted"}>{a.status}</Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-
-                <Card className="flex flex-col p-5">
-                  <h3 className="font-display text-lg font-bold text-ink">Commitment split</h3>
-                  <p className="text-sm text-ink-muted">Value available vs mobilised.</p>
-                  <div className="mt-2 h-56">
-                    {pieData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie data={pieData} dataKey="value" innerRadius={50} outerRadius={80} paddingAngle={3} stroke="none">
-                            {pieData.map((d, i) => <Cell key={i} fill={d.fill} />)}
-                          </Pie>
-                          <Legend wrapperStyle={{ fontSize: 12, color: "#b9a6a4" }} />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-sm text-ink-faint">No value yet</div>
-                    )}
-                  </div>
-                </Card>
-              </div>
-            </div>
-          )}
-        </div>
+      {tab === "leverage" && isAcademic && (
+        <SponsorshipLeverageDashboard
+          partner={partner}
+          partnerTalent={partnerTalent}
+          onEnable={enableSponsorship}
+          onAddAsset={addAsset}
+          onUpdateAsset={updateAsset}
+          onRemoveAsset={removeAsset}
+          onOpenTalentMap={() => setTab("talent")}
+        />
       )}
 
-      {/* Talent map */}
-      {tab === "talent" && (
+      {tab === "talent" && isAcademic && (
         <div>
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h3 className="font-display text-lg font-bold text-ink">{partner.name} · Talent map</h3>
-              <p className="text-sm text-ink-muted">Students from this academic partner you can place on opportunities.</p>
+              <p className="text-sm text-ink-muted">Students from this academic partner — manage roster, skills and availability.</p>
             </div>
-            <Button onClick={() => setTalentEditing("new")}><Plus className="h-4 w-4" /> Add student</Button>
+            <Button onClick={() => setTalentEditing("new")}>
+              <Plus className="h-4 w-4" /> Add student
+            </Button>
           </div>
           <TalentGrid members={partnerTalent} onOpen={(m) => setTalentEditing(m)} />
         </div>

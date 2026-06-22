@@ -4,6 +4,7 @@ import {
   Contact2,
   Users,
   Briefcase,
+  UserCheck,
   Building2,
   Sparkles,
   BookOpen,
@@ -40,6 +41,7 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: "Talent Map", to: "/talent", icon: Users },
       { label: "Opportunities", to: "/opportunities", icon: Briefcase },
+      { label: "Placement Agent", to: "/placement", icon: UserCheck },
     ],
   },
   {

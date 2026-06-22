@@ -72,6 +72,18 @@ export const JOB_STATUS_TONE: Record<string, Tone> = {
   Closed: "bad",
 };
 
+export const OPPORTUNITY_SOURCE_TONE: Record<string, Tone> = {
+  partner: "good",
+  researched: "info",
+};
+
+export const PLACEMENT_OFFER_TONE: Record<string, Tone> = {
+  Draft: "muted",
+  Sent: "amber",
+  Accepted: "good",
+  Declined: "bad",
+};
+
 export const PARTNER_STAGE_TONE: Record<string, Tone> = {
   Prospect: "muted",
   Engaged: "info",

@@ -171,10 +171,17 @@ export interface TalentMember {
 export type JobStatus = "Draft" | "Open" | "Shared" | "Filled" | "Closed";
 export type JobType = "Internship" | "Freelance" | "Part-time" | "Full-time" | "Project";
 
+/** Direct from an industry partner vs indirect from HIVE research. */
+export type OpportunitySource = "partner" | "researched";
+
 export interface JobOpportunity {
   id: string;
   title: string;
   company: string;
+  source: OpportunitySource;
+  /** Set when source is partner — the industry partner posting directly. */
+  partnerId?: string;
+  /** Set when source is researched — linked HIVE profile. */
   researchId?: string;
   type: JobType;
   status: JobStatus;
@@ -189,6 +196,20 @@ export interface JobOpportunity {
   postedAt?: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export type PlacementOfferStatus = "Draft" | "Sent" | "Accepted" | "Declined";
+
+/** Offer from the placement agent to a student for an opportunity. */
+export interface PlacementOffer {
+  id: string;
+  jobId: string;
+  talentId: string;
+  status: PlacementOfferStatus;
+  matchScore: number;
+  matchReason: string;
+  sentAt?: string;
+  createdAt?: string;
 }
 
 /* -------------------------------- Partners -------------------------------- */

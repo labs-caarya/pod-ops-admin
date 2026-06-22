@@ -1,14 +1,16 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Trash2, Share2 } from "lucide-react";
 import { Drawer } from "@/components/ui/Drawer";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea, Select, FieldRow } from "@/components/ui/Field";
-import { jobStore } from "@/lib/data/collections";
-import type { JobOpportunity, JobStatus, JobType } from "@/lib/types";
+import { jobStore, partnerStore, researchStore } from "@/lib/data/collections";
+import { useCollection } from "@/lib/store";
+import type { JobOpportunity, JobStatus, JobType, OpportunitySource } from "@/lib/types";
 
 const TYPES: JobType[] = ["Internship", "Freelance", "Part-time", "Full-time", "Project"];
 const STATUSES: JobStatus[] = ["Draft", "Open", "Shared", "Filled", "Closed"];
 const MODES: JobOpportunity["workMode"][] = ["Remote", "Hybrid", "On-site"];
+const SOURCES: OpportunitySource[] = ["partner", "researched"];
 const SHARE_CHANNELS = ["Pod Board", "WhatsApp · SRCC", "Instagram", "LinkedIn", "College Notice Board"];
 
 export function JobDrawer({
@@ -20,12 +22,31 @@ export function JobDrawer({
   isNew: boolean;
   onClose: () => void;
 }) {
-  const [form, setForm] = useState<JobOpportunity>(job);
+  const partners = useCollection(partnerStore);
+  const research = useCollection(researchStore);
+  const industryPartners = useMemo(
+    () => partners.filter((p) => p.type === "Industry"),
+    [partners],
+  );
+
+  const [form, setForm] = useState<JobOpportunity>({
+    ...job,
+    source: job.source ?? (job.partnerId ? "partner" : "researched"),
+  });
 
   const set =
     <K extends keyof JobOpportunity>(key: K) =>
     (value: JobOpportunity[K]) =>
       setForm((f) => ({ ...f, [key]: value }));
+
+  const setSource = (source: OpportunitySource) => {
+    setForm((f) => ({
+      ...f,
+      source,
+      partnerId: source === "partner" ? f.partnerId : undefined,
+      researchId: source === "researched" ? f.researchId : undefined,
+    }));
+  };
 
   const toggleChannel = (ch: string) => {
     setForm((f) => {
@@ -71,6 +92,46 @@ export function JobDrawer({
       <div className="grid grid-cols-2 gap-3">
         <FieldRow label="Title" className="col-span-2"><Input value={form.title} onChange={(e) => set("title")(e.target.value)} /></FieldRow>
         <FieldRow label="Company"><Input value={form.company} onChange={(e) => set("company")(e.target.value)} /></FieldRow>
+        <FieldRow label="Source">
+          <Select value={form.source} onChange={(e) => setSource(e.target.value as OpportunitySource)}>
+            {SOURCES.map((s) => (
+              <option key={s} value={s}>{s === "partner" ? "Partner (direct)" : "Researched (indirect)"}</option>
+            ))}
+          </Select>
+        </FieldRow>
+        {form.source === "partner" ? (
+          <FieldRow label="Industry partner" className="col-span-2">
+            <Select
+              value={form.partnerId ?? ""}
+              onChange={(e) => set("partnerId")(e.target.value || undefined)}
+            >
+              <option value="">Select partner…</option>
+              {industryPartners.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </Select>
+          </FieldRow>
+        ) : (
+          <FieldRow label="HIVE research profile" className="col-span-2">
+            <Select
+              value={form.researchId ?? ""}
+              onChange={(e) => {
+                const researchId = e.target.value || undefined;
+                const profile = research.find((r) => r.id === researchId);
+                setForm((f) => ({
+                  ...f,
+                  researchId,
+                  company: profile?.name ?? f.company,
+                }));
+              }}
+            >
+              <option value="">Select research…</option>
+              {research.map((r) => (
+                <option key={r.id} value={r.id}>{r.name} · {r.sector}</option>
+              ))}
+            </Select>
+          </FieldRow>
+        )}
         <FieldRow label="Type">
           <Select value={form.type} onChange={(e) => set("type")(e.target.value as JobType)}>
             {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
