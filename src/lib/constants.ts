@@ -84,6 +84,38 @@ export const PLACEMENT_OFFER_TONE: Record<string, Tone> = {
   Declined: "bad",
 };
 
+export const CHALLENGE_STATUS_TONE: Record<string, Tone> = {
+  Mapped: "muted",
+  Investigating: "info",
+  "Root cause found": "amber",
+  "Action plan": "ruby",
+  Resolved: "good",
+};
+
+export const CHALLENGE_SEVERITY_TONE: Record<string, Tone> = {
+  Low: "muted",
+  Medium: "info",
+  High: "amber",
+  Critical: "bad",
+};
+
+export const CHALLENGE_STATUSES = [
+  "Mapped",
+  "Investigating",
+  "Root cause found",
+  "Action plan",
+  "Resolved",
+] as const;
+
+export const CHALLENGE_PILLARS = [
+  "Research",
+  "Network",
+  "Talent",
+  "Opportunities",
+  "Brand",
+  "Ops",
+] as const;
+
 export const PARTNER_STAGE_TONE: Record<string, Tone> = {
   Prospect: "muted",
   Engaged: "info",

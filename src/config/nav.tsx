@@ -1,5 +1,6 @@
 import {
   LayoutDashboard,
+  Vault,
   Microscope,
   Contact2,
   Users,
@@ -26,7 +27,10 @@ export interface NavSection {
 export const NAV_SECTIONS: NavSection[] = [
   {
     heading: "Overview",
-    items: [{ label: "Dashboard", to: "/", icon: LayoutDashboard, end: true }],
+    items: [
+      { label: "Dashboard", to: "/", icon: LayoutDashboard, end: true },
+      { label: "Challenge Vault", to: "/challenges", icon: Vault },
+    ],
   },
   {
     heading: "Grow the network",

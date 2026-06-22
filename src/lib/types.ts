@@ -269,6 +269,55 @@ export interface PodGoal {
   due: string;
 }
 
+/* ----------------------------- Challenge Vault ---------------------------- */
+
+export type ChallengePillar = PodGoal["pillar"] | "Ops";
+
+export type ChallengeSeverity = "Low" | "Medium" | "High" | "Critical";
+
+export type ChallengeStatus =
+  | "Mapped"
+  | "Investigating"
+  | "Root cause found"
+  | "Action plan"
+  | "Resolved";
+
+/** One link in a 5-whys / RCA chain. */
+export interface RcaWhy {
+  id: string;
+  /** e.g. "Why #1" answer */
+  answer: string;
+}
+
+export interface ChallengeAction {
+  id: string;
+  label: string;
+  done: boolean;
+  owner?: string;
+}
+
+export interface Challenge {
+  id: string;
+  title: string;
+  description: string;
+  pillar: ChallengePillar;
+  status: ChallengeStatus;
+  severity: ChallengeSeverity;
+  /** Observable symptoms — what you're seeing on the ground. */
+  symptoms: string[];
+  /** Business / pod impact if unsolved. */
+  impact: string;
+  /** Ordered 5-whys chain toward root cause. */
+  whys: RcaWhy[];
+  rootCause: string;
+  /** How we'll solve it once root cause is known. */
+  actions: ChallengeAction[];
+  owner: string;
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 /* --------------------------------- Ask ------------------------------------ */
 
 export interface ChatMessage {

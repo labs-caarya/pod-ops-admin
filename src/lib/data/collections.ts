@@ -1,5 +1,6 @@
 import { createCollection } from "../store";
 import type {
+  Challenge,
   Contact,
   JobOpportunity,
   Partner,
@@ -572,6 +573,113 @@ const partnersSeed: Partner[] = [
   },
 ];
 
+/* ----------------------------- Challenge vault ---------------------------- */
+
+const challengeSeed: Challenge[] = [
+  {
+    id: "ch_1",
+    title: "Industry partners stall after first meeting",
+    description: "Warm intros convert to meetings but proposals rarely follow — pipeline feels stuck mid-funnel.",
+    pillar: "Network",
+    status: "Investigating",
+    severity: "High",
+    symptoms: [
+      "3 brands in 'In Conversation' for 3+ weeks",
+      "No proposal sent after 5 meetings this month",
+      "Contacts go cold after initial enthusiasm",
+    ],
+    impact: "Blocks Level 4 partner-won objective and delays talent placement opportunities.",
+    whys: [
+      { id: "why_1", answer: "We leave meetings without a concrete next step or offer doc." },
+      { id: "why_2", answer: "Pod doesn't package HIVE research into a sponsor-ready one-pager fast enough." },
+      { id: "why_3", answer: "No standard follow-up SLA between meeting and proposal." },
+      { id: "why_4", answer: "" },
+      { id: "why_5", answer: "" },
+    ],
+    rootCause: "",
+    actions: [
+      { id: "act_1", label: "Ship proposal template + 48h follow-up rule in Rolodex", done: false, owner: "Riya" },
+      { id: "act_2", label: "Pair each meeting with one sponsorship leverage asset from academic partner", done: false, owner: "Karan" },
+    ],
+    owner: "Riya",
+  },
+  {
+    id: "ch_2",
+    title: "Mapped talent not opting into services",
+    description: "Students are on the talent map but service opt-ins stay low — weak placement and leverage story.",
+    pillar: "Talent",
+    status: "Root cause found",
+    severity: "Medium",
+    symptoms: [
+      "Only 40% of mapped students have service offerings set",
+      "Service strength chart skewed to 2 services",
+      "Placement Agent returns thin recommendations for some jobs",
+    ],
+    impact: "Industry sponsors can't see delivery capacity; placement agent has fewer good fits.",
+    whys: [
+      { id: "why_1", answer: "Students haven't been onboarded to pick service offerings." },
+      { id: "why_2", answer: "Talent intake form doesn't prompt for services — only skills." },
+      { id: "why_3", answer: "No campus session explaining Caarya service tracks." },
+      { id: "why_4", answer: "Pod assumes skills infer services automatically." },
+      { id: "why_5", answer: "" },
+    ],
+    rootCause: "No structured onboarding step for service opt-in after adding a student to the talent map.",
+    actions: [
+      { id: "act_3", label: "Run 30-min service opt-in drive for all Available students", done: true, owner: "Karan" },
+      { id: "act_4", label: "Update talent intake checklist in Talent Map drawer", done: false, owner: "Riya" },
+    ],
+    owner: "Karan",
+  },
+  {
+    id: "ch_3",
+    title: "Research profiles stuck at Scored",
+    description: "HIVE profiles get scored but rarely move to outreach — research doesn't convert to Rolodex momentum.",
+    pillar: "Research",
+    status: "Action plan",
+    severity: "Medium",
+    symptoms: [
+      "7 profiles in 'Scored' status",
+      "Only 2 moved to outreach in the last month",
+      "Pod researchers unsure when a score is 'good enough' to push",
+    ],
+    impact: "Research HIVE work doesn't feed the outreach pipeline; level-up research goal lags.",
+    whys: [
+      { id: "why_1", answer: "No clear score threshold for pushing to Rolodex." },
+      { id: "why_2", answer: "Researchers fear premature outreach will burn the lead." },
+      { id: "why_3", answer: "Missing owner handoff from research to outreach." },
+      { id: "why_4", answer: "Weekly review ritual doesn't include 'push candidates'." },
+      { id: "why_5", answer: "" },
+    ],
+    rootCause: "No defined score gate + handoff ritual from HIVE to Rolodex.",
+    actions: [
+      { id: "act_5", label: "Adopt rule: score ≥ 55 → must create Rolodex contact within 72h", done: false, owner: "Riya" },
+      { id: "act_6", label: "Weekly HIVE → Rolodex review in pod standup", done: false, owner: "Dev" },
+    ],
+    owner: "Riya",
+    notes: "Wakefit and Suta are first candidates to push under the new rule.",
+  },
+  {
+    id: "ch_4",
+    title: "Opportunity shares get views but few applicants",
+    description: "Jobs go to WhatsApp and Pod Board but applicant counts stay flat.",
+    pillar: "Opportunities",
+    status: "Mapped",
+    severity: "Low",
+    symptoms: ["Shared jobs average <5 applicants", "Students say they didn't see the post"],
+    impact: "Placement and partner fulfillment look weak in sponsor conversations.",
+    whys: [
+      { id: "why_1", answer: "" },
+      { id: "why_2", answer: "" },
+      { id: "why_3", answer: "" },
+      { id: "why_4", answer: "" },
+      { id: "why_5", answer: "" },
+    ],
+    rootCause: "",
+    actions: [],
+    owner: "Karan",
+  },
+];
+
 /* --------------------------------- Goals ---------------------------------- */
 
 const goalsSeed: PodGoal[] = [
@@ -591,3 +699,4 @@ export const jobStore = createCollection<JobOpportunity>("jobs", jobsSeed);
 export const placementOfferStore = createCollection<PlacementOffer>("placementOffers", placementOfferSeed);
 export const partnerStore = createCollection<Partner>("partners", partnersSeed);
 export const goalStore = createCollection<PodGoal>("goals", goalsSeed);
+export const challengeStore = createCollection<Challenge>("challenges", challengeSeed);

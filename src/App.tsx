@@ -5,6 +5,8 @@ import IndiaBackdrop from "@/components/layout/IndiaBackdrop";
 import { AppShell } from "@/components/layout/AppShell";
 import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
+import ChallengeVault from "@/pages/ChallengeVault";
+import ChallengeDetail from "@/pages/ChallengeDetail";
 import Research from "@/pages/Research";
 import ResearchDetail from "@/pages/ResearchDetail";
 import Rolodex from "@/pages/Rolodex";
@@ -48,6 +50,8 @@ export default function App() {
         />
         <Route element={<ProtectedRoutes />}>
           <Route path="/" element={<Dashboard />} />
+          <Route path="/challenges" element={<ChallengeVault />} />
+          <Route path="/challenges/:challengeId" element={<ChallengeDetail />} />
           <Route path="/research" element={<Research />} />
           <Route path="/research/:researchId" element={<ResearchDetail />} />
           <Route path="/rolodex" element={<Rolodex />} />
