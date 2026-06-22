@@ -25,21 +25,21 @@ export function OutreachPipelineFlow({ contacts }: { contacts: Contact[] }) {
   const totalActive = counts.reduce((s, c) => s + c.count, 0);
 
   return (
-    <Card className="p-5">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <div>
+    <Card className="p-4 sm:p-5">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
           <h2 className="font-display text-lg font-bold text-ink">Outreach pipeline</h2>
           <p className="text-sm text-ink-muted">{totalActive} active conversations in the Rolodex.</p>
         </div>
-        <Link to="/rolodex" className="flex items-center gap-1 text-sm text-ruby-bright hover:underline">
+        <Link to="/rolodex" className="flex shrink-0 items-center gap-1 text-sm text-ruby-bright hover:underline">
           Open Rolodex <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       </div>
 
-      <div className="overflow-x-auto pb-1">
-        <div className="flex w-full min-w-0 items-stretch gap-1 sm:gap-2">
+      <div className="overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]">
+        <div className="flex min-w-max items-stretch gap-1 sm:min-w-0 sm:w-full sm:gap-2">
           {counts.map((stage, i) => (
-            <div key={stage.key} className="flex min-w-0 flex-1 items-stretch">
+            <div key={stage.key} className="flex min-w-[4.5rem] flex-1 items-stretch sm:min-w-0">
               <div
                 className={cn(
                   "flex flex-1 flex-col items-center justify-center rounded-xl border px-2 py-4 text-center transition-colors sm:py-5",

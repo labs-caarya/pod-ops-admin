@@ -116,9 +116,9 @@ export function TalentDistributionMap({
   if (compact) return content;
 
   return (
-    <Card className="p-5">
-      <div className="mb-4 flex items-center justify-between gap-2">
-        <div>
+    <Card className="p-4 sm:p-5">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
           <h2 className="font-display text-lg font-bold text-ink">Talent distribution</h2>
           <p className="text-sm text-ink-muted">Developers, designers, nano-influencers & more in your mapped pool.</p>
         </div>

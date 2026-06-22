@@ -59,14 +59,14 @@ export function ServiceStrengthChart({
   const maxCount = Math.max(1, ...data.map((d) => d.count));
 
   return (
-    <Card className="lg:col-span-2 p-5">
+    <Card className="lg:col-span-2 p-4 sm:p-5">
       <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0 flex-1">
           <h2 className="font-display text-lg font-bold text-ink">{title}</h2>
           <p className="mt-0.5 text-sm text-ink-muted">{subtitle}</p>
         </div>
         {!hideLink && (
-          <Link to="/talent" className="flex items-center gap-1 text-sm text-ruby-bright hover:underline">
+          <Link to="/talent" className="flex shrink-0 items-center gap-1 text-sm text-ruby-bright hover:underline">
             Manage talent <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         )}

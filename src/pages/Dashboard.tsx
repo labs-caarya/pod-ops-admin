@@ -78,14 +78,14 @@ export default function Dashboard() {
         actions={
           <Link
             to="/ask"
-            className="btn-primary focus-ring inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-medium"
+            className="btn-primary focus-ring inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-medium sm:w-auto"
           >
             <TrendingUp className="h-4 w-4" /> Ask Moksha
           </Link>
         }
       />
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Brands researched" value={research.length} icon={Microscope} tone="ruby" hint={`${topResearch.filter((r) => r.score >= 60).length} strong+`} />
         <StatCard label="In outreach" value={contacts.length} icon={Contact2} tone="amber" hint={`${stats.partnersWon} won`} />
         <StatCard label="Talent mapped" value={talent.length} icon={Users} tone="info" hint={`${stats.placed} placed`} />
@@ -94,9 +94,9 @@ export default function Dashboard() {
 
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
         {/* Level-up objectives */}
-        <Card className="lg:col-span-2 p-5">
+        <Card className="lg:col-span-2 p-4 sm:p-5">
           <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-            <div>
+            <div className="min-w-0 flex-1">
               <div className="mb-1 flex flex-wrap items-center gap-2">
                 <h2 className="font-display text-lg font-bold text-ink">Level-up objectives</h2>
                 <Badge tone="ruby">Level {levelUp.currentLevel}</Badge>
@@ -119,7 +119,7 @@ export default function Dashboard() {
           <div className="space-y-4">
             {levelUp.objectives.map(({ goal: g, progress: p, complete }) => (
               <div key={g.id}>
-                <div className="mb-1.5 flex items-center justify-between gap-2 text-sm">
+                <div className="mb-1.5 flex flex-col gap-1.5 text-sm sm:flex-row sm:items-center sm:justify-between sm:gap-2">
                   <span className="flex min-w-0 items-center gap-2 text-ink">
                     {complete ? (
                       <CheckCircle2 className="h-4 w-4 shrink-0 text-good" aria-label="Complete" />
@@ -129,9 +129,9 @@ export default function Dashboard() {
                       </span>
                     )}
                     <Badge tone="muted" className="shrink-0 text-[10px]">{g.pillar}</Badge>
-                    <span className="truncate">{g.title}</span>
+                    <span className="min-w-0 break-words">{g.title}</span>
                   </span>
-                  <span className="shrink-0 text-ink-muted">
+                  <span className="shrink-0 pl-6 text-ink-muted sm:pl-0">
                     <span className="font-semibold text-ink">{formatGoalAmount(g, g.current)}</span>
                     {" / "}
                     {formatGoalAmount(g, g.target)}
@@ -142,15 +142,15 @@ export default function Dashboard() {
             ))}
           </div>
           {levelUp.readyToLevelUp && (
-            <div className="mt-4 flex items-center gap-2 rounded-xl border border-good/30 bg-good/10 px-3 py-2 text-sm text-good">
+            <div className="mt-4 flex flex-wrap items-start gap-2 rounded-xl border border-good/30 bg-good/10 px-3 py-2 text-sm text-good">
               <Zap className="h-4 w-4 shrink-0" />
-              All objectives met — your pod is ready to level up to Level {levelUp.nextLevel}!
+              <span>All objectives met — your pod is ready to level up to Level {levelUp.nextLevel}!</span>
             </div>
           )}
         </Card>
 
         {/* Progress toward next level */}
-        <Card className="flex flex-col items-center justify-center p-5">
+        <Card className="flex flex-col items-center justify-center p-4 sm:p-5">
           <h2 className="mb-1 self-start font-display text-lg font-bold text-ink">Progress pulse</h2>
           <p className="mb-1 self-start text-sm text-ink-muted">Completed toward Level {levelUp.nextLevel}.</p>
           <p className="mb-3 self-start text-xs text-ink-faint">
@@ -187,10 +187,10 @@ export default function Dashboard() {
         <ServiceStrengthChart talent={talent} />
 
         {/* Top research */}
-        <Card className="p-5">
-          <div className="mb-4 flex items-center justify-between">
+        <Card className="p-4 sm:p-5">
+          <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
             <h2 className="font-display text-lg font-bold text-ink">Top targets</h2>
-            <Link to="/research" className="flex items-center gap-1 text-sm text-ruby-bright hover:underline">
+            <Link to="/research" className="flex shrink-0 items-center gap-1 text-sm text-ruby-bright hover:underline">
               Research HIVE <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>

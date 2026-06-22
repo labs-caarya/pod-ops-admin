@@ -84,16 +84,16 @@ export default function ResourceLevelUp() {
         </p>
       </div>
 
-      <Card className="mb-6 border-ruby/25 bg-gradient-to-br from-ruby/10 via-surface-2 to-transparent p-5 sm:p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
+      <Card className="mb-6 border-ruby/25 bg-gradient-to-br from-ruby/10 via-surface-2 to-transparent p-4 sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
             <p className="text-xs font-bold uppercase tracking-widest text-ruby-bright">Your pod today</p>
-            <p className="mt-1 font-display text-xl font-black text-ink">
+            <p className="mt-1 font-display text-xl font-black text-ink break-words">
               {POD.name} · Level {levelUp.currentLevel}
             </p>
             <p className="mt-1 text-sm text-ink-muted">{POD.college} · {POD.crew}</p>
           </div>
-          <div className="rounded-xl border border-line bg-surface/80 px-4 py-3 text-right">
+          <div className="w-full shrink-0 rounded-xl border border-line bg-surface/80 px-4 py-3 sm:w-auto sm:text-right">
             <p className="text-xs text-ink-faint">Progress to Level {levelUp.nextLevel}</p>
             <p className="font-display text-2xl font-black text-gradient">{levelUp.overallProgress}%</p>
             <p className="text-xs text-ink-muted">
@@ -102,9 +102,9 @@ export default function ResourceLevelUp() {
           </div>
         </div>
         {levelUp.readyToLevelUp && (
-          <div className="mt-4 flex items-center gap-2 rounded-xl border border-good/30 bg-good/10 px-3 py-2 text-sm text-good">
+          <div className="mt-4 flex flex-wrap items-start gap-2 rounded-xl border border-good/30 bg-good/10 px-3 py-2 text-sm text-good">
             <Zap className="h-4 w-4 shrink-0" />
-            All objectives met — your pod is ready to level up!
+            <span>All objectives met — your pod is ready to level up!</span>
           </div>
         )}
       </Card>
@@ -153,16 +153,16 @@ export default function ResourceLevelUp() {
           const guide = PILLAR_GUIDE.find((x) => x.pillar === g.pillar);
           return (
             <Card key={g.id} className="p-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge tone="muted">{g.pillar}</Badge>
                     {complete && <Badge tone="good">Complete</Badge>}
                   </div>
-                  <p className="mt-1 font-semibold text-ink">{g.title}</p>
+                  <p className="mt-1 font-semibold text-ink break-words">{g.title}</p>
                   {guide && <p className="mt-1 text-sm text-ink-muted">{guide.howTo}</p>}
                 </div>
-                <div className="text-right text-sm">
+                <div className="shrink-0 text-sm sm:text-right">
                   <span className="font-semibold text-ink">{formatGoalAmount(g, g.current)}</span>
                   <span className="text-ink-muted"> / {formatGoalAmount(g, g.target)}</span>
                 </div>
