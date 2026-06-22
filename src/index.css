@@ -1,0 +1,157 @@
+@import url("https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=Sora:wght@400;500;600;700&display=swap");
+
+@import "tailwindcss";
+
+/*
+  Caarya Pod Operating Portal v6 — dark "ruby & amber" design system.
+  Theme tokens are exposed to Tailwind v4 via @theme so utilities like
+  `bg-surface`, `text-ruby`, `border-line`, `text-amber` work everywhere.
+*/
+@theme {
+  /* Backgrounds — deep warm near-black */
+  --color-base: #0e090b;
+  --color-base-2: #140d0f;
+  --color-surface: #1a1113;
+  --color-surface-2: #221619;
+  --color-surface-3: #2b1c20;
+
+  /* Lines / borders */
+  --color-line: #36262b;
+  --color-line-strong: #4a3036;
+
+  /* Text */
+  --color-ink: #f6ece9;
+  --color-ink-muted: #b9a6a4;
+  --color-ink-faint: #7c6a6c;
+
+  /* Ruby (primary brand) */
+  --color-ruby: #e11d48;
+  --color-ruby-bright: #fb3a63;
+  --color-ruby-deep: #9f1239;
+  --color-ruby-soft: #2a1117;
+
+  /* Amber (secondary accent) */
+  --color-amber: #f59e0b;
+  --color-amber-bright: #fbbf24;
+  --color-amber-deep: #b45309;
+  --color-amber-soft: #2a1e08;
+
+  /* Status */
+  --color-good: #34d399;
+  --color-warn: #fbbf24;
+  --color-bad: #fb7185;
+  --color-info: #38bdf8;
+
+  --font-sans: "Satoshi", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Lato", "Satoshi", ui-sans-serif, sans-serif;
+  --font-mono: "Sora", ui-monospace, monospace;
+
+  --radius-xl: 1rem;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-line);
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--color-base);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--color-ruby) 40%, transparent);
+    color: #fff;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-line-strong);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-ruby-deep);
+    background-clip: content-box;
+  }
+}
+
+@layer components {
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  /* Glass card surface used across the app */
+  .card {
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--color-surface) 92%, transparent), color-mix(in srgb, var(--color-base-2) 92%, transparent));
+    border: 1px solid var(--color-line);
+    border-radius: 1rem;
+    backdrop-filter: blur(6px);
+  }
+
+  .card-hover {
+    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .card-hover:hover {
+    border-color: var(--color-line-strong);
+    box-shadow: 0 18px 40px -24px rgba(225, 29, 72, 0.45);
+  }
+
+  /* Primary ruby→amber gradient action */
+  .btn-primary {
+    background-image: linear-gradient(135deg, var(--color-ruby-bright), var(--color-amber));
+    color: #1a0c10;
+    font-weight: 700;
+  }
+  .btn-primary:hover {
+    filter: brightness(1.06);
+  }
+
+  .text-gradient {
+    background-image: linear-gradient(120deg, var(--color-ruby-bright), var(--color-amber-bright));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .focus-ring:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-base), 0 0 0 4px color-mix(in srgb, var(--color-ruby) 70%, transparent);
+  }
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-12px) scale(1.01); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-ruby) 18%, transparent), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
