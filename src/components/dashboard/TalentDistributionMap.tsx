@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { getTalentDistribution, TALENT_ROLES } from "@/lib/data/services";
 import { cn } from "@/lib/utils";
-import type { TalentMember } from "@/lib/types";
+import type { TalentMember, TalentRole } from "@/lib/types";
 
 const ROLE_COLORS = [
   "bg-ruby/20 text-ruby-bright",
@@ -17,28 +17,90 @@ const ROLE_COLORS = [
   "bg-surface-3 text-ink-faint",
 ];
 
-export function TalentDistributionMap({ talent, compact }: { talent: TalentMember[]; compact?: boolean }) {
+interface TalentDistributionMapProps {
+  talent: TalentMember[];
+  compact?: boolean;
+  /** When true, role chips filter the list (Talent Map). */
+  filterable?: boolean;
+  selectedRole?: TalentRole | null;
+  onRoleSelect?: (role: TalentRole | null) => void;
+}
+
+export function TalentDistributionMap({
+  talent,
+  compact,
+  filterable,
+  selectedRole = null,
+  onRoleSelect,
+}: TalentDistributionMapProps) {
   const rows = getTalentDistribution(talent);
   const total = talent.length;
 
+  const handleRoleClick = (role: TalentRole, count: number) => {
+    if (!filterable || !onRoleSelect || count === 0) return;
+    onRoleSelect(selectedRole === role ? null : role);
+  };
+
   const content = (
     <>
+      {filterable && (
+        <p className="mb-2 text-[11px] text-ink-faint">
+          {selectedRole ? (
+            <>
+              Showing <span className="font-semibold text-ink">{selectedRole}</span>
+              {" · "}
+              <button type="button" onClick={() => onRoleSelect?.(null)} className="text-ruby-bright hover:underline">
+                Clear filter
+              </button>
+            </>
+          ) : (
+            "Tap a role to filter the map below."
+          )}
+        </p>
+      )}
       <div className={cn("grid gap-2", compact ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3")}>
         {TALENT_ROLES.map((role, i) => {
           const row = rows.find((r) => r.role === role);
           const count = row?.count ?? 0;
-          return (
-            <div
-              key={role}
-              className={cn(
-                "flex items-center justify-between gap-2 rounded-xl border border-line bg-surface-2 px-3 py-2.5 transition-colors",
-                count > 0 && "hover:border-line-strong",
-              )}
-            >
+          const selected = selectedRole === role;
+          const interactive = filterable && count > 0;
+
+          const inner = (
+            <>
               <span className={cn("rounded-md px-1.5 py-0.5 text-[10px] font-bold", ROLE_COLORS[i % ROLE_COLORS.length])}>
                 {role}
               </span>
               <span className="font-display text-lg font-black text-ink">{count}</span>
+            </>
+          );
+
+          const className = cn(
+            "flex items-center justify-between gap-2 rounded-xl border px-3 py-2.5 transition-colors",
+            selected
+              ? "border-ruby/60 bg-ruby/10 ring-1 ring-ruby/30"
+              : "border-line bg-surface-2",
+            interactive && !selected && "cursor-pointer hover:border-line-strong hover:bg-surface-3",
+            count === 0 && "opacity-45",
+            !interactive && !filterable && count > 0 && "hover:border-line-strong",
+          );
+
+          if (interactive) {
+            return (
+              <button
+                key={role}
+                type="button"
+                onClick={() => handleRoleClick(role, count)}
+                className={className}
+                aria-pressed={selected}
+              >
+                {inner}
+              </button>
+            );
+          }
+
+          return (
+            <div key={role} className={className}>
+              {inner}
             </div>
           );
         })}

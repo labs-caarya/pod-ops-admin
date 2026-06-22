@@ -10,7 +10,7 @@ import { useCollection } from "@/lib/store";
 import { talentStore, partnerStore } from "@/lib/data/collections";
 import { getServiceStrength, normalizeTalent } from "@/lib/data/services";
 import { makeId } from "@/lib/utils";
-import type { TalentMember } from "@/lib/types";
+import type { TalentMember, TalentRole } from "@/lib/types";
 import { TalentGrid } from "@/components/talent/TalentGrid";
 import { TalentDrawer } from "@/components/talent/TalentDrawer";
 
@@ -20,10 +20,13 @@ export default function TalentMap() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
+  const [roleFilter, setRoleFilter] = useState<TalentRole | null>(null);
   const [editing, setEditing] = useState<TalentMember | "new" | null>(null);
 
   const filtered = useMemo(() => {
     return talent.filter((m) => {
+      const member = normalizeTalent(m);
+      if (roleFilter && member.talentRole !== roleFilter) return false;
       if (statusFilter !== "all" && m.status !== statusFilter) return false;
       if (sourceFilter === "pod" && m.partnerId) return false;
       if (sourceFilter !== "all" && sourceFilter !== "pod" && m.partnerId !== sourceFilter) return false;
@@ -35,7 +38,7 @@ export default function TalentMap() {
         m.skills.some((s) => s.toLowerCase().includes(q))
       );
     });
-  }, [talent, statusFilter, sourceFilter, search]);
+  }, [talent, roleFilter, statusFilter, sourceFilter, search]);
 
   const stats = useMemo(
     () => ({
@@ -87,7 +90,13 @@ export default function TalentMap() {
           <h2 className="font-display text-sm font-bold text-ink">Talent distribution</h2>
           <span className="text-xs text-ink-faint">{talent.length} mapped</span>
         </div>
-        <TalentDistributionMap talent={normalizedTalent} compact />
+        <TalentDistributionMap
+          talent={normalizedTalent}
+          compact
+          filterable
+          selectedRole={roleFilter}
+          onRoleSelect={setRoleFilter}
+        />
       </Card>
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
