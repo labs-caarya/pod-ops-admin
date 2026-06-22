@@ -17,6 +17,7 @@ import Partners from "@/pages/Partners";
 import PartnerDetail from "@/pages/PartnerDetail";
 import AskMoksha from "@/pages/AskMoksha";
 import Resources from "@/pages/Resources";
+import ResourceLevelUp from "@/pages/ResourceLevelUp";
 
 function ProtectedRoutes() {
   const { isAuthenticated, isAuthenticating } = useAuth();
@@ -62,6 +63,7 @@ export default function App() {
           <Route path="/partners/:partnerId" element={<PartnerDetail />} />
           <Route path="/ask" element={<AskMoksha />} />
           <Route path="/resources" element={<Resources />} />
+          <Route path="/resources/leveling-up" element={<ResourceLevelUp />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

@@ -39,6 +39,7 @@ import {
 } from "@/lib/data/collections";
 import { computeScore } from "@/lib/data/scoring";
 import { formatGoalAmount, getLevelUpSnapshot } from "@/lib/data/levelUp";
+import { LEVEL_UP_RESOURCE_PATH } from "@/lib/data/levelUpResource";
 import { CLOSED_WIN } from "@/lib/constants";
 
 export default function Dashboard() {
@@ -100,14 +101,20 @@ export default function Dashboard() {
                 <h2 className="font-display text-lg font-bold text-ink">Level-up objectives</h2>
                 <Badge tone="ruby">Level {levelUp.currentLevel}</Badge>
                 <span className="text-xs text-ink-faint">→ Level {levelUp.nextLevel}</span>
+                <Badge tone={levelUp.readyToLevelUp ? "good" : levelUp.overallProgress >= 60 ? "amber" : "muted"}>
+                  {levelUp.objectivesComplete}/{levelUp.objectivesTotal} complete
+                </Badge>
               </div>
               <p className="text-sm text-ink-muted">
                 Hit every objective below to level up your pod. Each pillar unlocks the next tier of Caarya support.
               </p>
             </div>
-            <Badge tone={levelUp.readyToLevelUp ? "good" : levelUp.overallProgress >= 60 ? "amber" : "muted"}>
-              {levelUp.objectivesComplete}/{levelUp.objectivesTotal} complete
-            </Badge>
+            <Link
+              to={LEVEL_UP_RESOURCE_PATH}
+              className="flex shrink-0 items-center gap-1 text-sm text-ruby-bright hover:underline"
+            >
+              Learn more <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
           </div>
           <div className="space-y-4">
             {levelUp.objectives.map(({ goal: g, progress: p, complete }) => (
@@ -145,9 +152,7 @@ export default function Dashboard() {
         {/* Progress toward next level */}
         <Card className="flex flex-col items-center justify-center p-5">
           <h2 className="mb-1 self-start font-display text-lg font-bold text-ink">Progress pulse</h2>
-          <p className="mb-1 self-start text-sm text-ink-muted">
-            Completed toward Level {levelUp.nextLevel}.
-          </p>
+          <p className="mb-1 self-start text-sm text-ink-muted">Completed toward Level {levelUp.nextLevel}.</p>
           <p className="mb-3 self-start text-xs text-ink-faint">
             {levelUp.objectivesComplete} of {levelUp.objectivesTotal} objectives done ·{" "}
             {levelUp.overallProgress}% overall

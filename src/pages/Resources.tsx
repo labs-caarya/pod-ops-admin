@@ -32,6 +32,12 @@ const SECTIONS: ResourceSection[] = [
         external: true,
       },
       {
+        title: "How pod leveling works",
+        description: "Objectives across five pillars, all-or-nothing level gates, and what unlocks at the next tier.",
+        href: "/resources/leveling-up",
+        tag: "Guide",
+      },
+      {
         title: "Research HIVE playbook",
         description: "How to profile academic partners, campus companies, and industry targets — and when to push to Rolodex.",
         href: "/research",
