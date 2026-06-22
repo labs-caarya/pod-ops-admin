@@ -2,9 +2,11 @@ import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { Drawer } from "@/components/ui/Drawer";
 import { Button } from "@/components/ui/Button";
-import { Input, Select, FieldRow, Textarea } from "@/components/ui/Field";
+import { Input, Select, FieldRow, Textarea, Label } from "@/components/ui/Field";
 import { talentStore, partnerStore } from "@/lib/data/collections";
-import type { TalentMember } from "@/lib/types";
+import { ALL_POD_SERVICES, POD_SERVICE_GROUPS, TALENT_ROLES, normalizeTalent } from "@/lib/data/services";
+import type { PodServiceId, TalentMember } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 const LEVELS: TalentMember["level"][] = ["Explorer", "Builder", "Specialist", "Lead"];
 const STATUSES: TalentMember["status"][] = ["Available", "Engaged", "Placed", "Bench"];
@@ -18,7 +20,7 @@ export function TalentDrawer({
   isNew: boolean;
   onClose: () => void;
 }) {
-  const [form, setForm] = useState<TalentMember>(member);
+  const [form, setForm] = useState<TalentMember>(() => normalizeTalent(member));
   const partners = partnerStore.all().filter((p) => p.type === "Academic");
 
   const set =
@@ -26,11 +28,19 @@ export function TalentDrawer({
     (value: TalentMember[K]) =>
       setForm((f) => ({ ...f, [key]: value }));
 
+  const toggleService = (id: PodServiceId) => {
+    setForm((f) => {
+      const current = f.serviceOfferings ?? [];
+      const next = current.includes(id) ? current.filter((s) => s !== id) : [...current, id];
+      return { ...f, serviceOfferings: next };
+    });
+  };
+
   const save = () => {
     const skills = Array.isArray(form.skills)
       ? form.skills
       : String(form.skills).split(",").map((s) => s.trim()).filter(Boolean);
-    talentStore.upsert({ ...form, skills });
+    talentStore.upsert(normalizeTalent({ ...form, skills }));
     onClose();
   };
 
@@ -44,7 +54,7 @@ export function TalentDrawer({
       open
       onClose={onClose}
       title={isNew ? "Add talent" : form.name}
-      subtitle={form.primarySkill}
+      subtitle={form.talentRole ? `${form.talentRole} · ${form.primarySkill}` : form.primarySkill}
       footer={
         <div className="flex items-center justify-between">
           {!isNew ? (
@@ -65,6 +75,11 @@ export function TalentDrawer({
         <FieldRow label="Name"><Input value={form.name} onChange={(e) => set("name")(e.target.value)} /></FieldRow>
         <FieldRow label="College"><Input value={form.college} onChange={(e) => set("college")(e.target.value)} /></FieldRow>
         <FieldRow label="Primary skill"><Input value={form.primarySkill} onChange={(e) => set("primarySkill")(e.target.value)} /></FieldRow>
+        <FieldRow label="Talent role">
+          <Select value={form.talentRole} onChange={(e) => set("talentRole")(e.target.value as TalentMember["talentRole"])}>
+            {TALENT_ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+          </Select>
+        </FieldRow>
         <FieldRow label="Level">
           <Select value={form.level} onChange={(e) => set("level")(e.target.value as TalentMember["level"])}>
             {LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}
@@ -88,6 +103,42 @@ export function TalentDrawer({
             onChange={(e) => set("skills")(e.target.value.split(",").map((s) => s.trim()) as string[])}
           />
         </FieldRow>
+
+        <div className="col-span-2">
+          <Label>Services opted in</Label>
+          <p className="mb-2 text-[11px] text-ink-faint">Which pod services this student will help deliver.</p>
+          <div className="space-y-3">
+            {POD_SERVICE_GROUPS.map((group) => (
+              <div key={group.id}>
+                <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-ink-faint">{group.label}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {group.services.map((svc) => {
+                    const active = (form.serviceOfferings ?? []).includes(svc.id);
+                    return (
+                      <button
+                        key={svc.id}
+                        type="button"
+                        onClick={() => toggleService(svc.id)}
+                        className={cn(
+                          "rounded-lg border px-2 py-1 text-[11px] font-medium transition-colors",
+                          active
+                            ? "border-ruby/50 bg-ruby/15 text-ruby-bright"
+                            : "border-line bg-surface-2 text-ink-muted hover:border-line-strong",
+                        )}
+                      >
+                        {svc.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+          {ALL_POD_SERVICES.length > 0 && (form.serviceOfferings ?? []).length === 0 && (
+            <p className="mt-2 text-[11px] text-bad">Select at least one service.</p>
+          )}
+        </div>
+
         <FieldRow label="Placed at" className="col-span-2">
           <Input value={form.placedAt || ""} onChange={(e) => set("placedAt")(e.target.value)} placeholder="e.g. Zomato District activation" />
         </FieldRow>

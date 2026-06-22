@@ -30,9 +30,18 @@ export default function Login() {
         : "text-ink-muted";
 
   return (
-    <div className="relative flex min-h-dvh items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="card p-8">
+    <div className="relative flex min-h-dvh min-h-[100dvh] items-center justify-center p-4">
+      {/* Login floats above the full-screen map on mobile; centered on desktop too */}
+      <div className="relative z-10 w-full max-w-md">
+        <div
+          className={cn(
+            "p-6 sm:p-8",
+            /* Mobile: translucent glass over the map */
+            "card-glass",
+            /* Desktop: solid card */
+            "md:card md:shadow-none",
+          )}
+        >
           <div className="mb-6 flex flex-col items-center text-center">
             <CaaryaLogo className="h-9" />
             <h1 className="mt-5 font-display text-2xl font-black text-ink">Pod Operating Portal</h1>
@@ -54,7 +63,7 @@ export default function Login() {
                     placeholder="10-digit number"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                    className="pl-12"
+                    className="border-line/70 bg-base/50 pl-12 backdrop-blur-sm"
                   />
                 </div>
               </label>
@@ -81,7 +90,7 @@ export default function Login() {
                   placeholder="6-digit code"
                   value={otp}
                   onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  className="text-center text-lg tracking-[0.4em]"
+                  className="border-line/70 bg-base/50 text-center text-lg tracking-[0.4em] backdrop-blur-sm"
                 />
               </label>
               <Button
@@ -114,12 +123,12 @@ export default function Login() {
           )}
 
           <div className="my-6 flex items-center gap-3">
-            <div className="h-px flex-1 bg-line" />
+            <div className="h-px flex-1 bg-line/60" />
             <span className="text-[10px] uppercase tracking-widest text-ink-faint">or</span>
-            <div className="h-px flex-1 bg-line" />
+            <div className="h-px flex-1 bg-line/60" />
           </div>
 
-          <Button variant="outline" className="w-full" onClick={loginDemo}>
+          <Button variant="outline" className="w-full border-line/70 bg-base/30 backdrop-blur-sm md:bg-transparent" onClick={loginDemo}>
             Continue in demo mode <ArrowRight className="h-4 w-4" />
           </Button>
 
@@ -131,7 +140,7 @@ export default function Login() {
           )}
         </div>
 
-        <p className="mt-4 text-center text-[11px] text-ink-faint">
+        <p className="mt-4 text-center text-[11px] text-ink-faint/90 drop-shadow-sm">
           Caarya · Pod Operating Portal v6
         </p>
       </div>

@@ -23,11 +23,11 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             <p className="truncate text-xs text-ink-muted">{POD.crew}</p>
           </div>
         </div>
-        <div className="mt-3 flex items-center gap-2">
-          <span className="rounded-full bg-ruby/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-ruby-bright">
+        <div className="mt-3 flex flex-col gap-1.5">
+          <span className="truncate text-[10px] text-ink-faint">{POD.college}</span>
+          <span className="w-fit rounded-full bg-ruby/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-ruby-bright">
             Level {POD.level}
           </span>
-          <span className="truncate text-[10px] text-ink-faint">{POD.college}</span>
         </div>
       </div>
 

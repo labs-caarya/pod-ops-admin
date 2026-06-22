@@ -12,6 +12,7 @@ import {
   Plus,
   Trash2,
   Sparkles,
+  Rocket,
   Megaphone,
   Pencil,
 } from "lucide-react";
@@ -74,6 +75,9 @@ export default function PartnerDetail() {
   }
 
   const isAcademic = partner.type === "Academic";
+  const isCampusCompany = partner.type === "Campus Company";
+  const PartnerIcon = isAcademic ? GraduationCap : isCampusCompany ? Rocket : Factory;
+  const typeTone = isAcademic ? "ruby" : isCampusCompany ? "info" : "amber";
   const totalLeverage = partner.sponsorshipAssets.reduce((s, a) => s + a.value, 0);
   const committed = partner.sponsorshipAssets.filter((a) => a.status !== "Available").reduce((s, a) => s + a.value, 0);
   const totalAudience = partner.sponsorshipAssets.reduce((s, a) => s + a.audience, 0);
@@ -107,6 +111,8 @@ export default function PartnerDetail() {
     partnerId: partner.id,
     primarySkill: "",
     skills: [],
+    talentRole: "Content Creator",
+    serviceOfferings: [],
     level: "Explorer",
     status: "Available",
     availability: "",
@@ -130,7 +136,7 @@ export default function PartnerDetail() {
       </Link>
 
       <PageHeader
-        icon={isAcademic ? GraduationCap : Factory}
+        icon={PartnerIcon}
         title={partner.name}
         description={`${partner.kind} · ${partner.city}`}
         actions={
@@ -142,7 +148,7 @@ export default function PartnerDetail() {
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <Badge tone={PARTNER_STAGE_TONE[partner.stage] ?? "muted"}>{partner.stage}</Badge>
-        <Badge tone={isAcademic ? "ruby" : "amber"}>{partner.type}</Badge>
+        <Badge tone={typeTone}>{partner.type}</Badge>
         {partner.tags.map((t) => <Badge key={t} tone="muted">{t}</Badge>)}
       </div>
 

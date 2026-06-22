@@ -6,6 +6,7 @@ import {
   Briefcase,
   Building2,
   Sparkles,
+  BookOpen,
   type LucideIcon,
 } from "lucide-react";
 
@@ -29,7 +30,7 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     heading: "Grow the network",
     items: [
-      { label: "Research · HIVE", to: "/research", icon: Microscope },
+      { label: "Research HIVE", to: "/research", icon: Microscope },
       { label: "Rolodex", to: "/rolodex", icon: Contact2 },
       { label: "Partners", to: "/partners", icon: Building2 },
     ],
@@ -43,6 +44,9 @@ export const NAV_SECTIONS: NavSection[] = [
   },
   {
     heading: "Assist",
-    items: [{ label: "Ask Moksha", to: "/ask", icon: Sparkles }],
+    items: [
+      { label: "Ask Moksha", to: "/ask", icon: Sparkles },
+      { label: "Resources", to: "/resources", icon: BookOpen },
+    ],
   },
 ];

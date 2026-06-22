@@ -6,8 +6,8 @@ import { Input, Textarea, Select, FieldRow } from "@/components/ui/Field";
 import { partnerStore } from "@/lib/data/collections";
 import type { Partner, PartnerKind, PartnerStage, PartnerType } from "@/lib/types";
 
-const TYPES: PartnerType[] = ["Academic", "Industry"];
-const KINDS: PartnerKind[] = ["Club", "Council", "College", "Company", "Incubator", "Community"];
+const TYPES: PartnerType[] = ["Academic", "Campus Company", "Industry"];
+const KINDS: PartnerKind[] = ["Club", "Council", "College", "Company", "Incubator", "Community", "Student Startup"];
 const STAGES: PartnerStage[] = ["Prospect", "Engaged", "Active", "Strategic"];
 
 export function PartnerDrawer({
@@ -59,7 +59,23 @@ export function PartnerDrawer({
       <div className="grid grid-cols-2 gap-3">
         <FieldRow label="Name" className="col-span-2"><Input value={form.name} onChange={(e) => set("name")(e.target.value)} /></FieldRow>
         <FieldRow label="Type">
-          <Select value={form.type} onChange={(e) => set("type")(e.target.value as PartnerType)}>
+          <Select
+            value={form.type}
+            onChange={(e) => {
+              const type = e.target.value as PartnerType;
+              setForm((f) => ({
+                ...f,
+                type,
+                kind:
+                  type === "Academic"
+                    ? "Club"
+                    : type === "Campus Company"
+                      ? "Student Startup"
+                      : "Company",
+                sponsorshipEnabled: type === "Academic" ? f.sponsorshipEnabled : false,
+              }));
+            }}
+          >
             {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
           </Select>
         </FieldRow>

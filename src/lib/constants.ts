@@ -38,6 +38,25 @@ export const RESEARCH_STATUSES = [
   "Archived",
 ] as const;
 
+export const SEARCH_TARGETS = [
+  "Academic Partner",
+  "Campus Company",
+  "Industry Partner",
+] as const;
+
+export const INDUSTRY_PARTNER_STAGES = [
+  "Idea stage startup",
+  "Early stage startup",
+  "Angel Funded Startup",
+  "Established Brand",
+] as const;
+
+export const SEARCH_TARGET_TONE: Record<string, Tone> = {
+  "Academic Partner": "info",
+  "Campus Company": "ruby",
+  "Industry Partner": "amber",
+};
+
 export const TALENT_STATUS_TONE: Record<string, Tone> = {
   Available: "good",
   Engaged: "amber",

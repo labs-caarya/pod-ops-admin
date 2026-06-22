@@ -1,11 +1,14 @@
 import { useMemo, useState } from "react";
-import { Users, Plus, Search, UserCheck, UserPlus, Coffee } from "lucide-react";
+import { Users, Plus, Search, UserCheck, UserPlus, Coffee, Layers } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatCard } from "@/components/ui/StatCard";
+import { Card } from "@/components/ui/Card";
 import { Input, Select } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
+import { TalentDistributionMap } from "@/components/dashboard/TalentDistributionMap";
 import { useCollection } from "@/lib/store";
 import { talentStore, partnerStore } from "@/lib/data/collections";
+import { getServiceStrength, normalizeTalent } from "@/lib/data/services";
 import { makeId } from "@/lib/utils";
 import type { TalentMember } from "@/lib/types";
 import { TalentGrid } from "@/components/talent/TalentGrid";
@@ -39,9 +42,12 @@ export default function TalentMap() {
       available: talent.filter((m) => m.status === "Available").length,
       placed: talent.filter((m) => m.status === "Placed").length,
       bench: talent.filter((m) => m.status === "Bench").length,
+      serviceOptIns: getServiceStrength(talent).reduce((s, r) => s + r.count, 0),
     }),
     [talent],
   );
+
+  const normalizedTalent = useMemo(() => talent.map(normalizeTalent), [talent]);
 
   const newMember = (): TalentMember => ({
     id: makeId("tal"),
@@ -49,6 +55,8 @@ export default function TalentMap() {
     college: "",
     primarySkill: "",
     skills: [],
+    talentRole: "Content Creator",
+    serviceOfferings: [],
     level: "Explorer",
     status: "Available",
     availability: "",
@@ -59,7 +67,7 @@ export default function TalentMap() {
       <PageHeader
         icon={Users}
         title="Talent Map"
-        description="Map your pod's people — and partner students — by skill, level and availability, then place them on opportunities."
+        description="Map students by role and service offerings — developers, designers, nano-influencers and more."
         actions={
           <Button onClick={() => setEditing("new")}>
             <Plus className="h-4 w-4" /> Add talent
@@ -67,11 +75,20 @@ export default function TalentMap() {
         }
       />
 
-      <div className="mb-4 grid grid-cols-3 gap-3">
+      <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="Available" value={stats.available} icon={UserCheck} tone="good" />
         <StatCard label="Placed" value={stats.placed} icon={UserPlus} tone="info" />
         <StatCard label="On bench" value={stats.bench} icon={Coffee} tone="muted" />
+        <StatCard label="Service opt-ins" value={stats.serviceOptIns} icon={Layers} tone="ruby" hint="Across all services" />
       </div>
+
+      <Card className="mb-4 p-4">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <h2 className="font-display text-sm font-bold text-ink">Talent distribution</h2>
+          <span className="text-xs text-ink-faint">{talent.length} mapped</span>
+        </div>
+        <TalentDistributionMap talent={normalizedTalent} compact />
+      </Card>
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <div className="relative min-w-[220px] flex-1">

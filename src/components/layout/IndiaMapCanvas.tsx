@@ -17,8 +17,9 @@ interface IndiaMapCanvasProps {
   markers?: CampusMarker[];
   animate?: boolean;
   prominent?: boolean;
-  /** "hover" keeps labels hidden until hover — cleaner on backdrop */
   labelMode?: "hover" | "always";
+  /** Larger pins for mobile full-screen map */
+  pinSize?: "sm" | "lg";
 }
 
 export function IndiaMapCanvas({
@@ -27,15 +28,12 @@ export function IndiaMapCanvas({
   animate = false,
   prominent = false,
   labelMode = "always",
+  pinSize = "sm",
 }: IndiaMapCanvasProps) {
   return (
-    <div className={cn("relative aspect-square w-full max-w-lg", className)}>
-      {/* Silhouette fill */}
+    <div className={cn("relative aspect-square", className)}>
       <div
-        className={cn(
-          "absolute inset-0",
-          animate && "animate-[float-slow_14s_ease-in-out_infinite]",
-        )}
+        className={cn("absolute inset-0", animate && "animate-[float-slow_14s_ease-in-out_infinite]")}
         style={{
           ...MAP_MASK,
           background: prominent
@@ -44,7 +42,6 @@ export function IndiaMapCanvas({
         }}
       />
 
-      {/* Edge trace for definition */}
       <img
         src="/india-map.svg"
         alt=""
@@ -54,14 +51,12 @@ export function IndiaMapCanvas({
           animate && "animate-[float-slow_14s_ease-in-out_infinite]",
         )}
         style={{
-          filter:
-            "invert(36%) sepia(90%) saturate(1800%) hue-rotate(315deg) brightness(100%)",
+          filter: "invert(36%) sepia(90%) saturate(1800%) hue-rotate(315deg) brightness(100%)",
         }}
       />
 
-      {/* Campus markers */}
       {markers?.map((marker, i) => (
-        <CampusPin key={marker.id} marker={marker} delayMs={i * 120} labelMode={labelMode} />
+        <CampusPin key={marker.id} marker={marker} delayMs={i * 120} labelMode={labelMode} pinSize={pinSize} />
       ))}
     </div>
   );
@@ -71,30 +66,44 @@ function CampusPin({
   marker,
   delayMs,
   labelMode,
+  pinSize,
 }: {
   marker: CampusMarker;
   delayMs: number;
   labelMode: "hover" | "always";
+  pinSize: "sm" | "lg";
 }) {
+  const large = pinSize === "lg";
+
   return (
     <div
-      className="group absolute z-10 -translate-x-1/2 -translate-y-1/2"
+      className="group absolute z-20 -translate-x-1/2 -translate-y-1/2"
       style={{ left: `${marker.x}%`, top: `${marker.y}%` }}
     >
       <span
-        className="absolute left-1/2 top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full bg-ruby-bright/30 animate-ping"
+        className={cn(
+          "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-ruby-bright/40 animate-ping",
+          large ? "h-7 w-7" : "h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6",
+        )}
         style={{ animationDuration: "2.4s", animationDelay: `${delayMs}ms` }}
       />
-      <span className="relative block h-2.5 w-2.5 rounded-full border border-white/30 bg-gradient-to-br from-ruby-bright to-amber shadow-[0_0_10px_rgba(251,58,99,0.7)]" />
       <span
         className={cn(
-          "pointer-events-none absolute left-3 top-1/2 z-20 -translate-y-1/2 whitespace-nowrap rounded-lg border border-line/80 bg-base-2/95 px-2 py-1 text-[10px] font-semibold text-ink shadow-lg backdrop-blur-sm transition-opacity duration-200",
+          "relative block rounded-full border border-white/40 bg-gradient-to-br from-ruby-bright to-amber",
+          large
+            ? "h-3 w-3 shadow-[0_0_14px_rgba(251,58,99,0.85)]"
+            : "h-1.5 w-1.5 shadow-[0_0_8px_rgba(251,58,99,0.65)] sm:h-2 sm:w-2 md:h-2.5 md:w-2.5",
+        )}
+      />
+      <span
+        className={cn(
+          "pointer-events-none absolute left-2 top-1/2 z-20 hidden -translate-y-1/2 whitespace-nowrap rounded-lg border border-line/80 bg-base-2/95 px-2 py-0.5 text-[9px] font-semibold text-ink shadow-lg backdrop-blur-sm transition-opacity duration-200 sm:left-3 sm:block sm:px-2 sm:py-1 sm:text-[10px]",
           labelMode === "hover" ? "opacity-0 group-hover:opacity-100" : "opacity-100",
         )}
       >
         {marker.label}
         {marker.hint && (
-          <span className="ml-1 font-normal text-ink-faint">· {marker.hint}</span>
+          <span className="ml-1 hidden font-normal text-ink-faint md:inline">· {marker.hint}</span>
         )}
       </span>
     </div>

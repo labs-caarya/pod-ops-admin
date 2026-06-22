@@ -22,6 +22,16 @@ export type ResearchStatus =
 
 export type EntityKind = "Startup" | "Brand";
 
+/** What the pod is researching toward in HIVE. */
+export type SearchTarget = "Academic Partner" | "Campus Company" | "Industry Partner";
+
+/** Industry-partner stage when searchTarget is Industry Partner. */
+export type IndustryPartnerStage =
+  | "Idea stage startup"
+  | "Early stage startup"
+  | "Angel Funded Startup"
+  | "Established Brand";
+
 export interface ResearchScores {
   gapMatch: number;
   podFit: number;
@@ -33,7 +43,11 @@ export interface ResearchScores {
 export interface ResearchProfile {
   id: string;
   name: string;
+  /** @deprecated Use searchTarget + industryStage; kept for legacy profiles. */
   kind: EntityKind;
+  searchTarget: SearchTarget;
+  /** Set when searchTarget is Industry Partner. */
+  industryStage?: IndustryPartnerStage;
   sector: string;
   city: string;
   website: string;
@@ -108,6 +122,28 @@ export interface Contact {
 
 export type TalentStatus = "Available" | "Engaged" | "Placed" | "Bench";
 
+/** Distribution bucket on the talent map & dashboard. */
+export type TalentRole =
+  | "Developer"
+  | "Designer"
+  | "Video Editor"
+  | "Nano-Influencer"
+  | "Researcher"
+  | "Event Ops"
+  | "Content Creator"
+  | "Data Analyst"
+  | "Partnerships";
+
+/** Leaf services a student can opt into providing. */
+export type PodServiceId =
+  | "talent_placement"
+  | "innovation_consulting"
+  | "event_orchestration"
+  | "testing_360"
+  | "focus_groups"
+  | "market_research"
+  | "nano_influencer_marketing";
+
 export interface TalentMember {
   id: string;
   name: string;
@@ -117,6 +153,10 @@ export interface TalentMember {
   partnerId?: string;
   primarySkill: string;
   skills: string[];
+  /** Role bucket for talent distribution charts. */
+  talentRole: TalentRole;
+  /** Services this student has opted in to deliver for the pod. */
+  serviceOfferings: PodServiceId[];
   level: "Explorer" | "Builder" | "Specialist" | "Lead";
   status: TalentStatus;
   availability: string;
@@ -153,8 +193,15 @@ export interface JobOpportunity {
 
 /* -------------------------------- Partners -------------------------------- */
 
-export type PartnerType = "Academic" | "Industry";
-export type PartnerKind = "Club" | "Council" | "College" | "Company" | "Incubator" | "Community";
+export type PartnerType = "Academic" | "Industry" | "Campus Company";
+export type PartnerKind =
+  | "Club"
+  | "Council"
+  | "College"
+  | "Company"
+  | "Incubator"
+  | "Community"
+  | "Student Startup";
 export type PartnerStage = "Prospect" | "Engaged" | "Active" | "Strategic";
 
 export interface SponsorshipAsset {

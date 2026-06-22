@@ -10,23 +10,23 @@ import {
   TrendingUp,
   ArrowRight,
   IndianRupee,
+  Zap,
+  CheckCircle2,
 } from "lucide-react";
 import {
   ResponsiveContainer,
   RadialBarChart,
   RadialBar,
   PolarAngleAxis,
-  BarChart,
-  Bar,
-  XAxis,
-  Tooltip,
-  Cell,
 } from "recharts";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { StatCard } from "@/components/ui/StatCard";
 import { Badge } from "@/components/ui/Badge";
 import { ProgressBar } from "@/components/ui/Misc";
+import { ServiceStrengthChart } from "@/components/dashboard/ServiceStrengthChart";
+import { TalentDistributionMap } from "@/components/dashboard/TalentDistributionMap";
+import { OutreachPipelineFlow } from "@/components/dashboard/OutreachPipelineFlow";
 import { useCollection } from "@/lib/store";
 import {
   contactStore,
@@ -38,7 +38,8 @@ import {
   POD,
 } from "@/lib/data/collections";
 import { computeScore } from "@/lib/data/scoring";
-import { CLOSED_WIN, pct } from "@/lib/constants";
+import { formatGoalAmount, getLevelUpSnapshot } from "@/lib/data/levelUp";
+import { CLOSED_WIN } from "@/lib/constants";
 
 export default function Dashboard() {
   const research = useCollection(researchStore);
@@ -56,28 +57,7 @@ export default function Dashboard() {
     return { partnersWon, placed, sharedJobs, activePartners };
   }, [contacts, talent, jobs, partners]);
 
-  const overallProgress = useMemo(() => {
-    if (!goals.length) return 0;
-    const sum = goals.reduce((acc, g) => acc + Math.min(100, pct(g.current, g.target)), 0);
-    return Math.round(sum / goals.length);
-  }, [goals]);
-
-  const pipelineData = useMemo(() => {
-    const buckets: Record<string, number> = {};
-    contacts.forEach((c) => {
-      buckets[c.stage] = (buckets[c.stage] || 0) + 1;
-    });
-    const labels: Record<string, string> = {
-      to_contact: "To Contact",
-      outreach_sent: "Sent",
-      in_conversation: "Talking",
-      meeting: "Meeting",
-      proposal: "Proposal",
-      partner: "Won",
-      passed: "Passed",
-    };
-    return Object.entries(labels).map(([key, label]) => ({ name: label, value: buckets[key] || 0 }));
-  }, [contacts]);
+  const levelUp = useMemo(() => getLevelUpSnapshot(goals), [goals]);
 
   const topResearch = useMemo(
     () =>
@@ -112,49 +92,72 @@ export default function Dashboard() {
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {/* Goal alignment */}
+        {/* Level-up objectives */}
         <Card className="lg:col-span-2 p-5">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h2 className="font-display text-lg font-bold text-ink">Goal alignment</h2>
-              <p className="text-sm text-ink-muted">How the pod is tracking against its objectives.</p>
+              <div className="mb-1 flex flex-wrap items-center gap-2">
+                <h2 className="font-display text-lg font-bold text-ink">Level-up objectives</h2>
+                <Badge tone="ruby">Level {levelUp.currentLevel}</Badge>
+                <span className="text-xs text-ink-faint">→ Level {levelUp.nextLevel}</span>
+              </div>
+              <p className="text-sm text-ink-muted">
+                Hit every objective below to level up your pod. Each pillar unlocks the next tier of Caarya support.
+              </p>
             </div>
-            <Badge tone={overallProgress >= 60 ? "good" : "amber"}>{overallProgress}% on track</Badge>
+            <Badge tone={levelUp.readyToLevelUp ? "good" : levelUp.overallProgress >= 60 ? "amber" : "muted"}>
+              {levelUp.objectivesComplete}/{levelUp.objectivesTotal} complete
+            </Badge>
           </div>
           <div className="space-y-4">
-            {goals.map((g) => {
-              const p = Math.min(100, pct(g.current, g.target));
-              const isMoney = g.unit === "₹";
-              const fmt = (n: number) =>
-                isMoney ? `₹${(n / 1000).toFixed(0)}k` : `${n} ${g.unit}`;
-              return (
-                <div key={g.id}>
-                  <div className="mb-1.5 flex items-center justify-between text-sm">
-                    <span className="flex items-center gap-2 text-ink">
-                      <Badge tone="muted" className="text-[10px]">{g.pillar}</Badge>
-                      {g.title}
-                    </span>
-                    <span className="text-ink-muted">
-                      <span className="font-semibold text-ink">{fmt(g.current)}</span> / {fmt(g.target)}
-                    </span>
-                  </div>
-                  <ProgressBar value={p} tone={p >= 60 ? "good" : "ruby"} />
+            {levelUp.objectives.map(({ goal: g, progress: p, complete }) => (
+              <div key={g.id}>
+                <div className="mb-1.5 flex items-center justify-between gap-2 text-sm">
+                  <span className="flex min-w-0 items-center gap-2 text-ink">
+                    {complete ? (
+                      <CheckCircle2 className="h-4 w-4 shrink-0 text-good" aria-label="Complete" />
+                    ) : (
+                      <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-line-strong text-[9px] font-bold text-ink-faint">
+                        {Math.round(p)}%
+                      </span>
+                    )}
+                    <Badge tone="muted" className="shrink-0 text-[10px]">{g.pillar}</Badge>
+                    <span className="truncate">{g.title}</span>
+                  </span>
+                  <span className="shrink-0 text-ink-muted">
+                    <span className="font-semibold text-ink">{formatGoalAmount(g, g.current)}</span>
+                    {" / "}
+                    {formatGoalAmount(g, g.target)}
+                  </span>
                 </div>
-              );
-            })}
+                <ProgressBar value={p} tone={complete ? "good" : p >= 60 ? "amber" : "ruby"} />
+              </div>
+            ))}
           </div>
+          {levelUp.readyToLevelUp && (
+            <div className="mt-4 flex items-center gap-2 rounded-xl border border-good/30 bg-good/10 px-3 py-2 text-sm text-good">
+              <Zap className="h-4 w-4 shrink-0" />
+              All objectives met — your pod is ready to level up to Level {levelUp.nextLevel}!
+            </div>
+          )}
         </Card>
 
-        {/* Overall radial */}
+        {/* Progress toward next level */}
         <Card className="flex flex-col items-center justify-center p-5">
-          <h2 className="mb-1 self-start font-display text-lg font-bold text-ink">Sprint pulse</h2>
-          <p className="mb-2 self-start text-sm text-ink-muted">Average goal completion.</p>
+          <h2 className="mb-1 self-start font-display text-lg font-bold text-ink">Progress pulse</h2>
+          <p className="mb-1 self-start text-sm text-ink-muted">
+            Completed toward Level {levelUp.nextLevel}.
+          </p>
+          <p className="mb-3 self-start text-xs text-ink-faint">
+            {levelUp.objectivesComplete} of {levelUp.objectivesTotal} objectives done ·{" "}
+            {levelUp.overallProgress}% overall
+          </p>
           <div className="relative h-44 w-44">
             <ResponsiveContainer width="100%" height="100%">
               <RadialBarChart
                 innerRadius="72%"
                 outerRadius="100%"
-                data={[{ name: "p", value: overallProgress, fill: "#fb3a63" }]}
+                data={[{ name: "p", value: levelUp.overallProgress, fill: "#fb3a63" }]}
                 startAngle={90}
                 endAngle={-270}
               >
@@ -163,51 +166,27 @@ export default function Dashboard() {
               </RadialBarChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="font-display text-3xl font-black text-gradient">{overallProgress}%</span>
-              <span className="text-xs text-ink-faint">on track</span>
+              <span className="font-display text-3xl font-black text-gradient">{levelUp.overallProgress}%</span>
+              <span className="text-xs text-ink-faint">to Level {levelUp.nextLevel}</span>
             </div>
+          </div>
+          <div className="mt-3 w-full rounded-xl border border-line bg-surface-2 px-3 py-2 text-center text-xs text-ink-muted">
+            <span className="font-semibold text-ink">Level {levelUp.currentLevel}</span>
+            {" → "}
+            <span className="font-semibold text-ruby-bright">Level {levelUp.nextLevel}</span>
           </div>
         </Card>
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {/* Outreach pipeline */}
-        <Card className="lg:col-span-2 p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-display text-lg font-bold text-ink">Outreach pipeline</h2>
-            <Link to="/rolodex" className="flex items-center gap-1 text-sm text-ruby-bright hover:underline">
-              Open Rolodex <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-          <div className="h-52">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={pipelineData} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
-                <XAxis dataKey="name" tick={{ fill: "#7c6a6c", fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip
-                  cursor={{ fill: "rgba(225,29,72,0.08)" }}
-                  contentStyle={{
-                    background: "#1a1113",
-                    border: "1px solid #36262b",
-                    borderRadius: 12,
-                    color: "#f6ece9",
-                  }}
-                />
-                <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-                  {pipelineData.map((_, i) => (
-                    <Cell key={i} fill={i >= 5 ? "#34d399" : "#fb3a63"} fillOpacity={0.85} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </Card>
+        <ServiceStrengthChart talent={talent} />
 
         {/* Top research */}
         <Card className="p-5">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-display text-lg font-bold text-ink">Top targets</h2>
             <Link to="/research" className="flex items-center gap-1 text-sm text-ruby-bright hover:underline">
-              HIVE <ArrowRight className="h-3.5 w-3.5" />
+              Research HIVE <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
           <div className="space-y-2">
@@ -224,10 +203,19 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <QuickLink to="/talent" icon={Users} title="Place talent" desc={`${talent.filter((t) => t.status === "Available").length} students available`} />
-        <QuickLink to="/opportunities" icon={Briefcase} title="Share opportunities" desc={`${stats.sharedJobs} live · ${jobs.reduce((a, j) => a + j.applicants, 0)} applicants`} />
-        <QuickLink to="/partners" icon={IndianRupee} title="Sponsorship leverage" desc={`${partners.filter((p) => p.sponsorshipEnabled).length} academic partners enabled`} />
+      <div className="mt-4">
+        <OutreachPipelineFlow contacts={contacts} />
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <TalentDistributionMap talent={talent} />
+        </div>
+        <div className="flex flex-col gap-3">
+          <QuickLink to="/talent" icon={Users} title="Place talent" desc={`${talent.filter((t) => t.status === "Available").length} students available`} />
+          <QuickLink to="/opportunities" icon={Briefcase} title="Share opportunities" desc={`${stats.sharedJobs} live · ${jobs.reduce((a, j) => a + j.applicants, 0)} applicants`} />
+          <QuickLink to="/partners" icon={IndianRupee} title="Sponsorship leverage" desc={`${partners.filter((p) => p.sponsorshipEnabled).length} academic partners enabled`} />
+        </div>
       </div>
     </div>
   );
@@ -245,8 +233,8 @@ function QuickLink({
   desc: string;
 }) {
   return (
-    <Link to={to}>
-      <Card hover className="flex items-center gap-3 p-4">
+    <Link to={to} className="block h-full">
+      <Card hover className="flex h-full items-center gap-3 p-4">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-ruby/10 text-ruby-bright">
           <Icon className="h-5 w-5" />
         </div>
