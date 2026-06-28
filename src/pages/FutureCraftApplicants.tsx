@@ -1,16 +1,62 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { GraduationCap, Loader2, RefreshCw } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { Select } from "@/components/ui/Field";
 import { listFutureCraftApplicants, type FutureCraftApplicant } from "@/lib/api";
 import { cn, formatDate } from "@/lib/utils";
 
 export default function FutureCraftApplicants() {
   const [applicants, setApplicants] = useState<FutureCraftApplicant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [yearFilter, setYearFilter] = useState("all");
+  const [podFilter, setPodFilter] = useState("all");
   const [message, setMessage] = useState<{ text: string; tone: "bad" | "info" } | null>(null);
+
+  const yearOptions = useMemo(
+    () =>
+      Array.from(new Set(applicants.map((applicant) => applicant.year).filter(Boolean))).sort((left, right) => {
+        const leftNumber = Number.parseInt(left, 10);
+        const rightNumber = Number.parseInt(right, 10);
+        if (!Number.isNaN(leftNumber) && !Number.isNaN(rightNumber) && leftNumber !== rightNumber) {
+          return leftNumber - rightNumber;
+        }
+        return left.localeCompare(right, undefined, { numeric: true, sensitivity: "base" });
+      }),
+    [applicants],
+  );
+
+  const podOptions = useMemo(() => {
+    const options = new Map<string, string>();
+
+    applicants.forEach((applicant) => {
+      if (!applicant.hasMatchingPod) return;
+      const value = applicant.matchingPodCollegeName || applicant.college;
+      const label = applicant.matchingPodName || applicant.matchingPodCollegeName || applicant.college;
+      if (value) {
+        options.set(value, label);
+      }
+    });
+
+    return Array.from(options.entries())
+      .map(([value, label]) => ({ value, label }))
+      .sort((left, right) => left.label.localeCompare(right.label, undefined, { sensitivity: "base" }));
+  }, [applicants]);
+
+  const filteredApplicants = useMemo(
+    () =>
+      applicants.filter((applicant) => {
+        if (yearFilter !== "all" && applicant.year !== yearFilter) return false;
+        if (podFilter === "all") return true;
+        if (podFilter === "__unmatched__") return !applicant.hasMatchingPod;
+        return applicant.hasMatchingPod && (applicant.matchingPodCollegeName || applicant.college) === podFilter;
+      }),
+    [applicants, podFilter, yearFilter],
+  );
+
+  const hasActiveFilters = yearFilter !== "all" || podFilter !== "all";
 
   async function loadApplicants() {
     setLoading(true);
@@ -52,18 +98,39 @@ export default function FutureCraftApplicants() {
             <div>
               <p className="font-display text-lg font-bold text-ink">Application inbox</p>
               <p className="text-sm text-ink-muted">
-                {applicants.length} application{applicants.length === 1 ? "" : "s"} across matched and unmatched colleges
+                {filteredApplicants.length} application{filteredApplicants.length === 1 ? "" : "s"}
+                {hasActiveFilters ? ` shown of ${applicants.length}` : ""} across matched and unmatched colleges
               </p>
             </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 border-b border-line px-5 py-4">
+            <Select value={yearFilter} onChange={(e) => setYearFilter(e.target.value)} className="w-full sm:w-44">
+              <option value="all">All years</option>
+              {yearOptions.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </Select>
+            <Select value={podFilter} onChange={(e) => setPodFilter(e.target.value)} className="w-full sm:w-56">
+              <option value="all">All pods</option>
+              {podOptions.map((pod) => (
+                <option key={pod.value} value={pod.value}>
+                  {pod.label}
+                </option>
+              ))}
+              <option value="__unmatched__">No pod match</option>
+            </Select>
           </div>
 
           {loading ? (
             <div className="flex min-h-64 items-center justify-center">
               <Loader2 className="h-5 w-5 animate-spin text-ruby-bright" />
             </div>
-          ) : applicants.length ? (
+          ) : filteredApplicants.length ? (
             <div className="min-h-0 flex-1 divide-y divide-line overflow-y-auto">
-              {applicants.map((applicant) => (
+              {filteredApplicants.map((applicant) => (
                 <div key={applicant.id} className="px-5 py-4">
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                     <div className="space-y-1">
@@ -90,7 +157,9 @@ export default function FutureCraftApplicants() {
             </div>
           ) : (
             <div className="flex min-h-64 items-center justify-center px-6 text-center text-sm text-ink-muted">
-              No Future Craft applications have been submitted yet.
+              {applicants.length
+                ? "No applicants match the selected year or pod filters."
+                : "No Future Craft applications have been submitted yet."}
             </div>
           )}
         </div>
