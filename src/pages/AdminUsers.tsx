@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Eye, EyeOff, Loader2, Pencil, Plus, ShieldCheck, Trash2, UserRound } from "lucide-react";
+import { Eye, EyeOff, LayoutGrid, List, Loader2, Pencil, Plus, ShieldCheck, Trash2, UserRound } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -41,6 +41,7 @@ export default function AdminUsers() {
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [draft, setDraft] = useState<UserDraft>(EMPTY_DRAFT);
   const [showPassword, setShowPassword] = useState(false);
+  const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
   const [message, setMessage] = useState<{ text: string; tone: "good" | "bad" | "info" } | null>(null);
   const queryClient = useQueryClient();
   const usersQuery = useQuery(managedUsersQueryOptions());
@@ -171,14 +172,46 @@ export default function AdminUsers() {
               <p className="font-display text-lg font-bold text-ink">Current users</p>
               <p className="text-sm text-ink-muted">{users.length} account{users.length === 1 ? "" : "s"} in the shared collection</p>
             </div>
-            <Button
-              variant="secondary"
-              onClick={() => void Promise.all([usersQuery.refetch(), podsQuery.refetch()])}
-              disabled={loading || refreshing || saving}
-            >
-              {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserRound className="h-4 w-4" />}
-              Refresh
-            </Button>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 rounded-xl border border-line bg-surface-2 p-1">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("cards")}
+                  className={cn(
+                    "inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-colors",
+                    viewMode === "cards"
+                      ? "bg-ruby/15 text-ruby-bright"
+                      : "text-ink-muted hover:bg-surface-3 hover:text-ink",
+                  )}
+                  aria-pressed={viewMode === "cards"}
+                >
+                  <LayoutGrid className="h-3.5 w-3.5" />
+                  Cards
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("table")}
+                  className={cn(
+                    "inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-colors",
+                    viewMode === "table"
+                      ? "bg-ruby/15 text-ruby-bright"
+                      : "text-ink-muted hover:bg-surface-3 hover:text-ink",
+                  )}
+                  aria-pressed={viewMode === "table"}
+                >
+                  <List className="h-3.5 w-3.5" />
+                  Table
+                </button>
+              </div>
+              <Button
+                variant="secondary"
+                onClick={() => void Promise.all([usersQuery.refetch(), podsQuery.refetch()])}
+                disabled={loading || refreshing || saving}
+              >
+                {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserRound className="h-4 w-4" />}
+                Refresh
+              </Button>
+            </div>
           </div>
 
           {loading ? (
@@ -186,56 +219,128 @@ export default function AdminUsers() {
               <Loader2 className="h-5 w-5 animate-spin text-ruby-bright" />
             </div>
           ) : (
-            <div className="min-h-0 flex-1 overflow-y-auto divide-y divide-line">
-              {users.map((user) => {
-                const isAdmin = user.primary_role === "super_admin" || Boolean(user.permissions?.includes("*"));
+            viewMode === "table" ? (
+              <div className="min-h-0 flex-1 overflow-auto">
+                <table className="min-w-full border-separate border-spacing-0 text-left text-sm">
+                  <thead className="sticky top-0 z-10 bg-base">
+                    <tr className="text-xs uppercase tracking-[0.14em] text-ink-faint">
+                      <th className="border-b border-line px-5 py-3 font-medium">User</th>
+                      <th className="border-b border-line px-5 py-3 font-medium">Access</th>
+                      <th className="border-b border-line px-5 py-3 font-medium">Pod</th>
+                      <th className="border-b border-line px-5 py-3 font-medium">Status</th>
+                      <th className="border-b border-line px-5 py-3 font-medium text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.map((user) => {
+                      const isAdmin = user.primary_role === "super_admin" || Boolean(user.permissions?.includes("*"));
 
-                return (
-                  <div key={user.id} className="px-5 py-4">
-                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                      <div className="space-y-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-semibold text-ink">{user.name || user.username}</p>
-                          <Badge tone={isAdmin ? "info" : "muted"}>
-                            {isAdmin ? "super_admin" : user.podRole || user.primary_role || "Pod member"}
-                          </Badge>
-                          <Badge tone={user.isActive === false ? "warn" : "good"}>
-                            {user.isActive === false ? "Inactive" : "Active"}
-                          </Badge>
+                      return (
+                        <tr key={user.id} className="align-top text-ink-muted">
+                          <td className="border-b border-line px-5 py-4">
+                            <p className="font-semibold text-ink">{user.name || user.username}</p>
+                            <p className="mt-1 text-xs text-ink-faint">@{user.username}</p>
+                          </td>
+                          <td className="border-b border-line px-5 py-4">
+                            <div className="flex flex-wrap gap-2">
+                              <Badge tone={isAdmin ? "info" : "muted"}>
+                                {isAdmin ? "super_admin" : user.podRole || user.primary_role || "Pod member"}
+                              </Badge>
+                            </div>
+                          </td>
+                          <td className="border-b border-line px-5 py-4">
+                            <p className="text-ink">{isAdmin ? "Admin dashboard account" : user.podName || "No pod"}</p>
+                            {!isAdmin && (
+                              <p className="mt-1 text-xs text-ink-faint">{user.podRole || "No role assigned"}</p>
+                            )}
+                          </td>
+                          <td className="border-b border-line px-5 py-4">
+                            <Badge tone={user.isActive === false ? "warn" : "good"}>
+                              {user.isActive === false ? "Inactive" : "Active"}
+                            </Badge>
+                          </td>
+                          <td className="border-b border-line px-5 py-4">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => openEditDrawer(user)}
+                                disabled={isAdmin}
+                                title={isAdmin ? "Default admin stays fixed to admin access." : undefined}
+                              >
+                                <Pencil className="h-4 w-4" />
+                                Edit
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="danger"
+                                onClick={() => void handleDelete(user)}
+                                disabled={saving || isAdmin}
+                                title={isAdmin ? "Default admin cannot be deleted." : undefined}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                Delete
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="min-h-0 flex-1 overflow-y-auto divide-y divide-line">
+                {users.map((user) => {
+                  const isAdmin = user.primary_role === "super_admin" || Boolean(user.permissions?.includes("*"));
+
+                  return (
+                    <div key={user.id} className="px-5 py-4">
+                      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                        <div className="space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-semibold text-ink">{user.name || user.username}</p>
+                            <Badge tone={isAdmin ? "info" : "muted"}>
+                              {isAdmin ? "super_admin" : user.podRole || user.primary_role || "Pod member"}
+                            </Badge>
+                            <Badge tone={user.isActive === false ? "warn" : "good"}>
+                              {user.isActive === false ? "Inactive" : "Active"}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-ink-muted">@{user.username}</p>
+                          <p className="text-sm text-ink-faint">
+                            {isAdmin ? "Admin dashboard account" : `${user.podName || "No pod"} · ${user.podRole || "No role assigned"}`}
+                          </p>
                         </div>
-                        <p className="text-sm text-ink-muted">@{user.username}</p>
-                        <p className="text-sm text-ink-faint">
-                          {isAdmin ? "Admin dashboard account" : `${user.podName || "No pod"} · ${user.podRole || "No role assigned"}`}
-                        </p>
-                      </div>
 
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => openEditDrawer(user)}
-                          disabled={isAdmin}
-                          title={isAdmin ? "Default admin stays fixed to admin access." : undefined}
-                        >
-                          <Pencil className="h-4 w-4" />
-                          Edit
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="danger"
-                          onClick={() => void handleDelete(user)}
-                          disabled={saving || isAdmin}
-                          title={isAdmin ? "Default admin cannot be deleted." : undefined}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          Delete
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => openEditDrawer(user)}
+                            disabled={isAdmin}
+                            title={isAdmin ? "Default admin stays fixed to admin access." : undefined}
+                          >
+                            <Pencil className="h-4 w-4" />
+                            Edit
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="danger"
+                            onClick={() => void handleDelete(user)}
+                            disabled={saving || isAdmin}
+                            title={isAdmin ? "Default admin cannot be deleted." : undefined}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Delete
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )
           )}
         </div>
       </Card>

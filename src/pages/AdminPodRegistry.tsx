@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { Building2, LayoutGrid, List, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -38,6 +38,7 @@ export default function AdminPodRegistry() {
   const [drawerMode, setDrawerMode] = useState<"create" | "edit" | null>(null);
   const [editingPodId, setEditingPodId] = useState<string | null>(null);
   const [draft, setDraft] = useState<PodDraft>(EMPTY_DRAFT);
+  const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
   const [message, setMessage] = useState<{ text: string; tone: "good" | "bad" | "info" } | null>(null);
   const queryClient = useQueryClient();
   const podsQuery = useQuery(managedPodsQueryOptions());
@@ -152,10 +153,42 @@ export default function AdminPodRegistry() {
               <p className="font-display text-lg font-bold text-ink">Registered pods</p>
               <p className="text-sm text-ink-muted">{pods.length} pod{pods.length === 1 ? "" : "s"} available for assignment and login</p>
             </div>
-            <Button variant="secondary" onClick={() => void podsQuery.refetch()} disabled={loading || refreshing || saving}>
-              {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Building2 className="h-4 w-4" />}
-              Refresh
-            </Button>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 rounded-xl border border-line bg-surface-2 p-1">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("cards")}
+                  className={cn(
+                    "inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-colors",
+                    viewMode === "cards"
+                      ? "bg-ruby/15 text-ruby-bright"
+                      : "text-ink-muted hover:bg-surface-3 hover:text-ink",
+                  )}
+                  aria-pressed={viewMode === "cards"}
+                >
+                  <LayoutGrid className="h-3.5 w-3.5" />
+                  Cards
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("table")}
+                  className={cn(
+                    "inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-colors",
+                    viewMode === "table"
+                      ? "bg-ruby/15 text-ruby-bright"
+                      : "text-ink-muted hover:bg-surface-3 hover:text-ink",
+                  )}
+                  aria-pressed={viewMode === "table"}
+                >
+                  <List className="h-3.5 w-3.5" />
+                  Table
+                </button>
+              </div>
+              <Button variant="secondary" onClick={() => void podsQuery.refetch()} disabled={loading || refreshing || saving}>
+                {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Building2 className="h-4 w-4" />}
+                Refresh
+              </Button>
+            </div>
           </div>
 
           {loading ? (
@@ -163,32 +196,72 @@ export default function AdminPodRegistry() {
               <Loader2 className="h-5 w-5 animate-spin text-ruby-bright" />
             </div>
           ) : (
-            <div className="min-h-0 flex-1 overflow-y-auto divide-y divide-line">
-              {pods.map((pod) => (
-                <div key={pod.id} className="px-5 py-4">
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="space-y-1">
-                      <p className="font-semibold text-ink">{pod.name}</p>
-                      <p className="text-sm text-ink-muted">{pod.collegeName}</p>
-                      <p className="text-sm text-ink-faint">
-                        {pod.clubs.length} clubs linked · Lead {pod.podLeader}
-                      </p>
-                    </div>
+            viewMode === "table" ? (
+              <div className="min-h-0 flex-1 overflow-auto">
+                <table className="min-w-full border-separate border-spacing-0 text-left text-sm">
+                  <thead className="sticky top-0 z-10 bg-base">
+                    <tr className="text-xs uppercase tracking-[0.14em] text-ink-faint">
+                      <th className="border-b border-line px-5 py-3 font-medium">Pod</th>
+                      <th className="border-b border-line px-5 py-3 font-medium">College</th>
+                      <th className="border-b border-line px-5 py-3 font-medium">Lead</th>
+                      <th className="border-b border-line px-5 py-3 font-medium">Clubs</th>
+                      <th className="border-b border-line px-5 py-3 font-medium text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pods.map((pod) => (
+                      <tr key={pod.id} className="align-top text-ink-muted">
+                        <td className="border-b border-line px-5 py-4">
+                          <p className="font-semibold text-ink">{pod.name}</p>
+                        </td>
+                        <td className="border-b border-line px-5 py-4 text-ink">{pod.collegeName}</td>
+                        <td className="border-b border-line px-5 py-4 text-ink">{pod.podLeader}</td>
+                        <td className="border-b border-line px-5 py-4 text-ink-faint">{pod.clubs.length}</td>
+                        <td className="border-b border-line px-5 py-4">
+                          <div className="flex justify-end gap-2">
+                            <Button size="sm" variant="secondary" onClick={() => openEditDrawer(pod)}>
+                              <Pencil className="h-4 w-4" />
+                              Edit
+                            </Button>
+                            <Button size="sm" variant="danger" onClick={() => void handleDelete(pod)} disabled={saving}>
+                              <Trash2 className="h-4 w-4" />
+                              Delete
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="min-h-0 flex-1 overflow-y-auto divide-y divide-line">
+                {pods.map((pod) => (
+                  <div key={pod.id} className="px-5 py-4">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="space-y-1">
+                        <p className="font-semibold text-ink">{pod.name}</p>
+                        <p className="text-sm text-ink-muted">{pod.collegeName}</p>
+                        <p className="text-sm text-ink-faint">
+                          {pod.clubs.length} clubs linked · Lead {pod.podLeader}
+                        </p>
+                      </div>
 
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="secondary" onClick={() => openEditDrawer(pod)}>
-                        <Pencil className="h-4 w-4" />
-                        Edit
-                      </Button>
-                      <Button size="sm" variant="danger" onClick={() => void handleDelete(pod)} disabled={saving}>
-                        <Trash2 className="h-4 w-4" />
-                        Delete
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="secondary" onClick={() => openEditDrawer(pod)}>
+                          <Pencil className="h-4 w-4" />
+                          Edit
+                        </Button>
+                        <Button size="sm" variant="danger" onClick={() => void handleDelete(pod)} disabled={saving}>
+                          <Trash2 className="h-4 w-4" />
+                          Delete
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )
           )}
         </div>
       </Card>
