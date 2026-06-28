@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { NAV_SECTIONS } from "@/config/nav";
+import { preloadAdminRoute } from "@/lib/adminRouteModules";
 import { ADMIN_WORKSPACE } from "@/lib/admin/demoData";
 import { cn } from "@/lib/utils";
 import { CaaryaLogo } from "./CaaryaLogo";
@@ -44,6 +45,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                   to={item.to}
                   end={item.end}
                   onClick={onNavigate}
+                  onMouseEnter={() => void preloadAdminRoute(item.to)}
+                  onFocus={() => void preloadAdminRoute(item.to)}
                   className={({ isActive }) =>
                     cn(
                       "group flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-all",

@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Eye, EyeOff, Loader2, Pencil, Plus, ShieldCheck, Trash2, UserRound } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
@@ -9,12 +10,10 @@ import { FieldRow, Input, Select } from "@/components/ui/Field";
 import {
   createManagedUser,
   deleteManagedUser,
-  listManagedPods,
-  listManagedUsers,
   updateManagedUser,
   type AllowedUser,
-  type ManagedPod,
 } from "@/lib/api";
+import { adminQueryKeys, managedPodsQueryOptions, managedUsersQueryOptions } from "@/lib/adminQueries";
 import { POD_ROLE_OPTIONS, type PodRole } from "@/lib/podRoles";
 import { cn } from "@/lib/utils";
 
@@ -37,41 +36,24 @@ const EMPTY_DRAFT: UserDraft = {
 };
 
 export default function AdminUsers() {
-  const [users, setUsers] = useState<AllowedUser[]>([]);
-  const [pods, setPods] = useState<ManagedPod[]>([]);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [drawerMode, setDrawerMode] = useState<"create" | "edit" | null>(null);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [draft, setDraft] = useState<UserDraft>(EMPTY_DRAFT);
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState<{ text: string; tone: "good" | "bad" | "info" } | null>(null);
+  const queryClient = useQueryClient();
+  const usersQuery = useQuery(managedUsersQueryOptions());
+  const podsQuery = useQuery(managedPodsQueryOptions());
+  const users = usersQuery.data || [];
+  const pods = podsQuery.data || [];
+  const loading = usersQuery.isPending || podsQuery.isPending;
+  const refreshing = !loading && (usersQuery.isFetching || podsQuery.isFetching);
 
   const selectedPod = useMemo(
     () => pods.find((pod) => pod.id === draft.podId) || null,
     [draft.podId, pods],
   );
-
-  async function loadData() {
-    setLoading(true);
-    try {
-      const [usersData, podsData] = await Promise.all([listManagedUsers(), listManagedPods()]);
-      setUsers(usersData);
-      setPods(podsData);
-      setMessage(null);
-    } catch (error) {
-      setMessage({
-        text: error instanceof Error ? error.message : "Could not load users.",
-        tone: "bad",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    void loadData();
-  }, []);
 
   function openCreateDrawer() {
     setDrawerMode("create");
@@ -112,7 +94,7 @@ export default function AdminUsers() {
     try {
       if (drawerMode === "create") {
         const created = await createManagedUser(draft);
-        setUsers((current) => [created, ...current]);
+        queryClient.setQueryData<AllowedUser[]>(adminQueryKeys.managedUsers, (current = []) => [created, ...current]);
         setMessage({ text: `Created ${created.username}.`, tone: "good" });
       } else if (drawerMode === "edit" && editingUserId) {
         const payload: Partial<UserDraft> = {
@@ -125,10 +107,16 @@ export default function AdminUsers() {
           payload.password = draft.password;
         }
         const updated = await updateManagedUser(editingUserId, payload);
-        setUsers((current) => current.map((user) => (user.id === editingUserId ? updated : user)));
+        queryClient.setQueryData<AllowedUser[]>(
+          adminQueryKeys.managedUsers,
+          (current = []) => current.map((user) => (user.id === editingUserId ? updated : user)),
+        );
         setMessage({ text: `Updated ${updated.username}.`, tone: "good" });
       }
-      closeDrawer();
+      setDrawerMode(null);
+      setEditingUserId(null);
+      setDraft(EMPTY_DRAFT);
+      setShowPassword(false);
     } catch (error) {
       setMessage({
         text: error instanceof Error ? error.message : "Could not save user.",
@@ -147,7 +135,10 @@ export default function AdminUsers() {
     setSaving(true);
     try {
       await deleteManagedUser(user.id);
-      setUsers((current) => current.filter((item) => item.id !== user.id));
+      queryClient.setQueryData<AllowedUser[]>(
+        adminQueryKeys.managedUsers,
+        (current = []) => current.filter((item) => item.id !== user.id),
+      );
       setMessage({ text: `Deleted ${user.username}.`, tone: "good" });
     } catch (error) {
       setMessage({
@@ -180,8 +171,12 @@ export default function AdminUsers() {
               <p className="font-display text-lg font-bold text-ink">Current users</p>
               <p className="text-sm text-ink-muted">{users.length} account{users.length === 1 ? "" : "s"} in the shared collection</p>
             </div>
-            <Button variant="secondary" onClick={() => void loadData()} disabled={loading || saving}>
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserRound className="h-4 w-4" />}
+            <Button
+              variant="secondary"
+              onClick={() => void Promise.all([usersQuery.refetch(), podsQuery.refetch()])}
+              disabled={loading || refreshing || saving}
+            >
+              {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserRound className="h-4 w-4" />}
               Refresh
             </Button>
           </div>
@@ -255,6 +250,16 @@ export default function AdminUsers() {
           )}
         >
           {message.text}
+        </p>
+      )}
+
+      {!message && (usersQuery.isError || podsQuery.isError) && (
+        <p className="rounded-xl border border-bad/30 bg-bad/10 px-3 py-2 text-sm text-bad">
+          {usersQuery.error instanceof Error
+            ? usersQuery.error.message
+            : podsQuery.error instanceof Error
+              ? podsQuery.error.message
+              : "Could not load users."}
         </p>
       )}
 

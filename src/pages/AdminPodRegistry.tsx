@@ -1,14 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Drawer } from "@/components/ui/Drawer";
 import { FieldRow, Input } from "@/components/ui/Field";
+import { adminQueryKeys, managedPodsQueryOptions } from "@/lib/adminQueries";
 import {
   createManagedPod,
   deleteManagedPod,
-  listManagedPods,
   updateManagedPod,
   type ManagedPod,
 } from "@/lib/api";
@@ -33,39 +34,22 @@ const EMPTY_DRAFT: PodDraft = {
 };
 
 export default function AdminPodRegistry() {
-  const [pods, setPods] = useState<ManagedPod[]>([]);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [drawerMode, setDrawerMode] = useState<"create" | "edit" | null>(null);
   const [editingPodId, setEditingPodId] = useState<string | null>(null);
   const [draft, setDraft] = useState<PodDraft>(EMPTY_DRAFT);
   const [message, setMessage] = useState<{ text: string; tone: "good" | "bad" | "info" } | null>(null);
+  const queryClient = useQueryClient();
+  const podsQuery = useQuery(managedPodsQueryOptions());
+  const pods = podsQuery.data || [];
+  const loading = podsQuery.isPending;
+  const refreshing = !loading && podsQuery.isFetching;
 
   const derivedPodName = useMemo(() => {
     const college = draft.collegeName.trim();
     if (!college) return "Pod name will be generated from the college";
     return `${college.split(/\s+/)[0]} Pod`;
   }, [draft.collegeName]);
-
-  async function loadPods() {
-    setLoading(true);
-    try {
-      const data = await listManagedPods();
-      setPods(data);
-      setMessage(null);
-    } catch (error) {
-      setMessage({
-        text: error instanceof Error ? error.message : "Could not load pods.",
-        tone: "bad",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    void loadPods();
-  }, []);
 
   function openCreateDrawer() {
     setDrawerMode("create");
@@ -101,14 +85,20 @@ export default function AdminPodRegistry() {
     try {
       if (drawerMode === "create") {
         const created = await createManagedPod(draft);
-        setPods((current) => [...current, created]);
+        queryClient.setQueryData<ManagedPod[]>(adminQueryKeys.managedPods, (current = []) => [...current, created]);
         setMessage({ text: `Created ${created.name}.`, tone: "good" });
       } else if (drawerMode === "edit" && editingPodId) {
         const updated = await updateManagedPod(editingPodId, draft);
-        setPods((current) => current.map((pod) => (pod.id === editingPodId ? updated : pod)));
+        queryClient.setQueryData<ManagedPod[]>(
+          adminQueryKeys.managedPods,
+          (current = []) => current.map((pod) => (pod.id === editingPodId ? updated : pod)),
+        );
+        void queryClient.invalidateQueries({ queryKey: adminQueryKeys.managedUsers });
         setMessage({ text: `Updated ${updated.name}.`, tone: "good" });
       }
-      closeDrawer();
+      setDrawerMode(null);
+      setEditingPodId(null);
+      setDraft(EMPTY_DRAFT);
     } catch (error) {
       setMessage({
         text: error instanceof Error ? error.message : "Could not save pod.",
@@ -126,7 +116,10 @@ export default function AdminPodRegistry() {
     setSaving(true);
     try {
       await deleteManagedPod(pod.id);
-      setPods((current) => current.filter((item) => item.id !== pod.id));
+      queryClient.setQueryData<ManagedPod[]>(
+        adminQueryKeys.managedPods,
+        (current = []) => current.filter((item) => item.id !== pod.id),
+      );
       setMessage({ text: `Deleted ${pod.name}.`, tone: "good" });
     } catch (error) {
       setMessage({
@@ -159,8 +152,8 @@ export default function AdminPodRegistry() {
               <p className="font-display text-lg font-bold text-ink">Registered pods</p>
               <p className="text-sm text-ink-muted">{pods.length} pod{pods.length === 1 ? "" : "s"} available for assignment and login</p>
             </div>
-            <Button variant="secondary" onClick={() => void loadPods()} disabled={loading || saving}>
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Building2 className="h-4 w-4" />}
+            <Button variant="secondary" onClick={() => void podsQuery.refetch()} disabled={loading || refreshing || saving}>
+              {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Building2 className="h-4 w-4" />}
               Refresh
             </Button>
           </div>
@@ -210,6 +203,12 @@ export default function AdminPodRegistry() {
           )}
         >
           {message.text}
+        </p>
+      )}
+
+      {!message && podsQuery.isError && (
+        <p className="rounded-xl border border-bad/30 bg-bad/10 px-3 py-2 text-sm text-bad">
+          {podsQuery.error instanceof Error ? podsQuery.error.message : "Could not load pods."}
         </p>
       )}
 

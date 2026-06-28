@@ -1,11 +1,26 @@
-import { useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { Outlet } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
-import { X } from "lucide-react";
+import { Loader2, X } from "lucide-react";
+import { preloadAdminRouteModules } from "@/lib/adminRouteModules";
+import { warmAdminWorkspaceCache } from "@/lib/adminQueries";
 
 export function AppShell() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const hasWarmedWorkspace = useRef(false);
+
+  useEffect(() => {
+    if (hasWarmedWorkspace.current) return;
+    hasWarmedWorkspace.current = true;
+
+    void Promise.allSettled([
+      preloadAdminRouteModules(),
+      warmAdminWorkspaceCache(queryClient),
+    ]);
+  }, [queryClient]);
 
   return (
     <div className="flex h-dvh overflow-hidden">
@@ -34,10 +49,20 @@ export function AppShell() {
         <Topbar onMenuClick={() => setMobileOpen(true)} />
         <main className="flex-1 overflow-y-auto">
           <div className="mx-auto w-full max-w-7xl px-4 py-4 sm:py-6 lg:px-8 lg:py-8">
-            <Outlet />
+            <Suspense fallback={<RouteLoadFallback />}>
+              <Outlet />
+            </Suspense>
           </div>
         </main>
       </div>
+    </div>
+  );
+}
+
+function RouteLoadFallback() {
+  return (
+    <div className="flex min-h-[calc(100dvh-11rem)] items-center justify-center">
+      <Loader2 className="h-6 w-6 animate-spin text-ruby-bright" />
     </div>
   );
 }

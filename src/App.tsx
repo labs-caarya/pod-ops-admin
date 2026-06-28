@@ -1,3 +1,4 @@
+import { lazy } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -5,10 +6,17 @@ import IndiaBackdrop from "@/components/layout/IndiaBackdrop";
 import { AppShell } from "@/components/layout/AppShell";
 import Login from "@/pages/Login";
 import AdminDashboard from "@/pages/AdminDashboard";
-import AdminPods from "@/pages/AdminPods";
-import AdminPodRegistry from "@/pages/AdminPodRegistry";
-import AdminUsers from "@/pages/AdminUsers";
-import FutureCraftApplicants from "@/pages/FutureCraftApplicants";
+import {
+  loadAdminPodRegistryPage,
+  loadAdminPodsPage,
+  loadAdminUsersPage,
+  loadFutureCraftApplicantsPage,
+} from "@/lib/adminRouteModules";
+
+const AdminPods = lazy(loadAdminPodsPage);
+const AdminPodRegistry = lazy(loadAdminPodRegistryPage);
+const AdminUsers = lazy(loadAdminUsersPage);
+const FutureCraftApplicants = lazy(loadFutureCraftApplicantsPage);
 
 function ProtectedRoutes() {
   const { isAuthenticated, isAuthenticating } = useAuth();

@@ -1,19 +1,21 @@
-import { useEffect, useMemo, useState } from "react";
-import { GraduationCap, Loader2, RefreshCw } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { ChevronDown, GraduationCap, Loader2, RefreshCw, X } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Field";
-import { listFutureCraftApplicants, type FutureCraftApplicant } from "@/lib/api";
+import { futureCraftApplicantsQueryOptions } from "@/lib/adminQueries";
 import { cn, formatDate } from "@/lib/utils";
 
 export default function FutureCraftApplicants() {
-  const [applicants, setApplicants] = useState<FutureCraftApplicant[]>([]);
-  const [loading, setLoading] = useState(true);
   const [yearFilter, setYearFilter] = useState("all");
   const [podFilter, setPodFilter] = useState("all");
-  const [message, setMessage] = useState<{ text: string; tone: "bad" | "info" } | null>(null);
+  const applicantsQuery = useQuery(futureCraftApplicantsQueryOptions());
+  const applicants = applicantsQuery.data || [];
+  const loading = applicantsQuery.isPending;
+  const refreshing = !loading && applicantsQuery.isFetching;
 
   const yearOptions = useMemo(
     () =>
@@ -57,26 +59,12 @@ export default function FutureCraftApplicants() {
   );
 
   const hasActiveFilters = yearFilter !== "all" || podFilter !== "all";
+  const message = applicantsQuery.error instanceof Error ? applicantsQuery.error.message : "Could not load Future Craft applicants.";
 
-  async function loadApplicants() {
-    setLoading(true);
-    try {
-      const data = await listFutureCraftApplicants();
-      setApplicants(data);
-      setMessage(null);
-    } catch (error) {
-      setMessage({
-        text: error instanceof Error ? error.message : "Could not load Future Craft applicants.",
-        tone: "bad",
-      });
-    } finally {
-      setLoading(false);
-    }
+  function clearFilters() {
+    setYearFilter("all");
+    setPodFilter("all");
   }
-
-  useEffect(() => {
-    void loadApplicants();
-  }, []);
 
   return (
     <div className="flex min-h-[calc(100dvh-11rem)] flex-col gap-6">
@@ -85,8 +73,8 @@ export default function FutureCraftApplicants() {
         description="Review every application submitted through Future Craft and quickly see which colleges already have a pod."
         icon={GraduationCap}
         actions={
-          <Button variant="secondary" onClick={() => void loadApplicants()} disabled={loading}>
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+          <Button variant="secondary" onClick={() => void applicantsQuery.refetch()} disabled={loading || refreshing}>
+            {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             Refresh
           </Button>
         }
@@ -105,23 +93,33 @@ export default function FutureCraftApplicants() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 border-b border-line px-5 py-4">
-            <Select value={yearFilter} onChange={(e) => setYearFilter(e.target.value)} className="w-full sm:w-44">
-              <option value="all">All years</option>
-              {yearOptions.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </Select>
-            <Select value={podFilter} onChange={(e) => setPodFilter(e.target.value)} className="w-full sm:w-56">
-              <option value="all">All pods</option>
-              {podOptions.map((pod) => (
-                <option key={pod.value} value={pod.value}>
-                  {pod.label}
-                </option>
-              ))}
-              <option value="__unmatched__">No pod match</option>
-            </Select>
+            <FilterSelect className="w-full sm:w-44">
+              <Select value={yearFilter} onChange={(e) => setYearFilter(e.target.value)} className="w-full pr-10">
+                <option value="all">All years</option>
+                {yearOptions.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </Select>
+            </FilterSelect>
+            <FilterSelect className="w-full sm:w-56">
+              <Select value={podFilter} onChange={(e) => setPodFilter(e.target.value)} className="w-full pr-10">
+                <option value="all">All pods</option>
+                {podOptions.map((pod) => (
+                  <option key={pod.value} value={pod.value}>
+                    {pod.label}
+                  </option>
+                ))}
+                <option value="__unmatched__">No pod match</option>
+              </Select>
+            </FilterSelect>
+            {hasActiveFilters && (
+              <Button variant="ghost" size="sm" onClick={clearFilters}>
+                <X className="h-3.5 w-3.5" />
+                Clear filters
+              </Button>
+            )}
           </div>
 
           {loading ? (
@@ -165,17 +163,31 @@ export default function FutureCraftApplicants() {
         </div>
       </Card>
 
-      {message && (
+      {applicantsQuery.isError && (
         <p
           className={cn(
             "rounded-xl border px-3 py-2 text-sm",
-            message.tone === "bad" && "border-bad/30 bg-bad/10 text-bad",
-            message.tone === "info" && "border-line bg-surface-2 text-ink-muted",
+            "border-bad/30 bg-bad/10 text-bad",
           )}
         >
-          {message.text}
+          {message}
         </p>
       )}
+    </div>
+  );
+}
+
+function FilterSelect({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("relative", className)}>
+      {children}
+      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
     </div>
   );
 }
