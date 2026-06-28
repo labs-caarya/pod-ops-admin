@@ -16,7 +16,7 @@ export function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
     return () => document.removeEventListener("mousedown", onClick);
   }, []);
 
-  const name = user?.name || user?.phoneNumber || "Pod Member";
+  const name = user?.name || user?.username || user?.phoneNumber || "Pod Member";
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-line bg-base/70 px-4 backdrop-blur-xl lg:px-6">
@@ -28,8 +28,8 @@ export function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
           <Menu className="h-5 w-5" />
         </button>
         <div>
-          <p className="font-display text-sm font-bold text-ink">Pod Operating Portal</p>
-          <p className="hidden text-xs text-ink-faint sm:block">Research · Outreach · Talent · Partners</p>
+          <p className="font-display text-sm font-bold text-ink">Pod Ops Control Room</p>
+          <p className="hidden text-xs text-ink-faint sm:block">Partner pipeline · Team ops · Sponsor risk · Delivery readiness</p>
         </div>
       </div>
 

@@ -23,21 +23,24 @@ Dark **ruby & amber** theme on a subtle India backdrop. UI/structure carried ove
 - **Vite + React 18 + TypeScript**
 - **Tailwind CSS v4** (dark ruby/amber design system in `src/index.css`)
 - **React Router v6**, **TanStack Query**, **Recharts**, **lucide-react**
-- **Firebase** phone-OTP auth (mirrors `chirag-sandbox`)
+- **Temporary admin** username/password auth via the shared backend
 
 ## Auth
 
-Sign-in mirrors **chirag-sandbox**: Firebase phone OTP verifies the number, then the verified phone is exchanged for a **chronos-be** JWT via `GET /admin/allowed-users/{phone}/check`. chronos-be is used **only** for this sign-in check.
+Sign-in uses the shared local auth backend and the same Mongo `users` collection as the main frontend. Only `super_admin` / `["*"]` users can access this admin app.
 
 All feature data (research, rolodex, talent, jobs, partners) is this app's own and is stored in `localStorage` via a REST-shaped collection store (`src/lib/store.ts`) — designed to be swapped for a dedicated backend later without touching the pages.
 
-> No Firebase keys yet? Click **Continue in demo mode** on the login screen to explore with seed data.
+Default admin credentials:
+
+- Username: `testadmin`
+- Password: `moksha123`
 
 ## Getting started
 
 ```bash
 npm install
-cp .env.example .env   # fill in Firebase + chronos-be values (optional for demo mode)
+cp .env.example .env   # fill in backend values
 npm run dev            # http://localhost:3000
 ```
 
@@ -51,9 +54,7 @@ npm run build          # tsc -b && vite build  →  dist/
 
 See `.env.example`. Key vars:
 
-- `VITE_CHRONOS_BE_URL` — sign-in backend (chronos-be / moksha-be), incl. `/api`.
-- `VITE_FIREBASE_*` — Firebase phone-OTP (caarya-moksha project).
-- `VITE_REQUIRE_POD_PASS` / `VITE_POD_REQUIRED_PASS` — optional IAM pass gate.
+- `VITE_AUTH_API_URL` — shared backend base URL, incl. `/api`.
 - `VITE_AI_URL` — optional `chirag-ai` base for the Ask Moksha agent.
 
 ## Project structure
@@ -68,11 +69,11 @@ src/
 │   ├── talent/      # TalentGrid, TalentDrawer
 │   ├── jobs/        # JobDrawer
 │   └── partners/    # PartnerDrawer
-├── contexts/        # AuthContext (Firebase OTP + chronos token exchange)
+├── contexts/        # AuthContext (username/password admin login)
 ├── config/          # env, nav
 ├── lib/
 │   ├── data/        # seed collections, scoring, transforms
-│   ├── api.ts       # chronos-be sign-in exchange only
+│   ├── api.ts       # auth + user CRUD helpers
 │   ├── ai.ts        # Ask Moksha (chirag-ai + local fallback)
 │   ├── store.ts     # localStorage collection store (REST-shaped)
 │   ├── types.ts     # domain types

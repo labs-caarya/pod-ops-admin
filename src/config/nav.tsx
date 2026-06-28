@@ -1,14 +1,9 @@
 import {
   LayoutDashboard,
-  Vault,
-  Microscope,
-  Contact2,
-  Users,
-  Briefcase,
-  UserCheck,
+  Network,
   Building2,
-  Sparkles,
-  BookOpen,
+  ShieldCheck,
+  GraduationCap,
   type LucideIcon,
 } from "lucide-react";
 
@@ -26,33 +21,18 @@ export interface NavSection {
 
 export const NAV_SECTIONS: NavSection[] = [
   {
-    heading: "Overview",
+    heading: "Admin overview",
     items: [
       { label: "Dashboard", to: "/", icon: LayoutDashboard, end: true },
-      { label: "Challenge Vault", to: "/challenges", icon: Vault },
+      { label: "Pod Portfolio", to: "/pods", icon: Network },
+      { label: "Pod Registry", to: "/pods-admin", icon: Building2 },
     ],
   },
   {
-    heading: "Grow the network",
+    heading: "Operations",
     items: [
-      { label: "Research HIVE", to: "/research", icon: Microscope },
-      { label: "Rolodex", to: "/rolodex", icon: Contact2 },
-      { label: "Partners", to: "/partners", icon: Building2 },
-    ],
-  },
-  {
-    heading: "Mobilise talent",
-    items: [
-      { label: "Talent Map", to: "/talent", icon: Users },
-      { label: "Opportunities", to: "/opportunities", icon: Briefcase },
-      { label: "Placement Agent", to: "/placement", icon: UserCheck },
-    ],
-  },
-  {
-    heading: "Assist",
-    items: [
-      { label: "Ask Moksha", to: "/ask", icon: Sparkles },
-      { label: "Resources", to: "/resources", icon: BookOpen },
+      { label: "Users", to: "/access", icon: ShieldCheck },
+      { label: "Future Craft Applicants", to: "/future-craft-applicants", icon: GraduationCap },
     ],
   },
 ];

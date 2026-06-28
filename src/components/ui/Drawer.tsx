@@ -11,6 +11,9 @@ export function Drawer({
   children,
   footer,
   width = "max-w-xl",
+  panelClassName,
+  bodyClassName,
+  footerClassName,
 }: {
   open: boolean;
   onClose: () => void;
@@ -19,6 +22,9 @@ export function Drawer({
   children: React.ReactNode;
   footer?: React.ReactNode;
   width?: string;
+  panelClassName?: string;
+  bodyClassName?: string;
+  footerClassName?: string;
 }) {
   useEffect(() => {
     if (!open) return;
@@ -44,6 +50,7 @@ export function Drawer({
           "relative flex h-full w-full flex-col border-l border-line bg-base-2 shadow-2xl",
           "animate-[slidein_0.25s_ease]",
           width,
+          panelClassName,
         )}
         style={{ animationFillMode: "both" }}
       >
@@ -59,8 +66,8 @@ export function Drawer({
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto px-5 py-5">{children}</div>
-        {footer && <div className="border-t border-line bg-surface px-5 py-4">{footer}</div>}
+        <div className={cn("flex-1 overflow-y-auto px-5 py-5", bodyClassName)}>{children}</div>
+        {footer && <div className={cn("border-t border-line bg-surface px-5 py-4", footerClassName)}>{footer}</div>}
       </div>
       <style>{`
         @keyframes slidein { from { transform: translateX(24px); opacity: 0 } to { transform: translateX(0); opacity: 1 } }

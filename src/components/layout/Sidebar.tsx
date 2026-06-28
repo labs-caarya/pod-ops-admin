@@ -1,6 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { NAV_SECTIONS } from "@/config/nav";
-import { POD } from "@/lib/data/collections";
+import { ADMIN_WORKSPACE } from "@/lib/admin/demoData";
 import { cn } from "@/lib/utils";
 import { CaaryaLogo } from "./CaaryaLogo";
 
@@ -16,17 +16,17 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       <div className="mx-4 mt-4 rounded-2xl border border-line bg-gradient-to-br from-surface-2 to-base p-4">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-ruby-bright to-amber text-sm font-black text-[#1a0c10]">
-            {POD.name.slice(0, 2).toUpperCase()}
+            {ADMIN_WORKSPACE.name.slice(0, 2).toUpperCase()}
           </div>
           <div className="min-w-0">
-            <p className="truncate font-display text-sm font-bold text-ink">{POD.name}</p>
-            <p className="truncate text-xs text-ink-muted">{POD.crew}</p>
+            <p className="truncate font-display text-sm font-bold text-ink">{ADMIN_WORKSPACE.name}</p>
+            <p className="truncate text-xs text-ink-muted">{ADMIN_WORKSPACE.network}</p>
           </div>
         </div>
         <div className="mt-3 flex flex-col gap-1.5">
-          <span className="truncate text-[10px] text-ink-faint">{POD.college}</span>
+          <span className="truncate text-[10px] text-ink-faint">{ADMIN_WORKSPACE.tagline}</span>
           <span className="w-fit rounded-full bg-ruby/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-ruby-bright">
-            Level {POD.level}
+            Demo admin
           </span>
         </div>
       </div>
@@ -72,7 +72,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       </nav>
 
       <div className="border-t border-line px-5 py-3 text-[10px] text-ink-faint">
-        Caarya · Pod Operating Portal v6
+        Caarya · Pod Ops Admin Demo
       </div>
     </div>
   );

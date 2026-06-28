@@ -1,9 +1,9 @@
 {
-  "name": "pod-ops-v6",
+  "name": "pod-ops-admin-demo",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Caarya Pod Operating Portal v6 — research, rolodex, talent maps, opportunities, partners & sponsorship leverage.",
+  "description": "Caarya Pod Ops Admin Demo — cloned visual system with admin-focused portfolio, IAM, signal, and design-reference views.",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
