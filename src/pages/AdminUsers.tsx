@@ -41,7 +41,7 @@ export default function AdminUsers() {
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [draft, setDraft] = useState<UserDraft>(EMPTY_DRAFT);
   const [showPassword, setShowPassword] = useState(false);
-  const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
+  const [viewMode, setViewMode] = useState<"cards" | "table">("table");
   const [message, setMessage] = useState<{ text: string; tone: "good" | "bad" | "info" } | null>(null);
   const queryClient = useQueryClient();
   const usersQuery = useQuery(managedUsersQueryOptions());
@@ -290,55 +290,55 @@ export default function AdminUsers() {
                 </table>
               </div>
             ) : (
-              <div className="min-h-0 flex-1 overflow-y-auto divide-y divide-line">
+              <div className="min-h-0 flex-1 overflow-y-auto p-5">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {users.map((user) => {
                   const isAdmin = user.primary_role === "super_admin" || Boolean(user.permissions?.includes("*"));
 
                   return (
-                    <div key={user.id} className="px-5 py-4">
-                      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                        <div className="space-y-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="font-semibold text-ink">{user.name || user.username}</p>
-                            <Badge tone={isAdmin ? "info" : "muted"}>
-                              {isAdmin ? "super_admin" : user.podRole || user.primary_role || "Pod member"}
-                            </Badge>
-                            <Badge tone={user.isActive === false ? "warn" : "good"}>
-                              {user.isActive === false ? "Inactive" : "Active"}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-ink-muted">@{user.username}</p>
-                          <p className="text-sm text-ink-faint">
-                            {isAdmin ? "Admin dashboard account" : `${user.podName || "No pod"} · ${user.podRole || "No role assigned"}`}
-                          </p>
+                    <div key={user.id} className="rounded-2xl border border-line bg-surface-2 p-4">
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-semibold text-ink">{user.name || user.username}</p>
+                          <Badge tone={isAdmin ? "info" : "muted"}>
+                            {isAdmin ? "super_admin" : user.podRole || user.primary_role || "Pod member"}
+                          </Badge>
+                          <Badge tone={user.isActive === false ? "warn" : "good"}>
+                            {user.isActive === false ? "Inactive" : "Active"}
+                          </Badge>
                         </div>
+                        <p className="text-sm text-ink-muted">@{user.username}</p>
+                        <p className="text-sm text-ink-faint">
+                          {isAdmin ? "Admin dashboard account" : `${user.podName || "No pod"} · ${user.podRole || "No role assigned"}`}
+                        </p>
+                      </div>
 
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => openEditDrawer(user)}
-                            disabled={isAdmin}
-                            title={isAdmin ? "Default admin stays fixed to admin access." : undefined}
-                          >
-                            <Pencil className="h-4 w-4" />
-                            Edit
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="danger"
-                            onClick={() => void handleDelete(user)}
-                            disabled={saving || isAdmin}
-                            title={isAdmin ? "Default admin cannot be deleted." : undefined}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            Delete
-                          </Button>
-                        </div>
+                      <div className="mt-4 flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => openEditDrawer(user)}
+                          disabled={isAdmin}
+                          title={isAdmin ? "Default admin stays fixed to admin access." : undefined}
+                        >
+                          <Pencil className="h-4 w-4" />
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          onClick={() => void handleDelete(user)}
+                          disabled={saving || isAdmin}
+                          title={isAdmin ? "Default admin cannot be deleted." : undefined}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Delete
+                        </Button>
                       </div>
                     </div>
                   );
                 })}
+                </div>
               </div>
             )
           )}

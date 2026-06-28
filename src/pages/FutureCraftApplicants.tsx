@@ -12,7 +12,7 @@ import { cn, formatDate } from "@/lib/utils";
 export default function FutureCraftApplicants() {
   const [yearFilter, setYearFilter] = useState("all");
   const [podFilter, setPodFilter] = useState("all");
-  const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
+  const [viewMode, setViewMode] = useState<"cards" | "table">("table");
   const applicantsQuery = useQuery(futureCraftApplicantsQueryOptions());
   const applicants = applicantsQuery.data || [];
   const loading = applicantsQuery.isPending;
@@ -200,31 +200,31 @@ export default function FutureCraftApplicants() {
                 </table>
               </div>
             ) : (
-              <div className="min-h-0 flex-1 divide-y divide-line overflow-y-auto">
+              <div className="min-h-0 flex-1 overflow-y-auto p-5">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {filteredApplicants.map((applicant) => (
-                  <div key={applicant.id} className="px-5 py-4">
-                    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                      <div className="space-y-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-semibold text-ink">{applicant.name}</p>
-                          <Badge tone={applicant.hasMatchingPod ? "good" : "muted"}>
-                            {applicant.hasMatchingPod ? "Pod exists" : "No pod match"}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-ink-muted">{applicant.email}</p>
-                        <p className="text-sm text-ink">{applicant.college}</p>
-                        <p className="text-sm text-ink-faint">
-                          Year {applicant.year} · Applied {formatDate(applicant.createdAt)}
-                        </p>
-                        {applicant.hasMatchingPod && (
-                          <p className="text-sm text-ink-faint">
-                            Matched pod: {applicant.matchingPodName || applicant.matchingPodCollegeName}
-                          </p>
-                        )}
+                  <div key={applicant.id} className="rounded-2xl border border-line bg-surface-2 p-4">
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-semibold text-ink">{applicant.name}</p>
+                        <Badge tone={applicant.hasMatchingPod ? "good" : "muted"}>
+                          {applicant.hasMatchingPod ? "Pod exists" : "No pod match"}
+                        </Badge>
                       </div>
+                      <p className="text-sm text-ink-muted">{applicant.email}</p>
+                      <p className="text-sm text-ink">{applicant.college}</p>
+                      <p className="text-sm text-ink-faint">
+                        Year {applicant.year} · Applied {formatDate(applicant.createdAt)}
+                      </p>
+                      {applicant.hasMatchingPod && (
+                        <p className="text-sm text-ink-faint">
+                          Matched pod: {applicant.matchingPodName || applicant.matchingPodCollegeName}
+                        </p>
+                      )}
                     </div>
                   </div>
                 ))}
+                </div>
               </div>
             )
           ) : (
