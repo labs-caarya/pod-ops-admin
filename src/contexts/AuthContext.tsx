@@ -71,7 +71,7 @@ function isTokenValid(token: string) {
 
 function isAdminUser(user: AllowedUser | null) {
   if (!user) return false;
-  return user.primary_role === "super_admin" || Boolean(user.permissions?.includes("*"));
+  return Boolean(user.permissions?.includes("*"));
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

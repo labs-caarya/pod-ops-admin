@@ -78,7 +78,8 @@ export async function loginWithCredentials(
       ...(podRole ? { podRole } : {}),
     }),
   });
-  return parseResponse(res);
+  const response = await parseResponse<{ success: boolean; data: { access_token: string; user: AllowedUser } }>(res);
+  return response.data;
 }
 
 export async function listManagedUsers(): Promise<AllowedUser[]> {
