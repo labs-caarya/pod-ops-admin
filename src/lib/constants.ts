@@ -1,6 +1,9 @@
 import type { OutreachStage } from "./types";
 import type { Tone } from "@/components/ui/Badge";
 
+export const TOKEN_KEY = "podops.token";
+export const USER_KEY = "podops.user";
+
 export { pct } from "./utils";
 
 export const CLOSED_WIN: OutreachStage = "partner";

@@ -57,7 +57,7 @@ export default function AdminDashboard() {
         actions={
           <>
             <Link to="/access">
-              <Button variant="outline">Users</Button>
+              <Button variant="outline">Leadership</Button>
             </Link>
             <Link to="/pods-admin">
               <Button variant="outline">Pod registry</Button>

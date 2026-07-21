@@ -1,4 +1,4 @@
-import { AI_URL, TOKEN_KEY } from "@/config/env";
+import { TOKEN_KEY } from "@/lib/constants";
 import type { ChatMessage } from "./types";
 
 /**
@@ -6,6 +6,8 @@ import type { ChatMessage } from "./types";
  * AI base URL + token are configured; otherwise falls back to a helpful local
  * knowledge responder so the feature always works in demo mode.
  */
+
+const AI_URL = (import.meta.env.VITE_AI_URL as string) || "";
 
 const SYSTEM_PROMPT = `You are "Ask Moksha", the in-app assistant for Caarya pods.
 Caarya runs student-led "pods" inside colleges. Pods research startups & brands,

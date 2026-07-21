@@ -1,3 +1,4 @@
+import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const fieldBase =
@@ -17,12 +18,15 @@ export function Textarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement
   return <textarea {...props} className={cn(fieldBase, "min-h-[84px] resize-y", props.className)} />;
 }
 
-export function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
+export function Select({ className, ...props }: React.SelectHTMLAttributes<HTMLSelectElement>) {
   return (
-    <select
-      {...props}
-      className={cn(fieldBase, "appearance-none bg-surface-2 pr-9", props.className)}
-    />
+    <div className={cn("relative", className)}>
+      <select
+        {...props}
+        className={cn(fieldBase, "appearance-none bg-surface-2 pr-9")}
+      />
+      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
+    </div>
   );
 }
 

@@ -2,7 +2,7 @@ import {
   LayoutDashboard,
   Network,
   Building2,
-  ShieldCheck,
+  UserRound,
   GraduationCap,
   type LucideIcon,
 } from "lucide-react";
@@ -26,12 +26,12 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Dashboard", to: "/", icon: LayoutDashboard, end: true },
       { label: "Pod Portfolio", to: "/pods", icon: Network },
       { label: "Pod Registry", to: "/pods-admin", icon: Building2 },
+      { label: "Leadership", to: "/access", icon: UserRound },
     ],
   },
   {
     heading: "Operations",
     items: [
-      { label: "Users", to: "/access", icon: ShieldCheck },
       { label: "Future Craft Applicants", to: "/future-craft-applicants", icon: GraduationCap },
     ],
   },

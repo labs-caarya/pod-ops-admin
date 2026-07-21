@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, GraduationCap, LayoutGrid, List, Loader2, RefreshCw, X } from "lucide-react";
+import { GraduationCap, LayoutGrid, List, Loader2, RefreshCw, X } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -124,27 +124,23 @@ export default function FutureCraftApplicants() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 border-b border-line px-5 py-4">
-            <FilterSelect className="w-full sm:w-44">
-              <Select value={yearFilter} onChange={(e) => setYearFilter(e.target.value)} className="w-full pr-10">
-                <option value="all">All years</option>
-                {yearOptions.map((year) => (
-                  <option key={year} value={year}>
-                    {year}
-                  </option>
-                ))}
-              </Select>
-            </FilterSelect>
-            <FilterSelect className="w-full sm:w-56">
-              <Select value={podFilter} onChange={(e) => setPodFilter(e.target.value)} className="w-full pr-10">
-                <option value="all">All pods</option>
-                {podOptions.map((pod) => (
-                  <option key={pod.value} value={pod.value}>
-                    {pod.label}
-                  </option>
-                ))}
-                <option value="__unmatched__">No pod match</option>
-              </Select>
-            </FilterSelect>
+            <Select value={yearFilter} onChange={(e) => setYearFilter(e.target.value)} className="w-full sm:w-44">
+              <option value="all">All years</option>
+              {yearOptions.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </Select>
+            <Select value={podFilter} onChange={(e) => setPodFilter(e.target.value)} className="w-full sm:w-56">
+              <option value="all">All pods</option>
+              {podOptions.map((pod) => (
+                <option key={pod.value} value={pod.value}>
+                  {pod.label}
+                </option>
+              ))}
+              <option value="__unmatched__">No pod match</option>
+            </Select>
             {hasActiveFilters && (
               <Button variant="ghost" size="sm" onClick={clearFilters}>
                 <X className="h-3.5 w-3.5" />
@@ -247,21 +243,6 @@ export default function FutureCraftApplicants() {
           {message}
         </p>
       )}
-    </div>
-  );
-}
-
-function FilterSelect({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <div className={cn("relative", className)}>
-      {children}
-      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
     </div>
   );
 }

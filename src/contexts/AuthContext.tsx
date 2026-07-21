@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { loginWithCredentials, type AllowedUser } from "@/lib/api";
-import { TOKEN_KEY, USER_KEY } from "@/config/env";
+import { TOKEN_KEY, USER_KEY } from "@/lib/constants";
 
 type StatusType = "" | "success" | "error" | "info";
 export interface AuthStatus {

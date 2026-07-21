@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Eye, EyeOff, LayoutGrid, List, Loader2, Pencil, Plus, ShieldCheck, Trash2, UserRound } from "lucide-react";
+import { Eye, EyeOff, LayoutGrid, List, Loader2, Pencil, Plus, Trash2, UserRound } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -13,8 +13,14 @@ import {
   updateManagedUser,
   type AllowedUser,
 } from "@/lib/api";
-import { adminQueryKeys, managedPodsQueryOptions, managedUsersQueryOptions } from "@/lib/adminQueries";
-import { POD_ROLE_OPTIONS, type PodRole } from "@/lib/podRoles";
+import { adminQueryKeys, collegesQueryOptions, managedUsersQueryOptions } from "@/lib/adminQueries";
+import {
+  formatPodRole,
+  POD_ROLE_OPTIONS,
+  podRoleToApiValue,
+  podRoleToLabel,
+  type PodRoleLabel,
+} from "@/lib/podRoles";
 import { cn } from "@/lib/utils";
 
 type UserDraft = {
@@ -22,10 +28,10 @@ type UserDraft = {
   name: string;
   password: string;
   podId: string;
-  podRole: PodRole;
+  podRole: PodRoleLabel;
 };
 
-const DEFAULT_ROLE: PodRole = "Pod Leader";
+const DEFAULT_ROLE: PodRoleLabel = "Exec Lead";
 
 const EMPTY_DRAFT: UserDraft = {
   username: "",
@@ -42,19 +48,34 @@ export default function AdminUsers() {
   const [draft, setDraft] = useState<UserDraft>(EMPTY_DRAFT);
   const [showPassword, setShowPassword] = useState(false);
   const [viewMode, setViewMode] = useState<"cards" | "table">("table");
+  const [podFilter, setPodFilter] = useState("");
   const [message, setMessage] = useState<{ text: string; tone: "good" | "bad" | "info" } | null>(null);
   const queryClient = useQueryClient();
   const usersQuery = useQuery(managedUsersQueryOptions());
-  const podsQuery = useQuery(managedPodsQueryOptions());
+  const collegesQuery = useQuery(collegesQueryOptions());
   const users = usersQuery.data || [];
-  const pods = podsQuery.data || [];
-  const loading = usersQuery.isPending || podsQuery.isPending;
-  const refreshing = !loading && (usersQuery.isFetching || podsQuery.isFetching);
+  const pods = collegesQuery.data || [];
+  const loading = usersQuery.isPending || collegesQuery.isPending;
+  const refreshing = !loading && (usersQuery.isFetching || collegesQuery.isFetching);
 
   const selectedPod = useMemo(
     () => pods.find((pod) => pod.id === draft.podId) || null,
     [draft.podId, pods],
   );
+
+  const filteredUsers = useMemo(() => {
+    if (!podFilter) return users;
+    return users.filter((user) => user.podId === podFilter);
+  }, [users, podFilter]);
+
+  const hasActiveFilters = Boolean(podFilter);
+
+  function formatLeadershipSummary(total: number, filtered: number) {
+    if (hasActiveFilters && filtered !== total) {
+      return `${filtered} of ${total} leadership account${total === 1 ? "" : "s"}`;
+    }
+    return `${total} leadership account${total === 1 ? "" : "s"}`;
+  }
 
   function openCreateDrawer() {
     setDrawerMode("create");
@@ -75,7 +96,7 @@ export default function AdminUsers() {
       name: user.name || "",
       password: "",
       podId: user.podId || pods[0]?.id || "",
-      podRole: (user.podRole as PodRole) || DEFAULT_ROLE,
+      podRole: podRoleToLabel(user.podRole),
     });
     setShowPassword(false);
     setMessage(null);
@@ -94,15 +115,24 @@ export default function AdminUsers() {
     setSaving(true);
     try {
       if (drawerMode === "create") {
-        const created = await createManagedUser(draft);
+        const created = await createManagedUser({
+          ...draft,
+          podRole: podRoleToApiValue(draft.podRole),
+        });
         queryClient.setQueryData<AllowedUser[]>(adminQueryKeys.managedUsers, (current = []) => [created, ...current]);
         setMessage({ text: `Created ${created.username}.`, tone: "good" });
       } else if (drawerMode === "edit" && editingUserId) {
-        const payload: Partial<UserDraft> = {
+        const payload: {
+          username: string;
+          name: string;
+          podId: string;
+          podRole: ReturnType<typeof podRoleToApiValue>;
+          password?: string;
+        } = {
           username: draft.username,
           name: draft.name,
           podId: draft.podId,
-          podRole: draft.podRole,
+          podRole: podRoleToApiValue(draft.podRole),
         };
         if (draft.password.trim()) {
           payload.password = draft.password;
@@ -154,9 +184,9 @@ export default function AdminUsers() {
   return (
     <div className="flex min-h-[calc(100dvh-11rem)] flex-col gap-6">
       <PageHeader
-        title="User Access"
+        title="Leadership"
         description="Create and manage pod login accounts. Every non-admin user must be mapped to a pod and a pod role."
-        icon={ShieldCheck}
+        icon={UserRound}
         actions={
           <Button onClick={openCreateDrawer} disabled={!pods.length || loading}>
             <Plus className="h-4 w-4" />
@@ -169,8 +199,12 @@ export default function AdminUsers() {
         <div className="flex min-h-0 flex-1 flex-col">
           <div className="flex items-center justify-between border-b border-line px-5 py-4">
             <div>
-              <p className="font-display text-lg font-bold text-ink">Current users</p>
-              <p className="text-sm text-ink-muted">{users.length} account{users.length === 1 ? "" : "s"} in the shared collection</p>
+              <p className="font-display text-lg font-bold text-ink">Current Leadership</p>
+              <p className="text-sm text-ink-muted">
+                {loading && !users.length
+                  ? "Loading leadership accounts…"
+                  : formatLeadershipSummary(users.length, filteredUsers.length)}
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1 rounded-xl border border-line bg-surface-2 p-1">
@@ -205,7 +239,7 @@ export default function AdminUsers() {
               </div>
               <Button
                 variant="secondary"
-                onClick={() => void Promise.all([usersQuery.refetch(), podsQuery.refetch()])}
+                onClick={() => void Promise.all([usersQuery.refetch(), collegesQuery.refetch()])}
                 disabled={loading || refreshing || saving}
               >
                 {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserRound className="h-4 w-4" />}
@@ -214,11 +248,27 @@ export default function AdminUsers() {
             </div>
           </div>
 
+          <div className="flex flex-wrap items-center gap-2 border-b border-line px-5 py-4">
+            <Select value={podFilter} onChange={(e) => setPodFilter(e.target.value)} className="w-full sm:w-64">
+              <option value="">All pods</option>
+              {pods.map((pod) => (
+                <option key={pod.id} value={pod.id}>
+                  {pod.name} · {pod.crew}
+                </option>
+              ))}
+            </Select>
+            {hasActiveFilters ? (
+              <Button variant="ghost" size="sm" onClick={() => setPodFilter("")}>
+                Clear filter
+              </Button>
+            ) : null}
+          </div>
+
           {loading ? (
             <div className="flex min-h-64 items-center justify-center">
               <Loader2 className="h-5 w-5 animate-spin text-ruby-bright" />
             </div>
-          ) : (
+          ) : filteredUsers.length ? (
             viewMode === "table" ? (
               <div className="min-h-0 flex-1 overflow-auto">
                 <table className="min-w-full border-separate border-spacing-0 text-left text-sm">
@@ -232,7 +282,7 @@ export default function AdminUsers() {
                     </tr>
                   </thead>
                   <tbody>
-                    {users.map((user) => {
+                    {filteredUsers.map((user) => {
                       const isAdmin = user.primary_role === "super_admin" || Boolean(user.permissions?.includes("*"));
 
                       return (
@@ -244,14 +294,14 @@ export default function AdminUsers() {
                           <td className="border-b border-line px-5 py-4">
                             <div className="flex flex-wrap gap-2">
                               <Badge tone={isAdmin ? "info" : "muted"}>
-                                {isAdmin ? "super_admin" : user.podRole || user.primary_role || "Pod member"}
+                                {isAdmin ? "super_admin" : formatPodRole(user.podRole)}
                               </Badge>
                             </div>
                           </td>
                           <td className="border-b border-line px-5 py-4">
                             <p className="text-ink">{isAdmin ? "Admin dashboard account" : user.podName || "No pod"}</p>
                             {!isAdmin && (
-                              <p className="mt-1 text-xs text-ink-faint">{user.podRole || "No role assigned"}</p>
+                              <p className="mt-1 text-xs text-ink-faint">{formatPodRole(user.podRole)}</p>
                             )}
                           </td>
                           <td className="border-b border-line px-5 py-4">
@@ -292,7 +342,7 @@ export default function AdminUsers() {
             ) : (
               <div className="min-h-0 flex-1 overflow-y-auto p-5">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {users.map((user) => {
+                {filteredUsers.map((user) => {
                   const isAdmin = user.primary_role === "super_admin" || Boolean(user.permissions?.includes("*"));
 
                   return (
@@ -301,7 +351,7 @@ export default function AdminUsers() {
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="font-semibold text-ink">{user.name || user.username}</p>
                           <Badge tone={isAdmin ? "info" : "muted"}>
-                            {isAdmin ? "super_admin" : user.podRole || user.primary_role || "Pod member"}
+                            {isAdmin ? "super_admin" : formatPodRole(user.podRole)}
                           </Badge>
                           <Badge tone={user.isActive === false ? "warn" : "good"}>
                             {user.isActive === false ? "Inactive" : "Active"}
@@ -309,7 +359,7 @@ export default function AdminUsers() {
                         </div>
                         <p className="text-sm text-ink-muted">@{user.username}</p>
                         <p className="text-sm text-ink-faint">
-                          {isAdmin ? "Admin dashboard account" : `${user.podName || "No pod"} · ${user.podRole || "No role assigned"}`}
+                          {isAdmin ? "Admin dashboard account" : `${user.podName || "No pod"} · ${formatPodRole(user.podRole)}`}
                         </p>
                       </div>
 
@@ -341,6 +391,17 @@ export default function AdminUsers() {
                 </div>
               </div>
             )
+          ) : (
+            <div className="flex min-h-64 flex-col items-center justify-center px-6 text-center">
+              <p className="font-display font-bold text-ink">
+                {hasActiveFilters ? "No matching leadership" : "No leadership accounts yet"}
+              </p>
+              <p className="mt-1 text-sm text-ink-muted">
+                {hasActiveFilters
+                  ? "No leadership accounts are assigned to this pod."
+                  : "Create the first leadership account to get started."}
+              </p>
+            </div>
           )}
         </div>
       </Card>
@@ -358,12 +419,12 @@ export default function AdminUsers() {
         </p>
       )}
 
-      {!message && (usersQuery.isError || podsQuery.isError) && (
+      {!message && (usersQuery.isError || collegesQuery.isError) && (
         <p className="rounded-xl border border-bad/30 bg-bad/10 px-3 py-2 text-sm text-bad">
           {usersQuery.error instanceof Error
             ? usersQuery.error.message
-            : podsQuery.error instanceof Error
-              ? podsQuery.error.message
+            : collegesQuery.error instanceof Error
+              ? collegesQuery.error.message
               : "Could not load users."}
         </p>
       )}
@@ -399,7 +460,7 @@ export default function AdminUsers() {
               {selectedPod ? `${selectedPod.name}` : "User account"}
             </p>
             <p className="mt-1 text-sm text-ink-muted">
-              {selectedPod ? `${selectedPod.collegeName} · ${draft.podRole}` : "Choose a pod and role for this user."}
+              {selectedPod ? `${selectedPod.crew} · ${draft.podRole}` : "Choose a pod and role for this user."}
             </p>
           </div>
 
@@ -426,7 +487,7 @@ export default function AdminUsers() {
                 <option value="">Select pod</option>
                 {pods.map((pod) => (
                   <option key={pod.id} value={pod.id}>
-                    {pod.name} · {pod.collegeName}
+                    {pod.name} · {pod.crew}
                   </option>
                 ))}
               </Select>
@@ -434,7 +495,7 @@ export default function AdminUsers() {
             <FieldRow label="Pod role">
               <Select
                 value={draft.podRole}
-                onChange={(e) => setDraft((current) => ({ ...current, podRole: e.target.value as PodRole }))}
+                onChange={(e) => setDraft((current) => ({ ...current, podRole: e.target.value as PodRoleLabel }))}
               >
                 {POD_ROLE_OPTIONS.map((role) => (
                   <option key={role} value={role}>

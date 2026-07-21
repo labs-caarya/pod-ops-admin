@@ -11,7 +11,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3000,
+    port: 4174,
     proxy: {
       // Proxy chronos-be calls in dev to avoid CORS. All app calls use `/api/*`.
       "/api": {
@@ -19,5 +19,8 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
+  },
+  preview: {
+    port: 4174,
   },
 });

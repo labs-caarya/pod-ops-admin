@@ -41,7 +41,7 @@ Default admin credentials:
 ```bash
 npm install
 cp .env.example .env   # fill in backend values
-npm run dev            # http://localhost:3000
+npm run dev            # http://localhost:4174
 ```
 
 Build:
@@ -54,7 +54,7 @@ npm run build          # tsc -b && vite build  →  dist/
 
 See `.env.example`. Key vars:
 
-- `VITE_AUTH_API_URL` — shared backend base URL, incl. `/api`.
+- `VITE_API_BASE_URL` — shared backend base URL, incl. `/api`.
 - `VITE_AI_URL` — optional `chirag-ai` base for the Ask Moksha agent.
 
 ## Project structure
