@@ -1,5 +1,9 @@
 import { TOKEN_KEY } from "@/lib/constants";
+import { leaderGoalStore, mentorStore } from "@/lib/data/collections";
+import { normalizeLeaderGoal } from "@/lib/leaderGoals";
+import { normalizeMentor } from "@/lib/mentors";
 import type { PodRoleApi } from "@/lib/podRoles";
+import type { PodLeaderGoal, PodMentor } from "@/lib/types";
 
 const API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || "")
   .trim()
@@ -53,6 +57,44 @@ export interface FutureCraftApplicant {
   hasMatchingPod: boolean;
   matchingPodName?: string;
   matchingPodCollegeName?: string;
+}
+
+export interface TechnicalSkill {
+  name: string;
+  proficiency: number;
+}
+
+export interface Tool {
+  id: string;
+  name: string;
+  source?: string;
+  iconKey?: string | null;
+}
+
+export interface Profile {
+  id: string;
+  personal: {
+    fullName: string;
+    headline: string;
+    location: string;
+    email: string;
+    phone: string;
+    linkedin?: string;
+    collegeName?: string;
+    yearOfGraduation?: string;
+    projectsWorkedOn?: string;
+  };
+  roles: string[];
+  status: string;
+  technicalSkills?: TechnicalSkill[];
+  transferableSkills?: Record<string, unknown>;
+  tools?: Tool[];
+  humanCentricity?: { responses: Record<string, unknown> };
+  workPreferences?: Record<string, unknown>;
+  schemaVersion?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  submittedAt: string;
 }
 
 function apiErrorMessage(payload: unknown, fallback: string): string {
@@ -328,6 +370,19 @@ export async function listFutureCraftApplicants(): Promise<FutureCraftApplicant[
   return unwrapList<FutureCraftApplicant>(payload, "applicants");
 }
 
+export async function listIndustryApplicants(): Promise<Profile[]> {
+  ensureApiBaseUrl();
+  const res = await fetch(`${API_BASE_URL}/profile`, {
+    headers: authHeaders(),
+  });
+  const payload = await readJson(res);
+  if (!res.ok) {
+    throw new Error(apiErrorMessage(payload, `Could not load industry applicants (${res.status}).`));
+  }
+  const data = unwrapData<Profile[]>(payload);
+  return Array.isArray(data) ? data : [];
+}
+
 export async function listColleges(): Promise<College[]> {
   const payload = await requestJson("/colleges");
   return normalizeColleges(payload);
@@ -360,4 +415,158 @@ export async function deleteCollege(id: string): Promise<void> {
   await requestJson(`/colleges/${encodeURIComponent(id)}`, {
     method: "DELETE",
   });
+}
+
+function unwrapLeaderGoals(payload: unknown): PodLeaderGoal[] {
+  if (!payload || typeof payload !== "object") return [];
+  const record = payload as {
+    data?: PodLeaderGoal[] | { goals?: PodLeaderGoal[] };
+    goals?: PodLeaderGoal[];
+  };
+  const data = record.data;
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === "object" && Array.isArray(data.goals)) return data.goals;
+  if (Array.isArray(record.goals)) return record.goals;
+  return [];
+}
+
+export async function listLeaderGoals(): Promise<PodLeaderGoal[]> {
+  if (API_BASE_URL) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/leader-goals`, {
+        headers: authHeaders(),
+      });
+      const payload = await readJson(res);
+      if (res.ok) {
+        const goals = unwrapLeaderGoals(payload).map(normalizeLeaderGoal);
+        if (goals.length) leaderGoalStore.replaceAll(goals);
+        return goals.length ? goals : leaderGoalStore.all().map(normalizeLeaderGoal);
+      }
+    } catch {
+      /* use local store */
+    }
+  }
+  return leaderGoalStore.all().map(normalizeLeaderGoal);
+}
+
+export async function upsertLeaderGoal(goal: PodLeaderGoal): Promise<PodLeaderGoal> {
+  const normalized = normalizeLeaderGoal(goal);
+  if (API_BASE_URL) {
+    try {
+      const exists = Boolean(leaderGoalStore.get(normalized.id));
+      const res = await fetch(`${API_BASE_URL}/leader-goals${exists ? `/${normalized.id}` : ""}`, {
+        method: exists ? "PATCH" : "POST",
+        headers: { ...authHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify(normalized),
+      });
+      const payload = await readJson(res);
+      if (res.ok) {
+        const saved = normalizeLeaderGoal(
+          (payload as { data?: PodLeaderGoal; goal?: PodLeaderGoal })?.data ??
+            (payload as { goal?: PodLeaderGoal })?.goal ??
+            normalized,
+        );
+        leaderGoalStore.upsert(saved);
+        return saved;
+      }
+    } catch {
+      /* use local store */
+    }
+  }
+  return leaderGoalStore.upsert(normalized);
+}
+
+export async function deleteLeaderGoal(id: string): Promise<void> {
+  if (API_BASE_URL) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/leader-goals/${id}`, {
+        method: "DELETE",
+        headers: authHeaders(),
+      });
+      if (res.ok) {
+        leaderGoalStore.remove(id);
+        return;
+      }
+    } catch {
+      /* use local store */
+    }
+  }
+  leaderGoalStore.remove(id);
+}
+
+function unwrapMentors(payload: unknown): PodMentor[] {
+  if (!payload || typeof payload !== "object") return [];
+  const record = payload as {
+    data?: PodMentor[] | { mentors?: PodMentor[] };
+    mentors?: PodMentor[];
+  };
+  const data = record.data;
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === "object" && Array.isArray(data.mentors)) return data.mentors;
+  if (Array.isArray(record.mentors)) return record.mentors;
+  return [];
+}
+
+export async function listMentors(): Promise<PodMentor[]> {
+  if (API_BASE_URL) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/mentors`, {
+        headers: authHeaders(),
+      });
+      const payload = await readJson(res);
+      if (res.ok) {
+        const mentors = unwrapMentors(payload).map(normalizeMentor);
+        if (mentors.length) mentorStore.replaceAll(mentors);
+        return mentors.length ? mentors : mentorStore.all().map(normalizeMentor);
+      }
+    } catch {
+      /* use local store */
+    }
+  }
+  return mentorStore.all().map(normalizeMentor);
+}
+
+export async function upsertMentor(mentor: PodMentor): Promise<PodMentor> {
+  const normalized = normalizeMentor(mentor);
+  if (API_BASE_URL) {
+    try {
+      const exists = Boolean(mentorStore.get(normalized.id));
+      const res = await fetch(`${API_BASE_URL}/mentors${exists ? `/${normalized.id}` : ""}`, {
+        method: exists ? "PATCH" : "POST",
+        headers: { ...authHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify(normalized),
+      });
+      const payload = await readJson(res);
+      if (res.ok) {
+        const saved = normalizeMentor(
+          (payload as { data?: PodMentor; mentor?: PodMentor })?.data ??
+            (payload as { mentor?: PodMentor })?.mentor ??
+            normalized,
+        );
+        mentorStore.upsert(saved);
+        return saved;
+      }
+    } catch {
+      /* use local store */
+    }
+  }
+  return mentorStore.upsert(normalized);
+}
+
+export async function deleteMentor(id: string): Promise<void> {
+  if (API_BASE_URL) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/mentors/${id}`, {
+        method: "DELETE",
+        headers: authHeaders(),
+      });
+      if (res.ok) {
+        mentorStore.remove(id);
+        return;
+      }
+    } catch {
+      /* use local store */
+    }
+  }
+  mentorStore.remove(id);
 }

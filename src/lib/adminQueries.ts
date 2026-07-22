@@ -2,6 +2,8 @@ import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import {
   listColleges,
   listFutureCraftApplicants,
+  listLeaderGoals,
+  listMentors,
   listManagedPods,
   listManagedUsers,
   type College,
@@ -9,6 +11,7 @@ import {
   type ManagedPod,
   type AllowedUser,
 } from "@/lib/api";
+import type { PodLeaderGoal, PodMentor } from "@/lib/types";
 
 const TEN_MINUTES = 10 * 60 * 1000;
 const THIRTY_MINUTES = 30 * 60 * 1000;
@@ -18,6 +21,8 @@ export const adminQueryKeys = {
   managedPods: ["admin", "managed-pods"] as const,
   managedUsers: ["admin", "managed-users"] as const,
   futureCraftApplicants: ["admin", "future-craft-applicants"] as const,
+  leaderGoals: ["admin", "leader-goals"] as const,
+  mentors: ["admin", "mentors"] as const,
 };
 
 export function collegesQueryOptions() {
@@ -56,11 +61,31 @@ export function futureCraftApplicantsQueryOptions() {
   });
 }
 
+export function leaderGoalsQueryOptions() {
+  return queryOptions<PodLeaderGoal[]>({
+    queryKey: adminQueryKeys.leaderGoals,
+    queryFn: listLeaderGoals,
+    staleTime: TEN_MINUTES,
+    gcTime: THIRTY_MINUTES,
+  });
+}
+
+export function mentorsQueryOptions() {
+  return queryOptions<PodMentor[]>({
+    queryKey: adminQueryKeys.mentors,
+    queryFn: listMentors,
+    staleTime: TEN_MINUTES,
+    gcTime: THIRTY_MINUTES,
+  });
+}
+
 export function warmAdminWorkspaceCache(queryClient: QueryClient) {
   return Promise.allSettled([
     queryClient.prefetchQuery(collegesQueryOptions()),
     queryClient.prefetchQuery(managedPodsQueryOptions()),
     queryClient.prefetchQuery(managedUsersQueryOptions()),
     queryClient.prefetchQuery(futureCraftApplicantsQueryOptions()),
+    queryClient.prefetchQuery(leaderGoalsQueryOptions()),
+    queryClient.prefetchQuery(mentorsQueryOptions()),
   ]);
 }

@@ -6,6 +6,8 @@ import type {
   Partner,
   PlacementOffer,
   PodGoal,
+  PodLeaderGoal,
+  PodMentor,
   ResearchProfile,
   TalentMember,
 } from "../types";
@@ -578,6 +580,8 @@ const partnersSeed: Partner[] = [
 const challengeSeed: Challenge[] = [
   {
     id: "ch_1",
+    podId: "pod_gitam_vizag",
+    podName: "GITAM Pod",
     title: "Industry partners stall after first meeting",
     description: "Warm intros convert to meetings but proposals rarely follow — pipeline feels stuck mid-funnel.",
     pillar: "Network",
@@ -605,6 +609,8 @@ const challengeSeed: Challenge[] = [
   },
   {
     id: "ch_2",
+    podId: "pod_gitam_vizag",
+    podName: "GITAM Pod",
     title: "Mapped talent not opting into services",
     description: "Students are on the talent map but service opt-ins stay low — weak placement and leverage story.",
     pillar: "Talent",
@@ -632,6 +638,8 @@ const challengeSeed: Challenge[] = [
   },
   {
     id: "ch_3",
+    podId: POD.id,
+    podName: POD.name,
     title: "Research profiles stuck at Scored",
     description: "HIVE profiles get scored but rarely move to outreach — research doesn't convert to Rolodex momentum.",
     pillar: "Research",
@@ -660,6 +668,8 @@ const challengeSeed: Challenge[] = [
   },
   {
     id: "ch_4",
+    podId: POD.id,
+    podName: POD.name,
     title: "Opportunity shares get views but few applicants",
     description: "Jobs go to WhatsApp and Pod Board but applicant counts stay flat.",
     pillar: "Opportunities",
@@ -678,6 +688,34 @@ const challengeSeed: Challenge[] = [
     actions: [],
     owner: "Karan",
   },
+  {
+    id: "ch_5",
+    podId: "pod_iitd",
+    podName: "Forge Pod",
+    title: "Academic partner MOUs stuck in review",
+    description: "Campus MOU drafts sit with college admin for weeks with no clear escalation path.",
+    pillar: "Network",
+    status: "Investigating",
+    severity: "Critical",
+    symptoms: [
+      "2 MOUs pending sign-off for 30+ days",
+      "No single college-side owner identified",
+      "Pod outreach paused on related faculty intros",
+    ],
+    impact: "Blocks sponsorship leverage and on-campus activation for Q3.",
+    whys: [
+      { id: "why_1", answer: "College admin wants legal review but pod has no template." },
+      { id: "why_2", answer: "" },
+      { id: "why_3", answer: "" },
+      { id: "why_4", answer: "" },
+      { id: "why_5", answer: "" },
+    ],
+    rootCause: "",
+    actions: [
+      { id: "act_7", label: "Escalate via Caarya academic partnerships desk", done: false, owner: "Neha" },
+    ],
+    owner: "Neha",
+  },
 ];
 
 /* --------------------------------- Goals ---------------------------------- */
@@ -690,6 +728,93 @@ const goalsSeed: PodGoal[] = [
   { id: "g5", title: "Sponsorship value mobilised", pillar: "Brand", target: 1000000, current: 380000, unit: "₹", due: "Level 4" },
 ];
 
+const leaderGoalsSeed: PodLeaderGoal[] = [
+  {
+    id: "lg_1",
+    podId: "",
+    podName: "All pods",
+    assignedPodRole: "Pod Leader",
+    assigneeName: "Karan Mehta",
+    icon: "target",
+    title: "Close 2 partner wins from active Rolodex conversations",
+    description: "Move at least two in-conversation contacts to Partner Won or Proposal Sent.",
+    status: "active",
+    dueDate: "2026-07-28",
+  },
+  {
+    id: "lg_2",
+    podId: "",
+    podName: "All pods",
+    assignedPodRole: "Pod Researcher",
+    assigneeName: "Priya Sharma",
+    icon: "microscope",
+    title: "Profile 3 new HIVE targets in the activating lane",
+    description: "Fill the next three open research slots with scored profiles.",
+    status: "active",
+    dueDate: "2026-07-25",
+  },
+  {
+    id: "lg_3",
+    podId: "",
+    podName: "All pods",
+    assignedPodRole: "Pod Talent Manager",
+    assigneeName: "Arjun Reddy",
+    icon: "users",
+    title: "Place 2 observers into activating castle slots",
+    description: "Move talent from exploring lanes into live pod work this sprint.",
+    status: "active",
+    dueDate: "2026-07-30",
+  },
+  {
+    id: "lg_4",
+    podId: "",
+    podName: "All pods",
+    assignedPodRole: "Pod Outreach Manager",
+    assigneeName: "Sneha Iyer",
+    icon: "megaphone",
+    title: "Book 4 outreach follow-ups for overdue Rolodex contacts",
+    description: "Clear all overdue next-action dates in the pipeline.",
+    status: "active",
+    dueDate: "2026-07-26",
+  },
+  {
+    id: "lg_5",
+    podId: "",
+    podName: "All pods",
+    assignedPodRole: "Pod Partner Manager",
+    assigneeName: "Rahul Das",
+    icon: "handshake",
+    title: "Add 1 new industry partner opportunity",
+    description: "Post a partner-direct role on the Opportunity Canvas from an industry relationship.",
+    status: "active",
+    dueDate: "2026-08-01",
+  },
+];
+
+const mentorsSeed: PodMentor[] = [
+  {
+    id: "mnt_1",
+    podId: "",
+    podName: "All pods",
+    name: "Dr. Ananya Krishnan",
+    expertise: ["Startup fundraising", "D2C growth", "Pitch decks", "Investor relations"],
+  },
+  {
+    id: "mnt_2",
+    podId: "",
+    podName: "All pods",
+    name: "Vikram Joshi",
+    expertise: ["Campus partnerships", "Employer branding", "HR ops"],
+  },
+  {
+    id: "mnt_3",
+    podId: "",
+    podName: "All pods",
+    name: "Meera Nair",
+    expertise: ["Content strategy", "Social media", "Brand storytelling", "Community building", "UGC"],
+  },
+];
+
 /* ---------------------------- Collection exports -------------------------- */
 
 export const researchStore = createCollection<ResearchProfile>("research", researchSeed);
@@ -699,4 +824,28 @@ export const jobStore = createCollection<JobOpportunity>("jobs", jobsSeed);
 export const placementOfferStore = createCollection<PlacementOffer>("placementOffers", placementOfferSeed);
 export const partnerStore = createCollection<Partner>("partners", partnersSeed);
 export const goalStore = createCollection<PodGoal>("goals", goalsSeed);
+export const leaderGoalStore = createCollection<PodLeaderGoal>("leaderGoals", leaderGoalsSeed);
+export const mentorStore = createCollection<PodMentor>("mentors", mentorsSeed);
 export const challengeStore = createCollection<Challenge>("challenges", challengeSeed);
+
+(function migrateChallengePods() {
+  const seedById = new Map(challengeSeed.map((challenge) => [challenge.id, challenge]));
+  const items = challengeStore.all();
+  let changed = false;
+  const next = items.map((item) => {
+    const seed = seedById.get(item.id);
+    if (seed && (!item.podId || !item.podName)) {
+      changed = true;
+      return { ...item, podId: item.podId || seed.podId, podName: item.podName || seed.podName };
+    }
+    return item;
+  });
+  const knownIds = new Set(items.map((item) => item.id));
+  for (const seed of challengeSeed) {
+    if (!knownIds.has(seed.id)) {
+      next.push(seed);
+      changed = true;
+    }
+  }
+  if (changed) challengeStore.replaceAll(next);
+})();

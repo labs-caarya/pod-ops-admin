@@ -10,13 +10,25 @@ import {
   loadAdminPodRegistryPage,
   loadAdminPodsPage,
   loadAdminUsersPage,
+  loadAdminLeaderGoalsPage,
+  loadAdminPodMentorsPage,
+  loadChallengeVaultPage,
+  loadChallengeDetailPage,
   loadFutureCraftApplicantsPage,
+  loadCastleApplicantsPage,
+  loadIndustryApplicantsPage,
 } from "@/lib/adminRouteModules";
 
 const AdminPods = lazy(loadAdminPodsPage);
 const AdminPodRegistry = lazy(loadAdminPodRegistryPage);
 const AdminUsers = lazy(loadAdminUsersPage);
+const AdminLeaderGoals = lazy(loadAdminLeaderGoalsPage);
+const AdminPodMentors = lazy(loadAdminPodMentorsPage);
+const ChallengeVault = lazy(loadChallengeVaultPage);
+const ChallengeDetail = lazy(loadChallengeDetailPage);
 const FutureCraftApplicants = lazy(loadFutureCraftApplicantsPage);
+const CastleApplicants = lazy(loadCastleApplicantsPage);
+const IndustryApplicants = lazy(loadIndustryApplicantsPage);
 
 function ProtectedRoutes() {
   const { isAuthenticated, isAuthenticating } = useAuth();
@@ -53,7 +65,14 @@ export default function App() {
           <Route path="/pods" element={<AdminPods />} />
           <Route path="/pods-admin" element={<AdminPodRegistry />} />
           <Route path="/access" element={<AdminUsers />} />
-          <Route path="/future-craft-applicants" element={<FutureCraftApplicants />} />
+          <Route path="/challenges" element={<ChallengeVault />} />
+          <Route path="/challenges/:challengeId" element={<ChallengeDetail />} />
+          <Route path="/leader-goals" element={<AdminLeaderGoals />} />
+          <Route path="/mentors" element={<AdminPodMentors />} />
+          <Route path="/applicants/futurecraft" element={<FutureCraftApplicants />} />
+          <Route path="/applicants/castle" element={<CastleApplicants />} />
+          <Route path="/applicants/industry" element={<IndustryApplicants />} />
+          <Route path="/future-craft-applicants" element={<Navigate to="/applicants/futurecraft" replace />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

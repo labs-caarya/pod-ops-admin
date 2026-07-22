@@ -269,6 +269,42 @@ export interface PodGoal {
   due: string;
 }
 
+export type PodLeaderGoalStatus = "active" | "done";
+
+export type LeaderGoalIcon =
+  | "target"
+  | "microscope"
+  | "users"
+  | "megaphone"
+  | "handshake";
+
+/** Focus goal assigned by Caarya admin to a specific pod leadership role. */
+export interface PodLeaderGoal {
+  id: string;
+  podId: string;
+  podName?: string;
+  assignedPodRole: string;
+  assigneeName?: string;
+  icon?: LeaderGoalIcon;
+  title: string;
+  description?: string;
+  status: PodLeaderGoalStatus;
+  dueDate?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/** Mentor assigned to a pod by Caarya admin. */
+export interface PodMentor {
+  id: string;
+  podId: string;
+  podName?: string;
+  name: string;
+  expertise: string[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 /* ----------------------------- Challenge Vault ---------------------------- */
 
 export type ChallengePillar = PodGoal["pillar"] | "Ops";
@@ -313,6 +349,8 @@ export interface Challenge {
   /** How we'll solve it once root cause is known. */
   actions: ChallengeAction[];
   owner: string;
+  podId?: string;
+  podName?: string;
   notes?: string;
   createdAt?: string;
   updatedAt?: string;

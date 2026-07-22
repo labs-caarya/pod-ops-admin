@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import {
   Vault,
-  Plus,
   Search,
   GitBranch,
   ListChecks,
@@ -16,12 +16,12 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { StatCard } from "@/components/ui/StatCard";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Field";
 import { ProgressBar, EmptyState } from "@/components/ui/Misc";
 import { useCollection } from "@/lib/store";
 import { challengeStore } from "@/lib/data/collections";
 import { actionProgress, rcaProgress, vaultStats } from "@/lib/data/challenges";
+import { collegesQueryOptions } from "@/lib/adminQueries";
 import {
   CHALLENGE_SEVERITY_TONE,
   CHALLENGE_STATUSES,
@@ -32,6 +32,10 @@ import { cn } from "@/lib/utils";
 
 type StatusFilter = "all" | ChallengeStatus;
 type ViewMode = "cards" | "table";
+
+function podLabel(challenge: Challenge) {
+  return challenge.podName || challenge.podId || "Unknown pod";
+}
 
 function ChallengeCards({ items }: { items: Challenge[] }) {
   return (
@@ -50,6 +54,7 @@ function ChallengeCards({ items }: { items: Challenge[] }) {
                 <ChevronRight className="h-4 w-4 shrink-0 text-ink-faint" />
               </div>
               <div className="mt-3 flex flex-wrap gap-1.5">
+                <Badge tone="info">{podLabel(c)}</Badge>
                 <Badge tone={CHALLENGE_STATUS_TONE[c.status] ?? "muted"}>{c.status}</Badge>
                 <Badge tone={CHALLENGE_SEVERITY_TONE[c.severity] ?? "muted"}>{c.severity}</Badge>
                 <Badge tone="muted">{c.pillar}</Badge>
@@ -105,10 +110,11 @@ function ChallengeTable({ items }: { items: Challenge[] }) {
   return (
     <Card className="overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[880px] text-left text-sm">
+        <table className="w-full min-w-[980px] text-left text-sm">
           <thead>
             <tr className="border-b border-line bg-surface-2 text-xs font-bold uppercase tracking-widest text-ink-faint">
               <th className="px-4 py-3 font-bold">Challenge</th>
+              <th className="px-4 py-3 font-bold">Pod</th>
               <th className="px-4 py-3 font-bold">Pillar</th>
               <th className="px-4 py-3 font-bold">Status</th>
               <th className="px-4 py-3 font-bold">Severity</th>
@@ -141,6 +147,9 @@ function ChallengeTable({ items }: { items: Challenge[] }) {
                         </p>
                       )}
                     </Link>
+                  </td>
+                  <td className="px-4 py-3">
+                    <Badge tone="info">{podLabel(c)}</Badge>
                   </td>
                   <td className="px-4 py-3">
                     <Badge tone="muted">{c.pillar}</Badge>
@@ -179,41 +188,50 @@ function ChallengeTable({ items }: { items: Challenge[] }) {
 
 export default function ChallengeVault() {
   const challenges = useCollection(challengeStore);
+  const collegesQuery = useQuery(collegesQueryOptions());
+  const pods = collegesQuery.data || [];
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [pillarFilter, setPillarFilter] = useState("all");
+  const [podFilter, setPodFilter] = useState("all");
   const [viewMode, setViewMode] = useState<ViewMode>("table");
 
   const stats = useMemo(() => vaultStats(challenges), [challenges]);
+
+  const podOptions = useMemo(() => {
+    const fromChallenges = new Map<string, string>();
+    for (const challenge of challenges) {
+      if (challenge.podId) fromChallenges.set(challenge.podId, challenge.podName || challenge.podId);
+    }
+    for (const pod of pods) {
+      fromChallenges.set(pod.id, pod.name);
+    }
+    return [...fromChallenges.entries()].map(([id, name]) => ({ id, name }));
+  }, [challenges, pods]);
 
   const filtered = useMemo(() => {
     return challenges.filter((c) => {
       if (statusFilter !== "all" && c.status !== statusFilter) return false;
       if (pillarFilter !== "all" && c.pillar !== pillarFilter) return false;
+      if (podFilter !== "all" && c.podId !== podFilter) return false;
       if (!search) return true;
       const q = search.toLowerCase();
       return (
         c.title.toLowerCase().includes(q) ||
         c.description.toLowerCase().includes(q) ||
         c.pillar.toLowerCase().includes(q) ||
-        c.owner.toLowerCase().includes(q)
+        c.owner.toLowerCase().includes(q) ||
+        podLabel(c).toLowerCase().includes(q)
       );
     });
-  }, [challenges, search, statusFilter, pillarFilter]);
+  }, [challenges, search, statusFilter, pillarFilter, podFilter]);
 
   return (
     <div>
       <PageHeader
         icon={Vault}
         title="Challenge Vault"
-        description="Map what's blocking your pod, run root cause analysis, and track actions until it's solved."
-        actions={
-          <Link to="/challenges/new">
-            <Button>
-              <Plus className="h-4 w-4" /> Map challenge
-            </Button>
-          </Link>
-        }
+        description="See every challenge pods have mapped — symptoms, RCA progress, and action plans across the network."
       />
 
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-5">
@@ -245,12 +263,20 @@ export default function ChallengeVault() {
         <div className="relative min-w-[220px] flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
           <Input
-            placeholder="Search challenges…"
+            placeholder="Search challenges or pods…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
           />
         </div>
+        <Select value={podFilter} onChange={(e) => setPodFilter(e.target.value)} className="w-44">
+          <option value="all">All pods</option>
+          {podOptions.map((pod) => (
+            <option key={pod.id} value={pod.id}>
+              {pod.name}
+            </option>
+          ))}
+        </Select>
         <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as StatusFilter)} className="w-44">
           <option value="all">All statuses</option>
           {CHALLENGE_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -295,14 +321,7 @@ export default function ChallengeVault() {
         <EmptyState
           icon={Vault}
           title="No challenges mapped"
-          description="When something blocks your pod, map it here — run RCA and track the fix."
-          action={
-            <Link to="/challenges/new">
-              <Button>
-                <Plus className="h-4 w-4" /> Map challenge
-              </Button>
-            </Link>
-          }
+          description="When pods map blockers in their Challenge Vault, they will appear here for Caarya oversight."
         />
       ) : viewMode === "cards" ? (
         <ChallengeCards items={filtered} />

@@ -134,6 +134,7 @@ function ChallengeDetailBody({
           <p className="mt-2 max-w-2xl text-sm text-ink-muted">{editor.form.description}</p>
         )}
         <div className="mt-3 flex flex-wrap gap-2">
+          {!isNew && editor.form.podName && <Badge tone="info">{editor.form.podName}</Badge>}
           <Badge tone={CHALLENGE_STATUS_TONE[editor.form.status] ?? "muted"}>{editor.form.status}</Badge>
           <Badge tone={CHALLENGE_SEVERITY_TONE[editor.form.severity] ?? "muted"}>{editor.form.severity}</Badge>
           <Badge tone="muted">{editor.form.pillar}</Badge>

@@ -4,6 +4,11 @@ import {
   Building2,
   UserRound,
   GraduationCap,
+  ClipboardList,
+  BookOpen,
+  Vault,
+  Castle,
+  Briefcase,
   type LucideIcon,
 } from "lucide-react";
 
@@ -32,7 +37,17 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     heading: "Operations",
     items: [
-      { label: "Future Craft Applicants", to: "/future-craft-applicants", icon: GraduationCap },
+      { label: "Challenge Vault", to: "/challenges", icon: Vault },
+      { label: "Leader goals", to: "/leader-goals", icon: ClipboardList },
+      { label: "Pod mentors", to: "/mentors", icon: BookOpen },
+    ],
+  },
+  {
+    heading: "Applicants",
+    items: [
+      { label: "Futurecraft", to: "/applicants/futurecraft", icon: GraduationCap },
+      { label: "Castle", to: "/applicants/castle", icon: Castle },
+      { label: "Industry", to: "/applicants/industry", icon: Briefcase },
     ],
   },
 ];
