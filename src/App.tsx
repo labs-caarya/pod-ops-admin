@@ -17,6 +17,8 @@ import {
   loadFutureCraftApplicantsPage,
   loadCastleApplicantsPage,
   loadIndustryApplicantsPage,
+  loadAdminPodActivationPage,
+  loadAdminPodActivationDetailPage,
 } from "@/lib/adminRouteModules";
 
 const AdminPods = lazy(loadAdminPodsPage);
@@ -29,6 +31,8 @@ const ChallengeDetail = lazy(loadChallengeDetailPage);
 const FutureCraftApplicants = lazy(loadFutureCraftApplicantsPage);
 const CastleApplicants = lazy(loadCastleApplicantsPage);
 const IndustryApplicants = lazy(loadIndustryApplicantsPage);
+const AdminPodActivation = lazy(loadAdminPodActivationPage);
+const AdminPodActivationDetail = lazy(loadAdminPodActivationDetailPage);
 
 function ProtectedRoutes() {
   const { isAuthenticated, isAuthenticating } = useAuth();
@@ -67,6 +71,8 @@ export default function App() {
           <Route path="/access" element={<AdminUsers />} />
           <Route path="/challenges" element={<ChallengeVault />} />
           <Route path="/challenges/:challengeId" element={<ChallengeDetail />} />
+          <Route path="/pod-activation" element={<AdminPodActivation />} />
+          <Route path="/pod-activation/:podId" element={<AdminPodActivationDetail />} />
           <Route path="/leader-goals" element={<AdminLeaderGoals />} />
           <Route path="/mentors" element={<AdminPodMentors />} />
           <Route path="/applicants/futurecraft" element={<FutureCraftApplicants />} />

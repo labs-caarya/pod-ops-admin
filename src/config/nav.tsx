@@ -7,6 +7,7 @@ import {
   ClipboardList,
   BookOpen,
   Vault,
+  Rocket,
   Castle,
   Briefcase,
   type LucideIcon,
@@ -38,6 +39,7 @@ export const NAV_SECTIONS: NavSection[] = [
     heading: "Operations",
     items: [
       { label: "Challenge Vault", to: "/challenges", icon: Vault },
+      { label: "Pod Activation", to: "/pod-activation", icon: Rocket },
       { label: "Leader goals", to: "/leader-goals", icon: ClipboardList },
       { label: "Pod mentors", to: "/mentors", icon: BookOpen },
     ],
