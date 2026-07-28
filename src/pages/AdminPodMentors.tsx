@@ -214,7 +214,38 @@ export default function AdminPodMentors() {
                 <p className="mt-1 text-sm text-ink-muted">Add a mentor with name and expertise tags.</p>
               </div>
             ) : (
-              <table className="w-full min-w-[720px] text-left text-sm">
+              <>
+                <div className="space-y-3 p-4 md:hidden">
+                  {filteredMentors.map((mentor) => (
+                    <Card key={mentor.id} className="p-4">
+                      <p className="font-display text-lg font-bold text-ink">{mentor.name}</p>
+                      <div className="mt-3">
+                        <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-ink-faint">
+                          Expertise
+                        </p>
+                        <ExpertiseTags tags={mentor.expertise} />
+                      </div>
+                      <div className="mt-3 border-t border-line pt-3">
+                        <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">Pod</p>
+                        <p className="mt-1 text-sm text-ink-muted">
+                          {podLabel(mentor.podId, mentor.podName, pods)}
+                        </p>
+                      </div>
+                      <div className="mt-4 grid grid-cols-2 gap-2">
+                        <Button variant="secondary" size="sm" onClick={() => openEditDrawer(mentor)} disabled={saving}>
+                          <Pencil className="h-3.5 w-3.5" />
+                          Edit
+                        </Button>
+                        <Button variant="secondary" size="sm" onClick={() => void handleDelete(mentor)} disabled={saving}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                          Delete
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+
+                <table className="hidden w-full min-w-[720px] text-left text-sm md:table">
                 <thead className="sticky top-0 bg-surface-1 text-xs uppercase tracking-wide text-ink-faint">
                   <tr className="border-b border-line">
                     <th className="px-5 py-3 font-medium">Mentor</th>
@@ -248,7 +279,8 @@ export default function AdminPodMentors() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+                </table>
+              </>
             )}
           </div>
         </div>

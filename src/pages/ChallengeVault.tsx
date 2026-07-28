@@ -287,7 +287,7 @@ export default function ChallengeVault() {
             <option key={p} value={p}>{p}</option>
           ))}
         </Select>
-        <div className="flex rounded-xl border border-line bg-surface-2 p-0.5">
+        <div className="hidden rounded-xl border border-line bg-surface-2 p-0.5 sm:flex">
           <button
             type="button"
             onClick={() => setViewMode("cards")}
@@ -326,7 +326,14 @@ export default function ChallengeVault() {
       ) : viewMode === "cards" ? (
         <ChallengeCards items={filtered} />
       ) : (
-        <ChallengeTable items={filtered} />
+        <>
+          <div className="sm:hidden">
+            <ChallengeCards items={filtered} />
+          </div>
+          <div className="hidden sm:block">
+            <ChallengeTable items={filtered} />
+          </div>
+        </>
       )}
     </div>
   );
