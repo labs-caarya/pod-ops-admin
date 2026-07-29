@@ -1,6 +1,4 @@
 import { createCollection } from "@/lib/store";
-import { researchStore } from "@/lib/data/collections";
-import { makeId } from "@/lib/utils";
 import { buildActivationTemplateSeed } from "./seed";
 import { POD_ACTIVATION_CATEGORIES, CATEGORY_BY_ID } from "./categories";
 import type {
@@ -19,13 +17,6 @@ export const podActivationTemplateStore = createCollection<PodActivationItemTemp
   "podActivationTemplates",
   buildActivationTemplateSeed(),
 );
-
-export const podActivationProgressStore = createCollection<PodActivationProgress>("podActivationProgress");
-export const podActivationArtifactStore = createCollection<PodActivationArtifact>("podActivationArtifacts");
-
-function progressKey(podId: string, itemId: string) {
-  return `${podId}::${itemId}`;
-}
 
 export function getItemStatus(
   template: PodActivationItemTemplate,
@@ -59,7 +50,11 @@ export function getItemStatus(
   return record?.status ?? "available";
 }
 
-export function buildActivationSnapshot(podId: string): PodActivationSnapshot {
+export function buildActivationSnapshot(
+  podId: string,
+  progressOverride?: PodActivationProgress[],
+  artifactsOverride?: PodActivationArtifact[],
+): PodActivationSnapshot {
   const templates = podActivationTemplateStore
     .all()
     .filter((t) => t.published)
@@ -69,8 +64,8 @@ export function buildActivationSnapshot(podId: string): PodActivationSnapshot {
       if (catA !== catB) return catA - catB;
       return a.sortOrder - b.sortOrder;
     });
-  const progress = podActivationProgressStore.all().filter((p) => p.podId === podId);
-  const artifacts = podActivationArtifactStore.all().filter((a) => a.podId === podId);
+  const progress = (progressOverride ?? []).filter((p) => p.podId === podId);
+  const artifacts = (artifactsOverride ?? []).filter((a) => a.podId === podId);
 
   const items = templates.map((template) => {
     const status = getItemStatus(template, podId, progress, templates);
@@ -100,68 +95,13 @@ export function buildActivationSnapshot(podId: string): PodActivationSnapshot {
   };
 }
 
-export function markLearnComplete(podId: string, itemId: string, completedBy?: string) {
-  const id = progressKey(podId, itemId);
-  return podActivationProgressStore.upsert({
-    id,
-    podId,
-    itemId,
-    status: "complete",
-    completedBy,
-    completedAt: new Date().toISOString(),
-  });
-}
-
-export function submitActivationArtifact(input: Omit<PodActivationArtifact, "id" | "createdAt" | "updatedAt">) {
-  const existing = podActivationArtifactStore.all().find(
-    (a) => a.podId === input.podId && a.itemId === input.itemId,
-  );
-  const artifact = podActivationArtifactStore.upsert({
-    ...input,
-    id: existing?.id ?? `paa_${input.itemId}`,
-  });
-  markLearnComplete(input.podId, input.itemId);
-
-  if (input.payload?.targets && Array.isArray(input.payload.targets)) {
-    const names = input.payload.targets as string[];
-    const existingResearch = researchStore.all();
-    for (const name of names) {
-      if (existingResearch.some((r) => r.name.toLowerCase() === name.toLowerCase())) continue;
-      researchStore.upsert({
-        id: makeId("res"),
-        name,
-        kind: "Brand",
-        searchTarget: "Industry Partner",
-        industryStage: "Established Brand",
-        sector: "TBD",
-        city: "",
-        website: "",
-        founded: "",
-        status: "Research",
-        founderName: "",
-        founderBackground: "",
-        founderActive: true,
-        instagramFollowers: "",
-        linkedinFollowers: "",
-        socialFeel: "",
-        productClarity: 3,
-        designQuality: "",
-        gaps: "Added from Pod Activation — dream clientele.",
-        teamSize: "",
-        fundingStage: "",
-        openRoles: "",
-        strengths: "",
-        scores: { gapMatch: 0, podFit: 0, businessHealth: 0, socialPresence: 0, peopleCulture: 0 },
-      });
-    }
-  }
-
-  return artifact;
-}
-
-export function allPodsActivationSummary(podIds: string[]) {
+export function allPodsActivationSummary(
+  podIds: string[],
+  progress: PodActivationProgress[] = [],
+  artifacts: PodActivationArtifact[] = [],
+) {
   return podIds.map((podId) => {
-    const snap = buildActivationSnapshot(podId);
+    const snap = buildActivationSnapshot(podId, progress, artifacts);
     return { podId, ...snap };
   });
 }

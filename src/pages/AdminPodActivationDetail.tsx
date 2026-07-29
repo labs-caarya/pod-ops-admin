@@ -9,24 +9,24 @@ import { ProgressBar } from "@/components/ui/Misc";
 import {
   buildActivationSnapshot,
   POD_ACTIVATION_CATEGORIES,
-  podActivationProgressStore,
 } from "@/lib/podActivation";
-import { collegesQueryOptions } from "@/lib/adminQueries";
-import { useCollection } from "@/lib/store";
+import { collegesQueryOptions, podActivationQueryOptions } from "@/lib/adminQueries";
 import { cn } from "@/lib/utils";
 
 export default function AdminPodActivationDetail() {
   const { podId = "" } = useParams();
   const collegesQuery = useQuery(collegesQueryOptions());
-  const progress = useCollection(podActivationProgressStore);
-  const pod = collegesQuery.data?.find((item) => item.id === podId);
+  const activationQuery = useQuery(podActivationQueryOptions());
+  const progress = activationQuery.data?.progress || [];
+  const artifacts = activationQuery.data?.artifacts || [];
+  const pod = collegesQuery.data?.find((item) => item.id === podId && item.isPod);
 
   const snapshot = useMemo(() => {
     void progress;
-    return buildActivationSnapshot(podId);
-  }, [podId, progress]);
+    return buildActivationSnapshot(podId, progress, artifacts);
+  }, [artifacts, podId, progress]);
 
-  if (collegesQuery.isPending) {
+  if (collegesQuery.isPending || activationQuery.isPending) {
     return <Card className="p-8 text-center text-sm text-ink-muted">Loading pod…</Card>;
   }
 

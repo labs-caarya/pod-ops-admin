@@ -1,9 +1,9 @@
 import { TOKEN_KEY } from "@/lib/constants";
-import { leaderGoalStore, mentorStore } from "@/lib/data/collections";
 import { normalizeLeaderGoal } from "@/lib/leaderGoals";
 import { normalizeMentor } from "@/lib/mentors";
+import type { PodActivationArtifact, PodActivationProgress } from "@/lib/podActivation/types";
 import type { PodRoleApi } from "@/lib/podRoles";
-import type { PodLeaderGoal, PodMentor } from "@/lib/types";
+import type { Challenge, PodLeaderGoal, PodMentor } from "@/lib/types";
 
 const API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || "")
   .trim()
@@ -95,6 +95,55 @@ export interface Profile {
   createdAt?: string;
   updatedAt?: string;
   submittedAt: string;
+}
+
+export interface PodPortfolioEntry extends ManagedPod {
+  memberCount: number;
+  openChallenges: number;
+  criticalChallenges: number;
+  resolvedChallenges: number;
+  activationPercent: number;
+  health: "Thriving" | "Watching" | "At Risk";
+}
+
+export interface AdminDashboardData {
+  metrics: {
+    activePods: number;
+    activeUsers: number;
+    openChallenges: number;
+    applicants: number;
+  };
+  attention: {
+    podsUnderWatch: number;
+    criticalChallenges: number;
+    inactiveUsers: number;
+  };
+  priorities: {
+    id: string;
+    title: string;
+    owner: string;
+    severity: Challenge["severity"];
+    status: Challenge["status"];
+    podId: string;
+    updatedAt?: string;
+  }[];
+  pods: PodPortfolioEntry[];
+  throughput: {
+    week: string;
+    challenges: number;
+    futurecraft: number;
+    industry: number;
+  }[];
+  workflowCounts: {
+    id: string;
+    label: string;
+    count: number;
+  }[];
+}
+
+export interface PodActivationData {
+  progress: PodActivationProgress[];
+  artifacts: PodActivationArtifact[];
 }
 
 function apiErrorMessage(payload: unknown, fallback: string): string {
@@ -417,6 +466,101 @@ export async function deleteCollege(id: string): Promise<void> {
   });
 }
 
+export async function getAdminDashboard(): Promise<AdminDashboardData> {
+  const payload = await requestJson("/admin/dashboard");
+  const data = unwrapData<AdminDashboardData>(payload);
+  if (!data) throw new Error("Dashboard response was incomplete.");
+  return data;
+}
+
+export async function listPodPortfolio(): Promise<PodPortfolioEntry[]> {
+  const payload = await requestJson("/admin/pod-portfolio");
+  const data = unwrapData<PodPortfolioEntry[]>(payload);
+  return Array.isArray(data) ? data : [];
+}
+
+export async function listChallenges(): Promise<Challenge[]> {
+  const payload = await requestJson("/challenges");
+  const data = unwrapData<Challenge[]>(payload);
+  return Array.isArray(data) ? data : [];
+}
+
+type ChallengeWrite = Omit<Challenge, "id" | "podName" | "createdAt" | "updatedAt">;
+
+function challengePayload(challenge: Challenge): ChallengeWrite {
+  const { id: _id, podName: _podName, createdAt: _createdAt, updatedAt: _updatedAt, ...payload } = challenge;
+  return payload;
+}
+
+export async function createChallenge(challenge: Challenge): Promise<Challenge> {
+  const payload = await requestJson("/challenges", {
+    method: "POST",
+    body: JSON.stringify(challengePayload(challenge)),
+  });
+  const data = unwrapData<Challenge>(payload);
+  if (!data?.id) throw new Error("Challenge response was incomplete.");
+  return data;
+}
+
+export async function updateChallenge(challenge: Challenge): Promise<Challenge> {
+  const payload = await requestJson(`/challenges/${encodeURIComponent(challenge.id)}`, {
+    method: "PATCH",
+    body: JSON.stringify(challengePayload(challenge)),
+  });
+  const data = unwrapData<Challenge>(payload);
+  if (!data?.id) throw new Error("Challenge response was incomplete.");
+  return data;
+}
+
+export async function deleteChallenge(id: string): Promise<void> {
+  await requestJson(`/challenges/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
+export async function listPodActivationData(): Promise<PodActivationData> {
+  const payload = await requestJson("/pod-activation");
+  const data = unwrapData<PodActivationData>(payload);
+  return {
+    progress: Array.isArray(data?.progress) ? data.progress : [],
+    artifacts: Array.isArray(data?.artifacts) ? data.artifacts : [],
+  };
+}
+
+export async function savePodActivationProgress(
+  input: Omit<PodActivationProgress, "id" | "createdAt" | "updatedAt">,
+): Promise<PodActivationProgress> {
+  const payload = await requestJson("/pod-activation/progress", {
+    method: "PUT",
+    body: JSON.stringify(input),
+  });
+  const data = unwrapData<PodActivationProgress>(payload);
+  if (!data?.id) throw new Error("Activation progress response was incomplete.");
+  return data;
+}
+
+export async function deletePodActivationProgress(podId: string, itemId: string): Promise<void> {
+  await requestJson(`/pod-activation/progress/${encodeURIComponent(podId)}/${encodeURIComponent(itemId)}`, {
+    method: "DELETE",
+  });
+}
+
+export async function savePodActivationArtifact(
+  input: Omit<PodActivationArtifact, "id" | "createdAt" | "updatedAt">,
+): Promise<PodActivationArtifact> {
+  const payload = await requestJson("/pod-activation/artifacts", {
+    method: "PUT",
+    body: JSON.stringify(input),
+  });
+  const data = unwrapData<PodActivationArtifact>(payload);
+  if (!data?.id) throw new Error("Activation artifact response was incomplete.");
+  return data;
+}
+
+export async function deletePodActivationArtifact(podId: string, itemId: string): Promise<void> {
+  await requestJson(`/pod-activation/artifacts/${encodeURIComponent(podId)}/${encodeURIComponent(itemId)}`, {
+    method: "DELETE",
+  });
+}
+
 function unwrapLeaderGoals(payload: unknown): PodLeaderGoal[] {
   if (!payload || typeof payload !== "object") return [];
   const record = payload as {
@@ -431,67 +575,24 @@ function unwrapLeaderGoals(payload: unknown): PodLeaderGoal[] {
 }
 
 export async function listLeaderGoals(): Promise<PodLeaderGoal[]> {
-  if (API_BASE_URL) {
-    try {
-      const res = await fetch(`${API_BASE_URL}/leader-goals`, {
-        headers: authHeaders(),
-      });
-      const payload = await readJson(res);
-      if (res.ok) {
-        const goals = unwrapLeaderGoals(payload).map(normalizeLeaderGoal);
-        if (goals.length) leaderGoalStore.replaceAll(goals);
-        return goals.length ? goals : leaderGoalStore.all().map(normalizeLeaderGoal);
-      }
-    } catch {
-      /* use local store */
-    }
-  }
-  return leaderGoalStore.all().map(normalizeLeaderGoal);
+  const payload = await requestJson("/leader-goals");
+  return unwrapLeaderGoals(payload).map(normalizeLeaderGoal);
 }
 
 export async function upsertLeaderGoal(goal: PodLeaderGoal): Promise<PodLeaderGoal> {
   const normalized = normalizeLeaderGoal(goal);
-  if (API_BASE_URL) {
-    try {
-      const exists = Boolean(leaderGoalStore.get(normalized.id));
-      const res = await fetch(`${API_BASE_URL}/leader-goals${exists ? `/${normalized.id}` : ""}`, {
-        method: exists ? "PATCH" : "POST",
-        headers: { ...authHeaders(), "Content-Type": "application/json" },
-        body: JSON.stringify(normalized),
-      });
-      const payload = await readJson(res);
-      if (res.ok) {
-        const saved = normalizeLeaderGoal(
-          (payload as { data?: PodLeaderGoal; goal?: PodLeaderGoal })?.data ??
-            (payload as { goal?: PodLeaderGoal })?.goal ??
-            normalized,
-        );
-        leaderGoalStore.upsert(saved);
-        return saved;
-      }
-    } catch {
-      /* use local store */
-    }
-  }
-  return leaderGoalStore.upsert(normalized);
+  const exists = /^[a-f\d]{24}$/i.test(normalized.id);
+  const payload = await requestJson(`/leader-goals${exists ? `/${normalized.id}` : ""}`, {
+    method: exists ? "PATCH" : "POST",
+    body: JSON.stringify(normalized),
+  });
+  const saved = unwrapData<PodLeaderGoal>(payload);
+  if (!saved?.id) throw new Error("Leader goal response was incomplete.");
+  return normalizeLeaderGoal(saved);
 }
 
 export async function deleteLeaderGoal(id: string): Promise<void> {
-  if (API_BASE_URL) {
-    try {
-      const res = await fetch(`${API_BASE_URL}/leader-goals/${id}`, {
-        method: "DELETE",
-        headers: authHeaders(),
-      });
-      if (res.ok) {
-        leaderGoalStore.remove(id);
-        return;
-      }
-    } catch {
-      /* use local store */
-    }
-  }
-  leaderGoalStore.remove(id);
+  await requestJson(`/leader-goals/${encodeURIComponent(id)}`, { method: "DELETE" });
 }
 
 function unwrapMentors(payload: unknown): PodMentor[] {
@@ -508,65 +609,22 @@ function unwrapMentors(payload: unknown): PodMentor[] {
 }
 
 export async function listMentors(): Promise<PodMentor[]> {
-  if (API_BASE_URL) {
-    try {
-      const res = await fetch(`${API_BASE_URL}/mentors`, {
-        headers: authHeaders(),
-      });
-      const payload = await readJson(res);
-      if (res.ok) {
-        const mentors = unwrapMentors(payload).map(normalizeMentor);
-        if (mentors.length) mentorStore.replaceAll(mentors);
-        return mentors.length ? mentors : mentorStore.all().map(normalizeMentor);
-      }
-    } catch {
-      /* use local store */
-    }
-  }
-  return mentorStore.all().map(normalizeMentor);
+  const payload = await requestJson("/mentors");
+  return unwrapMentors(payload).map(normalizeMentor);
 }
 
 export async function upsertMentor(mentor: PodMentor): Promise<PodMentor> {
   const normalized = normalizeMentor(mentor);
-  if (API_BASE_URL) {
-    try {
-      const exists = Boolean(mentorStore.get(normalized.id));
-      const res = await fetch(`${API_BASE_URL}/mentors${exists ? `/${normalized.id}` : ""}`, {
-        method: exists ? "PATCH" : "POST",
-        headers: { ...authHeaders(), "Content-Type": "application/json" },
-        body: JSON.stringify(normalized),
-      });
-      const payload = await readJson(res);
-      if (res.ok) {
-        const saved = normalizeMentor(
-          (payload as { data?: PodMentor; mentor?: PodMentor })?.data ??
-            (payload as { mentor?: PodMentor })?.mentor ??
-            normalized,
-        );
-        mentorStore.upsert(saved);
-        return saved;
-      }
-    } catch {
-      /* use local store */
-    }
-  }
-  return mentorStore.upsert(normalized);
+  const exists = /^[a-f\d]{24}$/i.test(normalized.id);
+  const payload = await requestJson(`/mentors${exists ? `/${normalized.id}` : ""}`, {
+    method: exists ? "PATCH" : "POST",
+    body: JSON.stringify(normalized),
+  });
+  const saved = unwrapData<PodMentor>(payload);
+  if (!saved?.id) throw new Error("Mentor response was incomplete.");
+  return normalizeMentor(saved);
 }
 
 export async function deleteMentor(id: string): Promise<void> {
-  if (API_BASE_URL) {
-    try {
-      const res = await fetch(`${API_BASE_URL}/mentors/${id}`, {
-        method: "DELETE",
-        headers: authHeaders(),
-      });
-      if (res.ok) {
-        mentorStore.remove(id);
-        return;
-      }
-    } catch {
-      /* use local store */
-    }
-  }
-  mentorStore.remove(id);
+  await requestJson(`/mentors/${encodeURIComponent(id)}`, { method: "DELETE" });
 }

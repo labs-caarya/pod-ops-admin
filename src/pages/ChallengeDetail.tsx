@@ -1,16 +1,16 @@
 import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Vault, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Trash2, Vault } from "lucide-react";
+import { createChallenge, deleteChallenge, updateChallenge, type ManagedPod } from "@/lib/api";
+import { adminQueryKeys, challengesQueryOptions, managedPodsQueryOptions } from "@/lib/adminQueries";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { FieldRow, Select } from "@/components/ui/Field";
 import { EmptyState } from "@/components/ui/Misc";
-import { useCollection } from "@/lib/store";
-import { challengeStore } from "@/lib/data/collections";
 import { emptyWhys } from "@/lib/data/challenges";
-import {
-  CHALLENGE_SEVERITY_TONE,
-  CHALLENGE_STATUS_TONE,
-} from "@/lib/constants";
+import { CHALLENGE_SEVERITY_TONE, CHALLENGE_STATUS_TONE } from "@/lib/constants";
 import { makeId } from "@/lib/utils";
 import type { Challenge } from "@/lib/types";
 import {
@@ -23,7 +23,7 @@ import {
 
 const STEP_ORDER: ChallengeStep[] = ["map", "rca", "solve"];
 
-function emptyChallenge(): Challenge {
+function emptyChallenge(pod?: ManagedPod): Challenge {
   return {
     id: makeId("ch"),
     title: "",
@@ -37,43 +37,48 @@ function emptyChallenge(): Challenge {
     rootCause: "",
     actions: [],
     owner: "",
+    podId: pod?.id,
+    podName: pod?.name,
   };
 }
 
 export default function ChallengeDetail() {
   const { challengeId } = useParams();
   const navigate = useNavigate();
-  const challenges = useCollection(challengeStore);
+  const challengesQuery = useQuery(challengesQueryOptions());
+  const podsQuery = useQuery(managedPodsQueryOptions());
   const isNew = challengeId === "new";
-
-  const stored = isNew ? null : challenges.find((c) => c.id === challengeId);
+  const stored = isNew ? null : challengesQuery.data?.find((item) => item.id === challengeId);
   const [activeStep, setActiveStep] = useState<ChallengeStep>("map");
 
+  if (challengesQuery.isPending || podsQuery.isPending) {
+    return <Card className="p-8 text-center text-sm text-ink-muted">Loading challenge…</Card>;
+  }
+  if (challengesQuery.isError || podsQuery.isError) {
+    const error = challengesQuery.error || podsQuery.error;
+    return <Card className="p-8 text-center text-sm text-bad">{error instanceof Error ? error.message : "Could not load challenge."}</Card>;
+  }
   if (!isNew && !stored) {
     return (
       <EmptyState
         icon={Vault}
         title="Challenge not found"
-        description="This challenge may have been removed."
-        action={
-          <Link to="/challenges">
-            <Button>Back to Challenge Vault</Button>
-          </Link>
-        }
+        description="This challenge may have been archived."
+        action={<Link to="/challenges"><Button>Back to Challenge Vault</Button></Link>}
       />
     );
   }
 
+  const initial = stored ?? emptyChallenge(podsQuery.data?.[0]);
   return (
     <ChallengeDetailBody
-      key={stored?.id ?? "new"}
-      initial={stored ?? emptyChallenge()}
+      key={initial.id}
+      initial={initial}
+      pods={podsQuery.data || []}
       isNew={isNew}
       activeStep={activeStep}
       onStepChange={setActiveStep}
-      onSaved={(id) => {
-        if (isNew) navigate(`/challenges/${id}`, { replace: true });
-      }}
+      onSaved={(id) => navigate(`/challenges/${id}`, { replace: true })}
       onDeleted={() => navigate("/challenges")}
       onCancel={() => navigate("/challenges")}
     />
@@ -82,6 +87,7 @@ export default function ChallengeDetail() {
 
 function ChallengeDetailBody({
   initial,
+  pods,
   isNew,
   activeStep,
   onStepChange,
@@ -90,39 +96,58 @@ function ChallengeDetailBody({
   onCancel,
 }: {
   initial: Challenge;
+  pods: ManagedPod[];
   isNew: boolean;
   activeStep: ChallengeStep;
-  onStepChange: (s: ChallengeStep) => void;
+  onStepChange: (step: ChallengeStep) => void;
   onSaved: (id: string) => void;
   onDeleted: () => void;
   onCancel: () => void;
 }) {
   const editor = useChallengeForm(initial);
+  const queryClient = useQueryClient();
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
   const stepIndex = STEP_ORDER.indexOf(activeStep);
 
-  const save = () => {
-    const saved = challengeStore.upsert(editor.normalized);
-    onSaved(saved.id);
-  };
+  async function save() {
+    setSaving(true);
+    setMessage("");
+    try {
+      const selectedPod = pods.find((pod) => pod.id === editor.normalized.podId);
+      const input = { ...editor.normalized, podName: selectedPod?.name };
+      const saved = isNew ? await createChallenge(input) : await updateChallenge(input);
+      queryClient.setQueryData<Challenge[]>(adminQueryKeys.challenges, (current = []) => {
+        const exists = current.some((item) => item.id === saved.id);
+        return exists ? current.map((item) => item.id === saved.id ? saved : item) : [saved, ...current];
+      });
+      onSaved(saved.id);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not save challenge.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
-  const remove = () => {
-    if (!isNew) challengeStore.remove(editor.form.id);
-    onDeleted();
-  };
-
-  const goPrev = () => {
-    if (stepIndex > 0) onStepChange(STEP_ORDER[stepIndex - 1]);
-  };
-  const goNext = () => {
-    if (stepIndex < STEP_ORDER.length - 1) onStepChange(STEP_ORDER[stepIndex + 1]);
-  };
+  async function remove() {
+    if (isNew) return onDeleted();
+    setSaving(true);
+    try {
+      await deleteChallenge(editor.form.id);
+      queryClient.setQueryData<Challenge[]>(adminQueryKeys.challenges, (current = []) =>
+        current.filter((item) => item.id !== editor.form.id),
+      );
+      onDeleted();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not delete challenge.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div className="pb-8">
-      <Link
-        to="/challenges"
-        className="mb-4 inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink"
-      >
+      <Link to="/challenges" className="mb-4 inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink">
         <ArrowLeft className="h-4 w-4" /> Challenge Vault
       </Link>
 
@@ -130,23 +155,36 @@ function ChallengeDetailBody({
         <h1 className="font-display text-2xl font-black tracking-tight text-ink sm:text-3xl">
           {isNew ? "Map a new challenge" : editor.form.title || "Untitled challenge"}
         </h1>
-        {!isNew && editor.form.description && (
-          <p className="mt-2 max-w-2xl text-sm text-ink-muted">{editor.form.description}</p>
-        )}
         <div className="mt-3 flex flex-wrap gap-2">
-          {!isNew && editor.form.podName && <Badge tone="info">{editor.form.podName}</Badge>}
+          {editor.form.podName ? <Badge tone="info">{editor.form.podName}</Badge> : null}
           <Badge tone={CHALLENGE_STATUS_TONE[editor.form.status] ?? "muted"}>{editor.form.status}</Badge>
           <Badge tone={CHALLENGE_SEVERITY_TONE[editor.form.severity] ?? "muted"}>{editor.form.severity}</Badge>
           <Badge tone="muted">{editor.form.pillar}</Badge>
-          {editor.form.owner && <Badge tone="muted">{editor.form.owner}</Badge>}
         </div>
       </div>
+
+      {isNew ? (
+        <Card className="mb-4 p-4">
+          <FieldRow label="Pod">
+            <Select
+              value={editor.form.podId || ""}
+              onChange={(event) => {
+                const pod = pods.find((item) => item.id === event.target.value);
+                editor.set("podId")(event.target.value || undefined);
+                editor.set("podName")(pod?.name);
+              }}
+            >
+              <option value="">All pods</option>
+              {pods.map((pod) => <option key={pod.id} value={pod.id}>{pod.name} · {pod.collegeName}</option>)}
+            </Select>
+          </FieldRow>
+        </Card>
+      ) : null}
 
       <div className="mb-5 space-y-4">
         <ChallengeProgressStrip rcaPct={editor.rcaPct} actionPct={editor.actionPct} />
         <ChallengeStepNav active={activeStep} onChange={onStepChange} stepComplete={editor.stepComplete} />
       </div>
-
       <ChallengeFormSections
         activeStep={activeStep}
         form={editor.form}
@@ -160,36 +198,21 @@ function ChallengeDetailBody({
         removeAction={editor.removeAction}
       />
 
+      {message ? <p className="mt-4 rounded-xl border border-bad/30 bg-bad/10 px-3 py-2 text-sm text-bad">{message}</p> : null}
+
       <div className="mt-4 flex items-center justify-between gap-2">
-        <Button type="button" variant="ghost" size="sm" onClick={goPrev} disabled={stepIndex === 0}>
+        <Button variant="ghost" size="sm" onClick={() => onStepChange(STEP_ORDER[stepIndex - 1])} disabled={stepIndex === 0}>
           <ChevronLeft className="h-4 w-4" /> Previous
         </Button>
-        {stepIndex < STEP_ORDER.length - 1 ? (
-          <Button type="button" variant="secondary" size="sm" onClick={goNext}>
-            Next step <ChevronRight className="h-4 w-4" />
-          </Button>
-        ) : (
-          <span />
-        )}
+        <Button variant="secondary" size="sm" onClick={() => onStepChange(STEP_ORDER[stepIndex + 1])} disabled={stepIndex === STEP_ORDER.length - 1}>
+          Next step <ChevronRight className="h-4 w-4" />
+        </Button>
       </div>
 
       <div className="sticky bottom-0 -mx-4 mt-8 border-t border-line bg-base-2/95 px-4 py-3 backdrop-blur-sm sm:-mx-6 lg:-mx-8">
         <div className="flex items-center justify-between gap-3">
-          {!isNew ? (
-            <Button variant="danger" size="sm" onClick={remove}>
-              <Trash2 className="h-4 w-4" /> Delete
-            </Button>
-          ) : (
-            <Button variant="ghost" size="sm" onClick={onCancel}>Cancel</Button>
-          )}
-          <div className="flex items-center gap-2">
-            {!isNew && (
-              <Button variant="ghost" size="sm" onClick={onCancel}>Back to vault</Button>
-            )}
-            <Button onClick={save}>
-              {isNew ? "Create challenge" : "Save changes"}
-            </Button>
-          </div>
+          {!isNew ? <Button variant="danger" size="sm" onClick={() => void remove()} disabled={saving}><Trash2 className="h-4 w-4" /> Delete</Button> : <Button variant="ghost" size="sm" onClick={onCancel}>Cancel</Button>}
+          <Button onClick={() => void save()} disabled={saving}>{saving ? "Saving…" : isNew ? "Create challenge" : "Save changes"}</Button>
         </div>
       </div>
     </div>

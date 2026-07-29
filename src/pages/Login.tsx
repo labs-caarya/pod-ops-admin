@@ -26,7 +26,7 @@ export default function Login() {
             <CaaryaLogo className="h-9" />
             <h1 className="mt-5 font-display text-2xl font-black text-ink">Pod Ops Admin</h1>
             <p className="mt-1 text-sm text-ink-muted">
-              Sign in with the admin account to manage pod ops access and the control-room demo.
+              Sign in with the admin account to manage pod ops access and the live control room.
             </p>
           </div>
 
@@ -92,7 +92,7 @@ export default function Login() {
         </div>
 
         <p className="mt-4 text-center text-[11px] text-ink-faint/90 drop-shadow-sm">
-          Caarya · Admin dashboard demo
+          Caarya · Admin dashboard
         </p>
       </div>
     </div>

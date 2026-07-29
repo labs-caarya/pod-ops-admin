@@ -9,9 +9,7 @@ import { Input } from "@/components/ui/Field";
 import { ProgressBar, EmptyState } from "@/components/ui/Misc";
 import { StatCard } from "@/components/ui/StatCard";
 import { buildActivationSnapshot, POD_ACTIVATION_CATEGORIES } from "@/lib/podActivation";
-import { collegesQueryOptions } from "@/lib/adminQueries";
-import { useCollection } from "@/lib/store";
-import { podActivationProgressStore } from "@/lib/podActivation";
+import { collegesQueryOptions, podActivationQueryOptions } from "@/lib/adminQueries";
 
 function podActivationTone(percent: number) {
   if (percent >= 100) return "good";
@@ -22,15 +20,20 @@ function podActivationTone(percent: number) {
 export default function AdminPodActivation() {
   const [query, setQuery] = useState("");
   const collegesQuery = useQuery(collegesQueryOptions());
-  const progress = useCollection(podActivationProgressStore);
-  const pods = collegesQuery.data?.filter((c) => c.isPod) ?? [];
+  const activationQuery = useQuery(podActivationQueryOptions());
+  const progress = activationQuery.data?.progress || [];
+  const artifacts = activationQuery.data?.artifacts || [];
+  const pods = useMemo(
+    () => (collegesQuery.data || []).filter((college) => college.isPod),
+    [collegesQuery.data],
+  );
 
   const rows = useMemo(() => {
     void progress;
     const needle = query.trim().toLowerCase();
     return pods
       .map((pod) => {
-        const snapshot = buildActivationSnapshot(pod.id);
+        const snapshot = buildActivationSnapshot(pod.id, progress, artifacts);
         return {
           pod,
           snapshot,
@@ -41,7 +44,7 @@ export default function AdminPodActivation() {
         return [pod.name, pod.crew, pod.id].join(" ").toLowerCase().includes(needle);
       })
       .sort((a, b) => b.snapshot.percent - a.snapshot.percent);
-  }, [pods, progress, query]);
+  }, [artifacts, pods, progress, query]);
 
   const stats = useMemo(() => {
     if (!rows.length) {
@@ -81,8 +84,14 @@ export default function AdminPodActivation() {
         </div>
       </Card>
 
-      {collegesQuery.isPending ? (
+      {collegesQuery.isPending || activationQuery.isPending ? (
         <Card className="p-8 text-center text-sm text-ink-muted">Loading pods…</Card>
+      ) : collegesQuery.isError || activationQuery.isError ? (
+        <Card className="p-8 text-center text-sm text-bad">
+          {(collegesQuery.error || activationQuery.error) instanceof Error
+            ? (collegesQuery.error || activationQuery.error)?.message
+            : "Could not load activation data."}
+        </Card>
       ) : rows.length ? (
         <div className="space-y-3">
           {rows.map(({ pod, snapshot }) => (

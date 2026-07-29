@@ -15,13 +15,12 @@ import {
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatCard } from "@/components/ui/StatCard";
 import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Input, Select } from "@/components/ui/Field";
 import { ProgressBar, EmptyState } from "@/components/ui/Misc";
-import { useCollection } from "@/lib/store";
-import { challengeStore } from "@/lib/data/collections";
 import { actionProgress, rcaProgress, vaultStats } from "@/lib/data/challenges";
-import { collegesQueryOptions } from "@/lib/adminQueries";
+import { challengesQueryOptions, managedPodsQueryOptions } from "@/lib/adminQueries";
 import {
   CHALLENGE_SEVERITY_TONE,
   CHALLENGE_STATUSES,
@@ -187,9 +186,10 @@ function ChallengeTable({ items }: { items: Challenge[] }) {
 }
 
 export default function ChallengeVault() {
-  const challenges = useCollection(challengeStore);
-  const collegesQuery = useQuery(collegesQueryOptions());
-  const pods = collegesQuery.data || [];
+  const challengesQuery = useQuery(challengesQueryOptions());
+  const podsQuery = useQuery(managedPodsQueryOptions());
+  const challenges = challengesQuery.data || [];
+  const pods = podsQuery.data || [];
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [pillarFilter, setPillarFilter] = useState("all");
@@ -232,6 +232,7 @@ export default function ChallengeVault() {
         icon={Vault}
         title="Challenge Vault"
         description="See every challenge pods have mapped — symptoms, RCA progress, and action plans across the network."
+        actions={<Link to="/challenges/new"><Button>Map challenge</Button></Link>}
       />
 
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-5">
@@ -317,7 +318,13 @@ export default function ChallengeVault() {
         </div>
       </div>
 
-      {filtered.length === 0 ? (
+      {challengesQuery.isPending ? (
+        <Card className="p-8 text-center text-sm text-ink-muted">Loading challenges…</Card>
+      ) : challengesQuery.isError ? (
+        <Card className="p-8 text-center text-sm text-bad">
+          {challengesQuery.error instanceof Error ? challengesQuery.error.message : "Could not load challenges."}
+        </Card>
+      ) : filtered.length === 0 ? (
         <EmptyState
           icon={Vault}
           title="No challenges mapped"

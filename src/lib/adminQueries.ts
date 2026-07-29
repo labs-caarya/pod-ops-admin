@@ -6,12 +6,19 @@ import {
   listMentors,
   listManagedPods,
   listManagedUsers,
+  getAdminDashboard,
+  listPodPortfolio,
+  listChallenges,
+  listPodActivationData,
   type College,
   type FutureCraftApplicant,
   type ManagedPod,
   type AllowedUser,
+  type AdminDashboardData,
+  type PodPortfolioEntry,
+  type PodActivationData,
 } from "@/lib/api";
-import type { PodLeaderGoal, PodMentor } from "@/lib/types";
+import type { Challenge, PodLeaderGoal, PodMentor } from "@/lib/types";
 
 const TEN_MINUTES = 10 * 60 * 1000;
 const THIRTY_MINUTES = 30 * 60 * 1000;
@@ -23,12 +30,52 @@ export const adminQueryKeys = {
   futureCraftApplicants: ["admin", "future-craft-applicants"] as const,
   leaderGoals: ["admin", "leader-goals"] as const,
   mentors: ["admin", "mentors"] as const,
+  dashboard: ["admin", "dashboard"] as const,
+  podPortfolio: ["admin", "pod-portfolio"] as const,
+  challenges: ["admin", "challenges"] as const,
+  podActivation: ["admin", "pod-activation"] as const,
 };
 
 export function collegesQueryOptions() {
   return queryOptions<College[]>({
     queryKey: adminQueryKeys.colleges,
     queryFn: listColleges,
+    staleTime: TEN_MINUTES,
+    gcTime: THIRTY_MINUTES,
+  });
+}
+
+export function dashboardQueryOptions() {
+  return queryOptions<AdminDashboardData>({
+    queryKey: adminQueryKeys.dashboard,
+    queryFn: getAdminDashboard,
+    staleTime: TEN_MINUTES,
+    gcTime: THIRTY_MINUTES,
+  });
+}
+
+export function podPortfolioQueryOptions() {
+  return queryOptions<PodPortfolioEntry[]>({
+    queryKey: adminQueryKeys.podPortfolio,
+    queryFn: listPodPortfolio,
+    staleTime: TEN_MINUTES,
+    gcTime: THIRTY_MINUTES,
+  });
+}
+
+export function challengesQueryOptions() {
+  return queryOptions<Challenge[]>({
+    queryKey: adminQueryKeys.challenges,
+    queryFn: listChallenges,
+    staleTime: TEN_MINUTES,
+    gcTime: THIRTY_MINUTES,
+  });
+}
+
+export function podActivationQueryOptions() {
+  return queryOptions<PodActivationData>({
+    queryKey: adminQueryKeys.podActivation,
+    queryFn: listPodActivationData,
     staleTime: TEN_MINUTES,
     gcTime: THIRTY_MINUTES,
   });
@@ -87,5 +134,9 @@ export function warmAdminWorkspaceCache(queryClient: QueryClient) {
     queryClient.prefetchQuery(futureCraftApplicantsQueryOptions()),
     queryClient.prefetchQuery(leaderGoalsQueryOptions()),
     queryClient.prefetchQuery(mentorsQueryOptions()),
+    queryClient.prefetchQuery(dashboardQueryOptions()),
+    queryClient.prefetchQuery(podPortfolioQueryOptions()),
+    queryClient.prefetchQuery(challengesQueryOptions()),
+    queryClient.prefetchQuery(podActivationQueryOptions()),
   ]);
 }

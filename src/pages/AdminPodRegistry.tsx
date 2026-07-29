@@ -7,17 +7,13 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Drawer } from "@/components/ui/Drawer";
 import { FieldRow, Input, Select } from "@/components/ui/Field";
-import {
-  getCollegeClubsPreview,
-  getCollegeExecLeadPreview,
-  getCollegeLeadershipPreview,
-} from "@/lib/admin/collegeRegistryPreview";
-import { adminQueryKeys, collegesQueryOptions } from "@/lib/adminQueries";
+import { adminQueryKeys, collegesQueryOptions, managedPodsQueryOptions } from "@/lib/adminQueries";
 import {
   createCollege,
   deleteCollege,
   updateCollege,
   type College,
+  type ManagedPod,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -54,6 +50,18 @@ function formatCollegeSummary(total: number, filtered: number, hasFilters: boole
 
 type ViewDrawerMode = "leadership" | "clubs" | null;
 
+function normalizePodName(value: string) {
+  return String(value || "").toLowerCase().replace(/\bpod\b/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function findManagedPod(college: College, pods: ManagedPod[]) {
+  const names = [college.name, college.crew].map(normalizePodName).filter(Boolean);
+  return pods.find((pod) => {
+    const candidates = [pod.name, pod.collegeName].map(normalizePodName);
+    return names.some((name) => candidates.some((candidate) => candidate === name || candidate.includes(name) || name.includes(candidate)));
+  });
+}
+
 export default function AdminPodRegistry() {
   const [saving, setSaving] = useState(false);
   const [drawerMode, setDrawerMode] = useState<"create" | "edit" | null>(null);
@@ -64,6 +72,7 @@ export default function AdminPodRegistry() {
   const [message, setMessage] = useState<{ text: string; tone: "good" | "bad" | "info" } | null>(null);
   const queryClient = useQueryClient();
   const collegesQuery = useQuery(collegesQueryOptions());
+  const managedPodsQuery = useQuery(managedPodsQueryOptions());
   const rows = collegesQuery.data || [];
   const loading = collegesQuery.isPending;
   const refreshing = !loading && collegesQuery.isFetching;
@@ -130,14 +139,17 @@ export default function AdminPodRegistry() {
     setViewCollege(null);
   }
 
-  const leadershipPreview = useMemo(
-    () => (viewCollege ? getCollegeLeadershipPreview(viewCollege) : []),
-    [viewCollege],
+  const matchedPod = useMemo(
+    () => (viewCollege ? findManagedPod(viewCollege, managedPodsQuery.data || []) : undefined),
+    [managedPodsQuery.data, viewCollege],
   );
-  const clubsPreview = useMemo(
-    () => (viewCollege ? getCollegeClubsPreview(viewCollege) : []),
-    [viewCollege],
-  );
+  const leadership = useMemo(() => matchedPod ? [
+    { role: "Exec Lead", name: matchedPod.podLeader },
+    { role: "Talent Manager", name: matchedPod.podTalentManager },
+    { role: "Outreach Manager", name: matchedPod.podOutreachManager },
+    { role: "Researcher", name: matchedPod.podResearcher },
+    { role: "Partner Manager", name: matchedPod.podPartnerManager },
+  ] : [], [matchedPod]);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -279,7 +291,7 @@ export default function AdminPodRegistry() {
                 </thead>
                 <tbody>
                   {filteredRows.map((row) => {
-                    const execLead = getCollegeExecLeadPreview(row);
+                    const execLead = findManagedPod(row, managedPodsQuery.data || [])?.podLeader;
                     return (
                     <tr key={row.id} className="align-top text-ink-muted">
                       <td className="border-b border-line px-5 py-4 font-semibold text-ink">{row.name || "—"}</td>
@@ -416,15 +428,15 @@ export default function AdminPodRegistry() {
         }
       >
         <p className="mb-4 rounded-xl border border-line bg-surface-2 px-3 py-2 text-sm text-ink-muted">
-          Preview UI only — leadership assignments are not connected to the API yet.
+          Leadership is loaded from the matching managed pod record.
         </p>
         <div className="space-y-3">
-          {leadershipPreview.map((slot) => (
+          {leadership.length ? leadership.map((slot) => (
             <div key={slot.role} className="rounded-xl border border-line bg-surface-2 p-3">
               <p className="text-xs uppercase tracking-[0.14em] text-ink-faint">{slot.role}</p>
               <p className="mt-1 text-sm font-semibold text-ink">{slot.name || "Unassigned"}</p>
             </div>
-          ))}
+          )) : <p className="text-sm text-ink-muted">No matching managed pod or leadership assignments were found.</p>}
         </div>
       </Drawer>
 
@@ -441,19 +453,13 @@ export default function AdminPodRegistry() {
         }
       >
         <p className="mb-4 rounded-xl border border-line bg-surface-2 px-3 py-2 text-sm text-ink-muted">
-          Preview UI only — club data is not connected to the API yet.
+          Clubs are loaded from the matching managed pod record.
         </p>
-        {clubsPreview.length ? (
+        {matchedPod?.clubs.length ? (
           <div className="space-y-3">
-            {clubsPreview.map((club) => (
-              <div key={club.name} className="rounded-xl border border-line bg-surface-2 p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-semibold text-ink">{club.name}</p>
-                  <Badge tone={club.stage === "Active" || club.stage === "Strategic" ? "good" : club.stage === "Engaged" ? "amber" : "muted"}>
-                    {club.stage}
-                  </Badge>
-                </div>
-                <p className="mt-1 text-xs text-ink-faint">{club.contribution}</p>
+            {matchedPod.clubs.map((club) => (
+              <div key={club} className="rounded-xl border border-line bg-surface-2 p-3">
+                <p className="text-sm font-semibold text-ink">{club}</p>
               </div>
             ))}
           </div>

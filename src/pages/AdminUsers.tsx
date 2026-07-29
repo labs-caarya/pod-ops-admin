@@ -12,8 +12,15 @@ import {
   deleteManagedUser,
   updateManagedUser,
   type AllowedUser,
+  type College,
+  type ManagedPod,
 } from "@/lib/api";
-import { adminQueryKeys, collegesQueryOptions, managedUsersQueryOptions } from "@/lib/adminQueries";
+import {
+  adminQueryKeys,
+  collegesQueryOptions,
+  managedPodsQueryOptions,
+  managedUsersQueryOptions,
+} from "@/lib/adminQueries";
 import {
   formatPodRole,
   POD_ROLE_OPTIONS,
@@ -41,6 +48,22 @@ const EMPTY_DRAFT: UserDraft = {
   podRole: DEFAULT_ROLE,
 };
 
+function normalizePodName(value: string) {
+  return String(value || "").toLowerCase().replace(/\bpod\b/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function findManagedPod(college: College, pods: ManagedPod[]) {
+  const names = [college.name, college.crew].map(normalizePodName).filter(Boolean);
+  return pods.find((pod) => {
+    const candidates = [pod.name, pod.collegeName].map(normalizePodName);
+    return names.some((name) =>
+      candidates.some((candidate) =>
+        candidate === name || candidate.includes(name) || name.includes(candidate),
+      ),
+    );
+  });
+}
+
 export default function AdminUsers() {
   const [saving, setSaving] = useState(false);
   const [drawerMode, setDrawerMode] = useState<"create" | "edit" | null>(null);
@@ -52,11 +75,28 @@ export default function AdminUsers() {
   const [message, setMessage] = useState<{ text: string; tone: "good" | "bad" | "info" } | null>(null);
   const queryClient = useQueryClient();
   const usersQuery = useQuery(managedUsersQueryOptions());
+  const podsQuery = useQuery(managedPodsQueryOptions());
   const collegesQuery = useQuery(collegesQueryOptions());
   const users = usersQuery.data || [];
-  const pods = collegesQuery.data || [];
-  const loading = usersQuery.isPending || collegesQuery.isPending;
-  const refreshing = !loading && (usersQuery.isFetching || collegesQuery.isFetching);
+  const pods = podsQuery.data || [];
+  const registeredPods = useMemo(
+    () => (collegesQuery.data || []).filter((college) => college.isPod),
+    [collegesQuery.data],
+  );
+  const createPodOptions = useMemo(
+    () => registeredPods.map((college) => ({
+      college,
+      managedPod: findManagedPod(college, pods),
+    })),
+    [pods, registeredPods],
+  );
+  const firstAssignablePodId = createPodOptions.find((option) => option.managedPod)?.managedPod?.id || "";
+  const loading = usersQuery.isPending || podsQuery.isPending || collegesQuery.isPending;
+  const refreshing = !loading && (
+    usersQuery.isFetching ||
+    podsQuery.isFetching ||
+    collegesQuery.isFetching
+  );
 
   const selectedPod = useMemo(
     () => pods.find((pod) => pod.id === draft.podId) || null,
@@ -82,7 +122,7 @@ export default function AdminUsers() {
     setEditingUserId(null);
     setDraft({
       ...EMPTY_DRAFT,
-      podId: pods[0]?.id || "",
+      podId: firstAssignablePodId,
     });
     setShowPassword(false);
     setMessage(null);
@@ -188,7 +228,7 @@ export default function AdminUsers() {
         description="Create and manage pod login accounts. Every non-admin user must be mapped to a pod and a pod role."
         icon={UserRound}
         actions={
-          <Button onClick={openCreateDrawer} disabled={!pods.length || loading}>
+          <Button onClick={openCreateDrawer} disabled={!firstAssignablePodId || loading}>
             <Plus className="h-4 w-4" />
             Create user
           </Button>
@@ -239,7 +279,11 @@ export default function AdminUsers() {
               </div>
               <Button
                 variant="secondary"
-                onClick={() => void Promise.all([usersQuery.refetch(), collegesQuery.refetch()])}
+                onClick={() => void Promise.all([
+                  usersQuery.refetch(),
+                  podsQuery.refetch(),
+                  collegesQuery.refetch(),
+                ])}
                 disabled={loading || refreshing || saving}
               >
                 {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserRound className="h-4 w-4" />}
@@ -253,7 +297,7 @@ export default function AdminUsers() {
               <option value="">All pods</option>
               {pods.map((pod) => (
                 <option key={pod.id} value={pod.id}>
-                  {pod.name} · {pod.crew}
+                  {pod.name} · {pod.collegeName}
                 </option>
               ))}
             </Select>
@@ -419,13 +463,15 @@ export default function AdminUsers() {
         </p>
       )}
 
-      {!message && (usersQuery.isError || collegesQuery.isError) && (
+      {!message && (usersQuery.isError || podsQuery.isError || collegesQuery.isError) && (
         <p className="rounded-xl border border-bad/30 bg-bad/10 px-3 py-2 text-sm text-bad">
           {usersQuery.error instanceof Error
             ? usersQuery.error.message
-            : collegesQuery.error instanceof Error
-              ? collegesQuery.error.message
-              : "Could not load users."}
+            : podsQuery.error instanceof Error
+              ? podsQuery.error.message
+              : collegesQuery.error instanceof Error
+                ? collegesQuery.error.message
+                : "Could not load users."}
         </p>
       )}
 
@@ -460,7 +506,7 @@ export default function AdminUsers() {
               {selectedPod ? `${selectedPod.name}` : "User account"}
             </p>
             <p className="mt-1 text-sm text-ink-muted">
-              {selectedPod ? `${selectedPod.crew} · ${draft.podRole}` : "Choose a pod and role for this user."}
+              {selectedPod ? `${selectedPod.collegeName} · ${draft.podRole}` : "Choose a pod and role for this user."}
             </p>
           </div>
 
@@ -485,11 +531,22 @@ export default function AdminUsers() {
                 onChange={(e) => setDraft((current) => ({ ...current, podId: e.target.value }))}
               >
                 <option value="">Select pod</option>
-                {pods.map((pod) => (
-                  <option key={pod.id} value={pod.id}>
-                    {pod.name} · {pod.crew}
-                  </option>
-                ))}
+                {drawerMode === "create"
+                  ? createPodOptions.map(({ college, managedPod }) => (
+                      <option
+                        key={college.id}
+                        value={managedPod?.id || `unlinked:${college.id}`}
+                        disabled={!managedPod}
+                      >
+                        {college.name} · {college.crew}
+                        {!managedPod ? " · Not linked for login" : ""}
+                      </option>
+                    ))
+                  : pods.map((pod) => (
+                      <option key={pod.id} value={pod.id}>
+                        {pod.name} · {pod.collegeName}
+                      </option>
+                    ))}
               </Select>
             </FieldRow>
             <FieldRow label="Pod role">
