@@ -349,8 +349,8 @@ export interface Challenge {
   /** How we'll solve it once root cause is known. */
   actions: ChallengeAction[];
   owner: string;
-  podId?: string;
-  podName?: string;
+  collegeId?: string;
+  collegeName?: string;
   notes?: string;
   createdAt?: string;
   updatedAt?: string;

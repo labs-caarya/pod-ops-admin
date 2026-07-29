@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, ChevronLeft, ChevronRight, Trash2, Vault } from "lucide-react";
-import { createChallenge, deleteChallenge, updateChallenge, type ManagedPod } from "@/lib/api";
-import { adminQueryKeys, challengesQueryOptions, managedPodsQueryOptions } from "@/lib/adminQueries";
+import { createChallenge, deleteChallenge, updateChallenge, type College } from "@/lib/api";
+import { adminQueryKeys, challengesQueryOptions, collegesQueryOptions } from "@/lib/adminQueries";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -23,7 +23,7 @@ import {
 
 const STEP_ORDER: ChallengeStep[] = ["map", "rca", "solve"];
 
-function emptyChallenge(pod?: ManagedPod): Challenge {
+function emptyChallenge(college?: College): Challenge {
   return {
     id: makeId("ch"),
     title: "",
@@ -37,8 +37,8 @@ function emptyChallenge(pod?: ManagedPod): Challenge {
     rootCause: "",
     actions: [],
     owner: "",
-    podId: pod?.id,
-    podName: pod?.name,
+    collegeId: college?.id,
+    collegeName: college?.name,
   };
 }
 
@@ -46,16 +46,17 @@ export default function ChallengeDetail() {
   const { challengeId } = useParams();
   const navigate = useNavigate();
   const challengesQuery = useQuery(challengesQueryOptions());
-  const podsQuery = useQuery(managedPodsQueryOptions());
+  const collegesQuery = useQuery(collegesQueryOptions());
+  const colleges = (collegesQuery.data || []).filter((college) => college.isPod);
   const isNew = challengeId === "new";
   const stored = isNew ? null : challengesQuery.data?.find((item) => item.id === challengeId);
   const [activeStep, setActiveStep] = useState<ChallengeStep>("map");
 
-  if (challengesQuery.isPending || podsQuery.isPending) {
+  if (challengesQuery.isPending || collegesQuery.isPending) {
     return <Card className="p-8 text-center text-sm text-ink-muted">Loading challenge…</Card>;
   }
-  if (challengesQuery.isError || podsQuery.isError) {
-    const error = challengesQuery.error || podsQuery.error;
+  if (challengesQuery.isError || collegesQuery.isError) {
+    const error = challengesQuery.error || collegesQuery.error;
     return <Card className="p-8 text-center text-sm text-bad">{error instanceof Error ? error.message : "Could not load challenge."}</Card>;
   }
   if (!isNew && !stored) {
@@ -69,12 +70,12 @@ export default function ChallengeDetail() {
     );
   }
 
-  const initial = stored ?? emptyChallenge(podsQuery.data?.[0]);
+  const initial = stored ?? emptyChallenge(colleges[0]);
   return (
     <ChallengeDetailBody
       key={initial.id}
       initial={initial}
-      pods={podsQuery.data || []}
+      colleges={colleges}
       isNew={isNew}
       activeStep={activeStep}
       onStepChange={setActiveStep}
@@ -87,7 +88,7 @@ export default function ChallengeDetail() {
 
 function ChallengeDetailBody({
   initial,
-  pods,
+  colleges,
   isNew,
   activeStep,
   onStepChange,
@@ -96,7 +97,7 @@ function ChallengeDetailBody({
   onCancel,
 }: {
   initial: Challenge;
-  pods: ManagedPod[];
+  colleges: College[];
   isNew: boolean;
   activeStep: ChallengeStep;
   onStepChange: (step: ChallengeStep) => void;
@@ -114,8 +115,8 @@ function ChallengeDetailBody({
     setSaving(true);
     setMessage("");
     try {
-      const selectedPod = pods.find((pod) => pod.id === editor.normalized.podId);
-      const input = { ...editor.normalized, podName: selectedPod?.name };
+      const selectedCollege = colleges.find((college) => college.id === editor.normalized.collegeId);
+      const input = { ...editor.normalized, collegeName: selectedCollege?.name };
       const saved = isNew ? await createChallenge(input) : await updateChallenge(input);
       queryClient.setQueryData<Challenge[]>(adminQueryKeys.challenges, (current = []) => {
         const exists = current.some((item) => item.id === saved.id);
@@ -156,7 +157,7 @@ function ChallengeDetailBody({
           {isNew ? "Map a new challenge" : editor.form.title || "Untitled challenge"}
         </h1>
         <div className="mt-3 flex flex-wrap gap-2">
-          {editor.form.podName ? <Badge tone="info">{editor.form.podName}</Badge> : null}
+          {editor.form.collegeName ? <Badge tone="info">{editor.form.collegeName}</Badge> : null}
           <Badge tone={CHALLENGE_STATUS_TONE[editor.form.status] ?? "muted"}>{editor.form.status}</Badge>
           <Badge tone={CHALLENGE_SEVERITY_TONE[editor.form.severity] ?? "muted"}>{editor.form.severity}</Badge>
           <Badge tone="muted">{editor.form.pillar}</Badge>
@@ -165,17 +166,17 @@ function ChallengeDetailBody({
 
       {isNew ? (
         <Card className="mb-4 p-4">
-          <FieldRow label="Pod">
+          <FieldRow label="College">
             <Select
-              value={editor.form.podId || ""}
+              value={editor.form.collegeId || ""}
               onChange={(event) => {
-                const pod = pods.find((item) => item.id === event.target.value);
-                editor.set("podId")(event.target.value || undefined);
-                editor.set("podName")(pod?.name);
+                const college = colleges.find((item) => item.id === event.target.value);
+                editor.set("collegeId")(event.target.value || undefined);
+                editor.set("collegeName")(college?.name);
               }}
             >
-              <option value="">All pods</option>
-              {pods.map((pod) => <option key={pod.id} value={pod.id}>{pod.name} · {pod.collegeName}</option>)}
+              <option value="">All colleges</option>
+              {colleges.map((college) => <option key={college.id} value={college.id}>{college.name} · {college.crew}</option>)}
             </Select>
           </FieldRow>
         </Card>
