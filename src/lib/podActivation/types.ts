@@ -39,7 +39,7 @@ export interface PodActivationItemTemplate {
 
 export interface PodActivationProgress {
   id: string;
-  podId: string;
+  collegeId: string;
   itemId: string;
   status: PodActivationItemStatus;
   completedAt?: string;
@@ -48,7 +48,7 @@ export interface PodActivationProgress {
 
 export interface PodActivationArtifact {
   id: string;
-  podId: string;
+  collegeId: string;
   itemId: string;
   categoryId: PodActivationCategoryId;
   title: string;

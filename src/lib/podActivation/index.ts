@@ -20,18 +20,18 @@ export const podActivationTemplateStore = createCollection<PodActivationItemTemp
 
 export function getItemStatus(
   template: PodActivationItemTemplate,
-  podId: string,
+  collegeId: string,
   progress: PodActivationProgress[],
   templates: PodActivationItemTemplate[],
 ): PodActivationItemStatus {
   if (!template.published) return "locked";
-  const record = progress.find((p) => p.podId === podId && p.itemId === template.id);
+  const record = progress.find((p) => p.collegeId === collegeId && p.itemId === template.id);
   if (record?.status === "complete") return "complete";
   if (template.unlocksItemId) {
     const prereq = templates.find((t) => t.id === template.unlocksItemId);
     if (prereq) {
       const prereqDone = progress.some(
-        (p) => p.podId === podId && p.itemId === prereq.id && p.status === "complete",
+        (p) => p.collegeId === collegeId && p.itemId === prereq.id && p.status === "complete",
       );
       if (!prereqDone) return "locked";
     }
@@ -43,7 +43,7 @@ export function getItemStatus(
   if (index > 0) {
     const prev = categoryItems[index - 1];
     const prevDone = progress.some(
-      (p) => p.podId === podId && p.itemId === prev.id && p.status === "complete",
+      (p) => p.collegeId === collegeId && p.itemId === prev.id && p.status === "complete",
     );
     if (!prevDone) return "locked";
   }
@@ -51,7 +51,7 @@ export function getItemStatus(
 }
 
 export function buildActivationSnapshot(
-  podId: string,
+  collegeId: string,
   progressOverride?: PodActivationProgress[],
   artifactsOverride?: PodActivationArtifact[],
 ): PodActivationSnapshot {
@@ -64,11 +64,11 @@ export function buildActivationSnapshot(
       if (catA !== catB) return catA - catB;
       return a.sortOrder - b.sortOrder;
     });
-  const progress = (progressOverride ?? []).filter((p) => p.podId === podId);
-  const artifacts = (artifactsOverride ?? []).filter((a) => a.podId === podId);
+  const progress = (progressOverride ?? []).filter((p) => p.collegeId === collegeId);
+  const artifacts = (artifactsOverride ?? []).filter((a) => a.collegeId === collegeId);
 
   const items = templates.map((template) => {
-    const status = getItemStatus(template, podId, progress, templates);
+    const status = getItemStatus(template, collegeId, progress, templates);
     const artifact = artifacts.find((a) => a.itemId === template.id);
     return { ...template, status, artifact };
   });
@@ -96,12 +96,12 @@ export function buildActivationSnapshot(
 }
 
 export function allPodsActivationSummary(
-  podIds: string[],
+  collegeIds: string[],
   progress: PodActivationProgress[] = [],
   artifacts: PodActivationArtifact[] = [],
 ) {
-  return podIds.map((podId) => {
-    const snap = buildActivationSnapshot(podId, progress, artifacts);
-    return { podId, ...snap };
+  return collegeIds.map((collegeId) => {
+    const snap = buildActivationSnapshot(collegeId, progress, artifacts);
+    return { collegeId, ...snap };
   });
 }

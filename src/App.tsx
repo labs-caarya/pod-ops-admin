@@ -72,7 +72,7 @@ export default function App() {
           <Route path="/challenges" element={<ChallengeVault />} />
           <Route path="/challenges/:challengeId" element={<ChallengeDetail />} />
           <Route path="/pod-activation" element={<AdminPodActivation />} />
-          <Route path="/pod-activation/:podId" element={<AdminPodActivationDetail />} />
+          <Route path="/pod-activation/:collegeId" element={<AdminPodActivationDetail />} />
           <Route path="/leader-goals" element={<AdminLeaderGoals />} />
           <Route path="/mentors" element={<AdminPodMentors />} />
           <Route path="/applicants/futurecraft" element={<FutureCraftApplicants />} />

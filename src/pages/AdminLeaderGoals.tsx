@@ -24,7 +24,7 @@ type GoalDraft = {
   title: string;
   description: string;
   assigneeName: string;
-  podId: string;
+  collegeId: string;
   podRole: PodRoleLabel;
   status: PodLeaderGoalStatus;
   dueDate: string;
@@ -36,16 +36,16 @@ const EMPTY_DRAFT: GoalDraft = {
   title: "",
   description: "",
   assigneeName: "",
-  podId: "",
+  collegeId: "",
   podRole: DEFAULT_ROLE,
   status: "active",
   dueDate: "",
 };
 
-function podLabel(podId: string, podName?: string, pods: { id: string; name: string; crew: string }[] = []) {
-  if (!podId) return podName || "All pods";
-  const pod = pods.find((item) => item.id === podId);
-  return pod ? `${pod.name} · ${pod.crew}` : podName || podId;
+function collegeLabel(collegeId: string, collegeName?: string, colleges: { id: string; name: string; crew: string }[] = []) {
+  if (!collegeId) return collegeName || "No college";
+  const college = colleges.find((item) => item.id === collegeId);
+  return college ? `${college.name} · ${college.crew}` : collegeName || collegeId;
 }
 
 export default function AdminLeaderGoals() {
@@ -61,13 +61,13 @@ export default function AdminLeaderGoals() {
   const goalsQuery = useQuery(leaderGoalsQueryOptions());
   const collegesQuery = useQuery(collegesQueryOptions());
   const goals = goalsQuery.data || [];
-  const pods = collegesQuery.data || [];
+  const colleges = collegesQuery.data || [];
   const loading = goalsQuery.isPending || collegesQuery.isPending;
   const refreshing = !loading && (goalsQuery.isFetching || collegesQuery.isFetching);
 
   const filteredGoals = useMemo(() => {
     return goals.filter((goal) => {
-      if (podFilter && goal.podId !== podFilter) return false;
+      if (podFilter && goal.collegeId !== podFilter) return false;
       if (roleFilter && goal.assignedPodRole !== roleFilter) return false;
       if (statusFilter && goal.status !== statusFilter) return false;
       return true;
@@ -88,7 +88,7 @@ export default function AdminLeaderGoals() {
       title: goal.title,
       description: goal.description || "",
       assigneeName: goal.assigneeName || "",
-      podId: goal.podId || "",
+      collegeId: goal.collegeId || "",
       podRole: podRoleToLabel(goal.assignedPodRole),
       status: goal.status,
       dueDate: goal.dueDate ? goal.dueDate.slice(0, 10) : "",
@@ -109,14 +109,18 @@ export default function AdminLeaderGoals() {
       setMessage({ text: "Title is required.", tone: "bad" });
       return;
     }
+    if (!draft.collegeId) {
+      setMessage({ text: "College is required.", tone: "bad" });
+      return;
+    }
 
     setSaving(true);
     try {
-      const selectedPod = pods.find((pod) => pod.id === draft.podId);
+      const selectedCollege = colleges.find((college) => college.id === draft.collegeId);
       const payload: PodLeaderGoal = {
         id: editingGoalId || makeId("lg"),
-        podId: draft.podId,
-        podName: draft.podId ? selectedPod?.name : "All pods",
+        collegeId: draft.collegeId,
+        collegeName: selectedCollege?.name,
         assignedPodRole: podRoleToApiValue(draft.podRole),
         assigneeName: draft.assigneeName.trim(),
         title: draft.title.trim(),
@@ -218,10 +222,10 @@ export default function AdminLeaderGoals() {
 
           <div className="flex flex-wrap items-center gap-2 border-b border-line px-5 py-4">
             <Select value={podFilter} onChange={(e) => setPodFilter(e.target.value)} className="w-full sm:w-56">
-              <option value="">All pods</option>
-              {pods.map((pod) => (
-                <option key={pod.id} value={pod.id}>
-                  {pod.name} · {pod.crew}
+              <option value="">All colleges</option>
+              {colleges.map((college) => (
+                <option key={college.id} value={college.id}>
+                  {college.name} · {college.crew}
                 </option>
               ))}
             </Select>
@@ -282,7 +286,7 @@ export default function AdminLeaderGoals() {
                         <div className="flex items-start justify-between gap-3">
                           <span className="text-ink-faint">Pod</span>
                           <span className="text-right text-ink-muted">
-                            {podLabel(goal.podId, goal.podName, pods)}
+                            {collegeLabel(goal.collegeId, goal.collegeName, colleges)}
                           </span>
                         </div>
                         <div className="flex items-center justify-between gap-3">
@@ -332,7 +336,7 @@ export default function AdminLeaderGoals() {
                         <Badge tone="ruby" className="mt-1">{formatPodRole(goal.assignedPodRole)}</Badge>
                       </td>
                       <td className="px-5 py-4 align-top text-ink-muted">
-                        {podLabel(goal.podId, goal.podName, pods)}
+                        {collegeLabel(goal.collegeId, goal.collegeName, colleges)}
                       </td>
                       <td className="px-5 py-4 align-top">
                         <Badge tone={goal.status === "active" ? "amber" : "good"}>
@@ -392,15 +396,16 @@ export default function AdminLeaderGoals() {
               placeholder="Optional context or success criteria"
             />
           </FieldRow>
-          <FieldRow label="Pod">
+          <FieldRow label="College">
             <Select
-              value={draft.podId}
-              onChange={(e) => setDraft((current) => ({ ...current, podId: e.target.value }))}
+              value={draft.collegeId}
+              onChange={(e) => setDraft((current) => ({ ...current, collegeId: e.target.value }))}
+              required
             >
-              <option value="">All pods</option>
-              {pods.map((pod) => (
-                <option key={pod.id} value={pod.id}>
-                  {pod.name} · {pod.crew}
+              <option value="">Select college</option>
+              {colleges.map((college) => (
+                <option key={college.id} value={college.id}>
+                  {college.name} · {college.crew}
                 </option>
               ))}
             </Select>

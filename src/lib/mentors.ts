@@ -11,8 +11,8 @@ export function formatExpertiseTags(tags: string[]): string {
 export function normalizeMentor(mentor: Partial<PodMentor> & { id: string }): PodMentor {
   return {
     id: mentor.id,
-    podId: mentor.podId ?? "",
-    podName: mentor.podName,
+    collegeId: mentor.collegeId ?? "",
+    collegeName: mentor.collegeName,
     name: mentor.name ?? "",
     expertise: Array.isArray(mentor.expertise)
       ? [...new Set(mentor.expertise.map((tag) => tag.trim()).filter(Boolean))]

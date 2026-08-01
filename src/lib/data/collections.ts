@@ -580,8 +580,8 @@ const partnersSeed: Partner[] = [
 const challengeSeed: Challenge[] = [
   {
     id: "ch_1",
-    podId: "pod_gitam_vizag",
-    podName: "GITAM Pod",
+    collegeId: "pod_gitam_vizag",
+    collegeName: "GITAM Pod",
     title: "Industry partners stall after first meeting",
     description: "Warm intros convert to meetings but proposals rarely follow — pipeline feels stuck mid-funnel.",
     pillar: "Network",
@@ -609,8 +609,8 @@ const challengeSeed: Challenge[] = [
   },
   {
     id: "ch_2",
-    podId: "pod_gitam_vizag",
-    podName: "GITAM Pod",
+    collegeId: "pod_gitam_vizag",
+    collegeName: "GITAM Pod",
     title: "Mapped talent not opting into services",
     description: "Students are on the talent map but service opt-ins stay low — weak placement and leverage story.",
     pillar: "Talent",
@@ -638,8 +638,8 @@ const challengeSeed: Challenge[] = [
   },
   {
     id: "ch_3",
-    podId: POD.id,
-    podName: POD.name,
+    collegeId: POD.id,
+    collegeName: POD.name,
     title: "Research profiles stuck at Scored",
     description: "HIVE profiles get scored but rarely move to outreach — research doesn't convert to Rolodex momentum.",
     pillar: "Research",
@@ -668,8 +668,8 @@ const challengeSeed: Challenge[] = [
   },
   {
     id: "ch_4",
-    podId: POD.id,
-    podName: POD.name,
+    collegeId: POD.id,
+    collegeName: POD.name,
     title: "Opportunity shares get views but few applicants",
     description: "Jobs go to WhatsApp and Pod Board but applicant counts stay flat.",
     pillar: "Opportunities",
@@ -690,8 +690,8 @@ const challengeSeed: Challenge[] = [
   },
   {
     id: "ch_5",
-    podId: "pod_iitd",
-    podName: "Forge Pod",
+    collegeId: "pod_iitd",
+    collegeName: "Forge Pod",
     title: "Academic partner MOUs stuck in review",
     description: "Campus MOU drafts sit with college admin for weeks with no clear escalation path.",
     pillar: "Network",
@@ -731,8 +731,8 @@ const goalsSeed: PodGoal[] = [
 const leaderGoalsSeed: PodLeaderGoal[] = [
   {
     id: "lg_1",
-    podId: "",
-    podName: "All pods",
+    collegeId: "",
+    collegeName: "",
     assignedPodRole: "Pod Leader",
     assigneeName: "Karan Mehta",
     icon: "target",
@@ -743,8 +743,8 @@ const leaderGoalsSeed: PodLeaderGoal[] = [
   },
   {
     id: "lg_2",
-    podId: "",
-    podName: "All pods",
+    collegeId: "",
+    collegeName: "",
     assignedPodRole: "Pod Researcher",
     assigneeName: "Priya Sharma",
     icon: "microscope",
@@ -755,8 +755,8 @@ const leaderGoalsSeed: PodLeaderGoal[] = [
   },
   {
     id: "lg_3",
-    podId: "",
-    podName: "All pods",
+    collegeId: "",
+    collegeName: "",
     assignedPodRole: "Pod Talent Manager",
     assigneeName: "Arjun Reddy",
     icon: "users",
@@ -767,8 +767,8 @@ const leaderGoalsSeed: PodLeaderGoal[] = [
   },
   {
     id: "lg_4",
-    podId: "",
-    podName: "All pods",
+    collegeId: "",
+    collegeName: "",
     assignedPodRole: "Pod Outreach Manager",
     assigneeName: "Sneha Iyer",
     icon: "megaphone",
@@ -779,8 +779,8 @@ const leaderGoalsSeed: PodLeaderGoal[] = [
   },
   {
     id: "lg_5",
-    podId: "",
-    podName: "All pods",
+    collegeId: "",
+    collegeName: "",
     assignedPodRole: "Pod Partner Manager",
     assigneeName: "Rahul Das",
     icon: "handshake",
@@ -794,22 +794,22 @@ const leaderGoalsSeed: PodLeaderGoal[] = [
 const mentorsSeed: PodMentor[] = [
   {
     id: "mnt_1",
-    podId: "",
-    podName: "All pods",
+    collegeId: "",
+    collegeName: "",
     name: "Dr. Ananya Krishnan",
     expertise: ["Startup fundraising", "D2C growth", "Pitch decks", "Investor relations"],
   },
   {
     id: "mnt_2",
-    podId: "",
-    podName: "All pods",
+    collegeId: "",
+    collegeName: "",
     name: "Vikram Joshi",
     expertise: ["Campus partnerships", "Employer branding", "HR ops"],
   },
   {
     id: "mnt_3",
-    podId: "",
-    podName: "All pods",
+    collegeId: "",
+    collegeName: "",
     name: "Meera Nair",
     expertise: ["Content strategy", "Social media", "Brand storytelling", "Community building", "UGC"],
   },
@@ -828,15 +828,19 @@ export const leaderGoalStore = createCollection<PodLeaderGoal>("leaderGoals", le
 export const mentorStore = createCollection<PodMentor>("mentors", mentorsSeed);
 export const challengeStore = createCollection<Challenge>("challenges", challengeSeed);
 
-(function migrateChallengePods() {
+(function migrateChallengeColleges() {
   const seedById = new Map(challengeSeed.map((challenge) => [challenge.id, challenge]));
   const items = challengeStore.all();
   let changed = false;
   const next = items.map((item) => {
     const seed = seedById.get(item.id);
-    if (seed && (!item.podId || !item.podName)) {
+    if (seed && (!item.collegeId || !item.collegeName)) {
       changed = true;
-      return { ...item, podId: item.podId || seed.podId, podName: item.podName || seed.podName };
+      return {
+        ...item,
+        collegeId: item.collegeId || seed.collegeId,
+        collegeName: item.collegeName || seed.collegeName,
+      };
     }
     return item;
   });

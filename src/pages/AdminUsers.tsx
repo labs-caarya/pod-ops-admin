@@ -12,13 +12,10 @@ import {
   deleteManagedUser,
   updateManagedUser,
   type AllowedUser,
-  type College,
-  type ManagedPod,
 } from "@/lib/api";
 import {
   adminQueryKeys,
   collegesQueryOptions,
-  managedPodsQueryOptions,
   managedUsersQueryOptions,
 } from "@/lib/adminQueries";
 import {
@@ -34,7 +31,7 @@ type UserDraft = {
   username: string;
   name: string;
   password: string;
-  podId: string;
+  collegeId: string;
   podRole: PodRoleLabel;
 };
 
@@ -44,25 +41,9 @@ const EMPTY_DRAFT: UserDraft = {
   username: "",
   name: "",
   password: "",
-  podId: "",
+  collegeId: "",
   podRole: DEFAULT_ROLE,
 };
-
-function normalizePodName(value: string) {
-  return String(value || "").toLowerCase().replace(/\bpod\b/g, "").replace(/[^a-z0-9]+/g, " ").trim();
-}
-
-function findManagedPod(college: College, pods: ManagedPod[]) {
-  const names = [college.name, college.crew].map(normalizePodName).filter(Boolean);
-  return pods.find((pod) => {
-    const candidates = [pod.name, pod.collegeName].map(normalizePodName);
-    return names.some((name) =>
-      candidates.some((candidate) =>
-        candidate === name || candidate.includes(name) || name.includes(candidate),
-      ),
-    );
-  });
-}
 
 export default function AdminUsers() {
   const [saving, setSaving] = useState(false);
@@ -71,44 +52,34 @@ export default function AdminUsers() {
   const [draft, setDraft] = useState<UserDraft>(EMPTY_DRAFT);
   const [showPassword, setShowPassword] = useState(false);
   const [viewMode, setViewMode] = useState<"cards" | "table">("table");
-  const [podFilter, setPodFilter] = useState("");
+  const [collegeFilter, setCollegeFilter] = useState("");
   const [message, setMessage] = useState<{ text: string; tone: "good" | "bad" | "info" } | null>(null);
   const queryClient = useQueryClient();
   const usersQuery = useQuery(managedUsersQueryOptions());
-  const podsQuery = useQuery(managedPodsQueryOptions());
   const collegesQuery = useQuery(collegesQueryOptions());
   const users = usersQuery.data || [];
-  const pods = podsQuery.data || [];
   const registeredPods = useMemo(
     () => (collegesQuery.data || []).filter((college) => college.isPod),
     [collegesQuery.data],
   );
-  const createPodOptions = useMemo(
-    () => registeredPods.map((college) => ({
-      college,
-      managedPod: findManagedPod(college, pods),
-    })),
-    [pods, registeredPods],
-  );
-  const firstAssignablePodId = createPodOptions.find((option) => option.managedPod)?.managedPod?.id || "";
-  const loading = usersQuery.isPending || podsQuery.isPending || collegesQuery.isPending;
+  const firstAssignableCollegeId = registeredPods[0]?.id || "";
+  const loading = usersQuery.isPending || collegesQuery.isPending;
   const refreshing = !loading && (
     usersQuery.isFetching ||
-    podsQuery.isFetching ||
     collegesQuery.isFetching
   );
 
-  const selectedPod = useMemo(
-    () => pods.find((pod) => pod.id === draft.podId) || null,
-    [draft.podId, pods],
+  const selectedCollege = useMemo(
+    () => registeredPods.find((college) => college.id === draft.collegeId) || null,
+    [draft.collegeId, registeredPods],
   );
 
   const filteredUsers = useMemo(() => {
-    if (!podFilter) return users;
-    return users.filter((user) => user.podId === podFilter);
-  }, [users, podFilter]);
+    if (!collegeFilter) return users;
+    return users.filter((user) => user.collegeId === collegeFilter);
+  }, [users, collegeFilter]);
 
-  const hasActiveFilters = Boolean(podFilter);
+  const hasActiveFilters = Boolean(collegeFilter);
 
   function formatLeadershipSummary(total: number, filtered: number) {
     if (hasActiveFilters && filtered !== total) {
@@ -122,7 +93,7 @@ export default function AdminUsers() {
     setEditingUserId(null);
     setDraft({
       ...EMPTY_DRAFT,
-      podId: firstAssignablePodId,
+      collegeId: firstAssignableCollegeId,
     });
     setShowPassword(false);
     setMessage(null);
@@ -135,7 +106,7 @@ export default function AdminUsers() {
       username: user.username || "",
       name: user.name || "",
       password: "",
-      podId: user.podId || pods[0]?.id || "",
+      collegeId: user.collegeId || registeredPods[0]?.id || "",
       podRole: podRoleToLabel(user.podRole),
     });
     setShowPassword(false);
@@ -165,13 +136,13 @@ export default function AdminUsers() {
         const payload: {
           username: string;
           name: string;
-          podId: string;
+          collegeId: string;
           podRole: ReturnType<typeof podRoleToApiValue>;
           password?: string;
         } = {
           username: draft.username,
           name: draft.name,
-          podId: draft.podId,
+          collegeId: draft.collegeId,
           podRole: podRoleToApiValue(draft.podRole),
         };
         if (draft.password.trim()) {
@@ -225,10 +196,10 @@ export default function AdminUsers() {
     <div className="flex min-h-[calc(100dvh-11rem)] flex-col gap-6">
       <PageHeader
         title="Leadership"
-        description="Create and manage pod login accounts. Every non-admin user must be mapped to a pod and a pod role."
+        description="Create and manage portal accounts. Every non-admin user is assigned to an active college and a pod role."
         icon={UserRound}
         actions={
-          <Button onClick={openCreateDrawer} disabled={!firstAssignablePodId || loading}>
+          <Button onClick={openCreateDrawer} disabled={!firstAssignableCollegeId || loading}>
             <Plus className="h-4 w-4" />
             Create user
           </Button>
@@ -281,7 +252,6 @@ export default function AdminUsers() {
                 variant="secondary"
                 onClick={() => void Promise.all([
                   usersQuery.refetch(),
-                  podsQuery.refetch(),
                   collegesQuery.refetch(),
                 ])}
                 disabled={loading || refreshing || saving}
@@ -293,16 +263,16 @@ export default function AdminUsers() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 border-b border-line px-5 py-4">
-            <Select value={podFilter} onChange={(e) => setPodFilter(e.target.value)} className="w-full sm:w-64">
-              <option value="">All pods</option>
-              {pods.map((pod) => (
-                <option key={pod.id} value={pod.id}>
-                  {pod.name} · {pod.collegeName}
+            <Select value={collegeFilter} onChange={(e) => setCollegeFilter(e.target.value)} className="w-full sm:w-64">
+              <option value="">All colleges</option>
+              {registeredPods.map((college) => (
+                <option key={college.id} value={college.id}>
+                  {college.name} · {college.crew}
                 </option>
               ))}
             </Select>
             {hasActiveFilters ? (
-              <Button variant="ghost" size="sm" onClick={() => setPodFilter("")}>
+              <Button variant="ghost" size="sm" onClick={() => setCollegeFilter("")}>
                 Clear filter
               </Button>
             ) : null}
@@ -320,7 +290,7 @@ export default function AdminUsers() {
                     <tr className="text-xs uppercase tracking-[0.14em] text-ink-faint">
                       <th className="border-b border-line px-5 py-3 font-medium">User</th>
                       <th className="border-b border-line px-5 py-3 font-medium">Access</th>
-                      <th className="border-b border-line px-5 py-3 font-medium">Pod</th>
+                      <th className="border-b border-line px-5 py-3 font-medium">College</th>
                       <th className="border-b border-line px-5 py-3 font-medium">Status</th>
                       <th className="border-b border-line px-5 py-3 font-medium text-right">Actions</th>
                     </tr>
@@ -343,7 +313,7 @@ export default function AdminUsers() {
                             </div>
                           </td>
                           <td className="border-b border-line px-5 py-4">
-                            <p className="text-ink">{isAdmin ? "Admin dashboard account" : user.podName || "No pod"}</p>
+                            <p className="text-ink">{isAdmin ? "Admin dashboard account" : user.collegeName || "No college"}</p>
                             {!isAdmin && (
                               <p className="mt-1 text-xs text-ink-faint">{formatPodRole(user.podRole)}</p>
                             )}
@@ -403,7 +373,7 @@ export default function AdminUsers() {
                         </div>
                         <p className="text-sm text-ink-muted">@{user.username}</p>
                         <p className="text-sm text-ink-faint">
-                          {isAdmin ? "Admin dashboard account" : `${user.podName || "No pod"} · ${formatPodRole(user.podRole)}`}
+                          {isAdmin ? "Admin dashboard account" : `${user.collegeName || "No college"} · ${formatPodRole(user.podRole)}`}
                         </p>
                       </div>
 
@@ -442,7 +412,7 @@ export default function AdminUsers() {
               </p>
               <p className="mt-1 text-sm text-ink-muted">
                 {hasActiveFilters
-                  ? "No leadership accounts are assigned to this pod."
+                  ? "No leadership accounts are assigned to this college."
                   : "Create the first leadership account to get started."}
               </p>
             </div>
@@ -463,13 +433,11 @@ export default function AdminUsers() {
         </p>
       )}
 
-      {!message && (usersQuery.isError || podsQuery.isError || collegesQuery.isError) && (
+      {!message && (usersQuery.isError || collegesQuery.isError) && (
         <p className="rounded-xl border border-bad/30 bg-bad/10 px-3 py-2 text-sm text-bad">
           {usersQuery.error instanceof Error
             ? usersQuery.error.message
-            : podsQuery.error instanceof Error
-              ? podsQuery.error.message
-              : collegesQuery.error instanceof Error
+            : collegesQuery.error instanceof Error
                 ? collegesQuery.error.message
                 : "Could not load users."}
         </p>
@@ -478,11 +446,11 @@ export default function AdminUsers() {
       <Drawer
         open={Boolean(drawerMode)}
         onClose={closeDrawer}
-        title={drawerMode === "edit" ? "Edit user" : "Create a pod user"}
+        title={drawerMode === "edit" ? "Edit user" : "Create a college user"}
         subtitle={
           drawerMode === "edit"
-            ? "Update identity, pod assignment, role, or reset the password when needed."
-            : "Add a username, password, pod, and pod role for the main pod-ops frontend."
+            ? "Update identity, college assignment, role, or reset the password when needed."
+            : "Add credentials, an active college, and a pod role for the member frontend."
         }
         width="max-w-md"
         panelClassName="bg-[color-mix(in_srgb,var(--color-base-2)_78%,transparent)] backdrop-blur-2xl"
@@ -503,10 +471,10 @@ export default function AdminUsers() {
         <div className="w-full rounded-2xl border border-line/70 bg-base/30 p-5 shadow-[0_18px_50px_rgba(0,0,0,0.18)]">
           <div className="mb-5">
             <p className="font-display text-lg font-bold text-ink">
-              {selectedPod ? `${selectedPod.name}` : "User account"}
+              {selectedCollege ? selectedCollege.name : "User account"}
             </p>
             <p className="mt-1 text-sm text-ink-muted">
-              {selectedPod ? `${selectedPod.collegeName} · ${draft.podRole}` : "Choose a pod and role for this user."}
+              {selectedCollege ? `${selectedCollege.crew} · ${draft.podRole}` : "Choose a college and role for this user."}
             </p>
           </div>
 
@@ -525,28 +493,17 @@ export default function AdminUsers() {
                 placeholder="e.g. Harsha Vardhan"
               />
             </FieldRow>
-            <FieldRow label="Pod">
+            <FieldRow label="College">
               <Select
-                value={draft.podId}
-                onChange={(e) => setDraft((current) => ({ ...current, podId: e.target.value }))}
+                value={draft.collegeId}
+                onChange={(e) => setDraft((current) => ({ ...current, collegeId: e.target.value }))}
               >
-                <option value="">Select pod</option>
-                {drawerMode === "create"
-                  ? createPodOptions.map(({ college, managedPod }) => (
-                      <option
-                        key={college.id}
-                        value={managedPod?.id || `unlinked:${college.id}`}
-                        disabled={!managedPod}
-                      >
-                        {college.name} · {college.crew}
-                        {!managedPod ? " · Not linked for login" : ""}
-                      </option>
-                    ))
-                  : pods.map((pod) => (
-                      <option key={pod.id} value={pod.id}>
-                        {pod.name} · {pod.collegeName}
-                      </option>
-                    ))}
+                <option value="">Select college</option>
+                {registeredPods.map((college) => (
+                  <option key={college.id} value={college.id}>
+                    {college.name} · {college.crew}
+                  </option>
+                ))}
               </Select>
             </FieldRow>
             <FieldRow label="Pod role">

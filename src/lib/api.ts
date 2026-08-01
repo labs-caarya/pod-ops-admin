@@ -15,8 +15,9 @@ export interface AllowedUser {
   name?: string;
   primary_role?: string;
   permissions?: string[];
-  podId?: string;
-  podName?: string;
+  collegeId?: string;
+  collegeName?: string;
+  collegeCrew?: string;
   podRole?: PodRoleApi;
   isActive?: boolean;
   createdAt?: string | null;
@@ -124,7 +125,7 @@ export interface AdminDashboardData {
     owner: string;
     severity: Challenge["severity"];
     status: Challenge["status"];
-    podId: string;
+    collegeId: string;
     updatedAt?: string;
   }[];
   pods: PodPortfolioEntry[];
@@ -239,7 +240,7 @@ async function requestJson(path: string, options: RequestInit = {}) {
 export async function loginWithCredentials(
   username: string,
   password: string,
-  podId?: string,
+  collegeId?: string,
   podRole?: PodRoleApi,
 ): Promise<{ access_token: string; user: AllowedUser }> {
   ensureApiBaseUrl();
@@ -250,7 +251,7 @@ export async function loginWithCredentials(
     body: JSON.stringify({
       username: String(username || "").trim(),
       password: String(password || ""),
-      ...(podId ? { podId } : {}),
+      ...(collegeId ? { collegeId } : {}),
       ...(podRole ? { podRole } : {}),
     }),
   });
@@ -283,7 +284,7 @@ export async function createManagedUser(input: {
   username: string;
   name: string;
   password: string;
-  podId: string;
+  collegeId: string;
   podRole: PodRoleApi;
 }): Promise<AllowedUser> {
   ensureApiBaseUrl();
@@ -301,7 +302,7 @@ export async function createManagedUser(input: {
 
 export async function updateManagedUser(
   id: string,
-  input: Partial<{ username: string; name: string; password: string; isActive: boolean; podId: string; podRole: PodRoleApi }>,
+  input: Partial<{ username: string; name: string; password: string; isActive: boolean; collegeId: string; podRole: PodRoleApi }>,
 ): Promise<AllowedUser> {
   ensureApiBaseUrl();
   const res = await fetch(`${API_BASE_URL}/users/${id}`, {
@@ -485,10 +486,10 @@ export async function listChallenges(): Promise<Challenge[]> {
   return Array.isArray(data) ? data : [];
 }
 
-type ChallengeWrite = Omit<Challenge, "id" | "podName" | "createdAt" | "updatedAt">;
+type ChallengeWrite = Omit<Challenge, "id" | "collegeName" | "createdAt" | "updatedAt">;
 
 function challengePayload(challenge: Challenge): ChallengeWrite {
-  const { id: _id, podName: _podName, createdAt: _createdAt, updatedAt: _updatedAt, ...payload } = challenge;
+  const { id: _id, collegeName: _collegeName, createdAt: _createdAt, updatedAt: _updatedAt, ...payload } = challenge;
   return payload;
 }
 
@@ -537,8 +538,8 @@ export async function savePodActivationProgress(
   return data;
 }
 
-export async function deletePodActivationProgress(podId: string, itemId: string): Promise<void> {
-  await requestJson(`/pod-activation/progress/${encodeURIComponent(podId)}/${encodeURIComponent(itemId)}`, {
+export async function deletePodActivationProgress(collegeId: string, itemId: string): Promise<void> {
+  await requestJson(`/pod-activation/progress/${encodeURIComponent(collegeId)}/${encodeURIComponent(itemId)}`, {
     method: "DELETE",
   });
 }
@@ -555,8 +556,8 @@ export async function savePodActivationArtifact(
   return data;
 }
 
-export async function deletePodActivationArtifact(podId: string, itemId: string): Promise<void> {
-  await requestJson(`/pod-activation/artifacts/${encodeURIComponent(podId)}/${encodeURIComponent(itemId)}`, {
+export async function deletePodActivationArtifact(collegeId: string, itemId: string): Promise<void> {
+  await requestJson(`/pod-activation/artifacts/${encodeURIComponent(collegeId)}/${encodeURIComponent(itemId)}`, {
     method: "DELETE",
   });
 }

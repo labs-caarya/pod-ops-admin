@@ -7,13 +7,13 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Drawer } from "@/components/ui/Drawer";
 import { FieldRow, Input, Select } from "@/components/ui/Field";
-import { adminQueryKeys, collegesQueryOptions, managedPodsQueryOptions } from "@/lib/adminQueries";
+import { adminQueryKeys, collegesQueryOptions, managedUsersQueryOptions } from "@/lib/adminQueries";
 import {
   createCollege,
   deleteCollege,
   updateCollege,
   type College,
-  type ManagedPod,
+  type AllowedUser,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -50,16 +50,10 @@ function formatCollegeSummary(total: number, filtered: number, hasFilters: boole
 
 type ViewDrawerMode = "leadership" | "clubs" | null;
 
-function normalizePodName(value: string) {
-  return String(value || "").toLowerCase().replace(/\bpod\b/g, "").replace(/[^a-z0-9]+/g, " ").trim();
-}
-
-function findManagedPod(college: College, pods: ManagedPod[]) {
-  const names = [college.name, college.crew].map(normalizePodName).filter(Boolean);
-  return pods.find((pod) => {
-    const candidates = [pod.name, pod.collegeName].map(normalizePodName);
-    return names.some((name) => candidates.some((candidate) => candidate === name || candidate.includes(name) || name.includes(candidate)));
-  });
+function findCollegeLead(college: College, users: AllowedUser[]) {
+  return users.find(
+    (user) => user.collegeId === college.id && user.podRole === "Pod Leader" && user.isActive !== false,
+  );
 }
 
 export default function AdminPodRegistry() {
@@ -72,7 +66,7 @@ export default function AdminPodRegistry() {
   const [message, setMessage] = useState<{ text: string; tone: "good" | "bad" | "info" } | null>(null);
   const queryClient = useQueryClient();
   const collegesQuery = useQuery(collegesQueryOptions());
-  const managedPodsQuery = useQuery(managedPodsQueryOptions());
+  const usersQuery = useQuery(managedUsersQueryOptions());
   const rows = collegesQuery.data || [];
   const loading = collegesQuery.isPending;
   const refreshing = !loading && collegesQuery.isFetching;
@@ -139,17 +133,19 @@ export default function AdminPodRegistry() {
     setViewCollege(null);
   }
 
-  const matchedPod = useMemo(
-    () => (viewCollege ? findManagedPod(viewCollege, managedPodsQuery.data || []) : undefined),
-    [managedPodsQuery.data, viewCollege],
+  const collegeUsers = useMemo(
+    () => (viewCollege
+      ? (usersQuery.data || []).filter((user) => user.collegeId === viewCollege.id && user.isActive !== false)
+      : []),
+    [usersQuery.data, viewCollege],
   );
-  const leadership = useMemo(() => matchedPod ? [
-    { role: "Exec Lead", name: matchedPod.podLeader },
-    { role: "Talent Manager", name: matchedPod.podTalentManager },
-    { role: "Outreach Manager", name: matchedPod.podOutreachManager },
-    { role: "Researcher", name: matchedPod.podResearcher },
-    { role: "Partner Manager", name: matchedPod.podPartnerManager },
-  ] : [], [matchedPod]);
+  const leadership = useMemo(() => [
+    { role: "Exec Lead", name: collegeUsers.find((user) => user.podRole === "Pod Leader")?.name },
+    { role: "Talent Manager", name: collegeUsers.find((user) => user.podRole === "Pod Talent Manager")?.name },
+    { role: "Outreach Manager", name: collegeUsers.find((user) => user.podRole === "Pod Outreach Manager")?.name },
+    { role: "Researcher", name: collegeUsers.find((user) => user.podRole === "Pod Researcher")?.name },
+    { role: "Partner Manager", name: collegeUsers.find((user) => user.podRole === "Pod Partner Manager")?.name },
+  ], [collegeUsers]);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -291,7 +287,7 @@ export default function AdminPodRegistry() {
                 </thead>
                 <tbody>
                   {filteredRows.map((row) => {
-                    const execLead = findManagedPod(row, managedPodsQuery.data || [])?.podLeader;
+                    const execLead = findCollegeLead(row, usersQuery.data || [])?.name;
                     return (
                     <tr key={row.id} className="align-top text-ink-muted">
                       <td className="border-b border-line px-5 py-4 font-semibold text-ink">{row.name || "—"}</td>
@@ -428,15 +424,15 @@ export default function AdminPodRegistry() {
         }
       >
         <p className="mb-4 rounded-xl border border-line bg-surface-2 px-3 py-2 text-sm text-ink-muted">
-          Leadership is loaded from the matching managed pod record.
+          Leadership is derived from active users assigned to this college.
         </p>
         <div className="space-y-3">
-          {leadership.length ? leadership.map((slot) => (
+          {leadership.map((slot) => (
             <div key={slot.role} className="rounded-xl border border-line bg-surface-2 p-3">
               <p className="text-xs uppercase tracking-[0.14em] text-ink-faint">{slot.role}</p>
               <p className="mt-1 text-sm font-semibold text-ink">{slot.name || "Unassigned"}</p>
             </div>
-          )) : <p className="text-sm text-ink-muted">No matching managed pod or leadership assignments were found.</p>}
+          ))}
         </div>
       </Drawer>
 
@@ -453,26 +449,16 @@ export default function AdminPodRegistry() {
         }
       >
         <p className="mb-4 rounded-xl border border-line bg-surface-2 px-3 py-2 text-sm text-ink-muted">
-          Clubs are loaded from the matching managed pod record.
+          Club assignments are not yet stored on college records.
         </p>
-        {matchedPod?.clubs.length ? (
-          <div className="space-y-3">
-            {matchedPod.clubs.map((club) => (
-              <div key={club} className="rounded-xl border border-line bg-surface-2 p-3">
-                <p className="text-sm font-semibold text-ink">{club}</p>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="rounded-xl border border-dashed border-line px-4 py-8 text-center">
-            <p className="font-display font-bold text-ink">No clubs linked yet</p>
-            <p className="mt-1 text-sm text-ink-muted">
-              {viewCollege?.isPod
-                ? "Club assignments for this pod will appear here once wired up."
-                : "Non-pod entries typically do not have linked clubs."}
-            </p>
-          </div>
-        )}
+        <div className="rounded-xl border border-dashed border-line px-4 py-8 text-center">
+          <p className="font-display font-bold text-ink">No clubs linked yet</p>
+          <p className="mt-1 text-sm text-ink-muted">
+            {viewCollege?.isPod
+              ? "Club assignments will appear here after they are added to the college model."
+              : "Non-pod entries typically do not have linked clubs."}
+          </p>
+        </div>
       </Drawer>
     </div>
   );

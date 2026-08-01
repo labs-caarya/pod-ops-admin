@@ -281,8 +281,8 @@ export type LeaderGoalIcon =
 /** Focus goal assigned by Caarya admin to a specific pod leadership role. */
 export interface PodLeaderGoal {
   id: string;
-  podId: string;
-  podName?: string;
+  collegeId: string;
+  collegeName?: string;
   assignedPodRole: string;
   assigneeName?: string;
   icon?: LeaderGoalIcon;
@@ -297,8 +297,8 @@ export interface PodLeaderGoal {
 /** Mentor assigned to a pod by Caarya admin. */
 export interface PodMentor {
   id: string;
-  podId: string;
-  podName?: string;
+  collegeId: string;
+  collegeName?: string;
   name: string;
   expertise: string[];
   createdAt?: string;
@@ -349,8 +349,8 @@ export interface Challenge {
   /** How we'll solve it once root cause is known. */
   actions: ChallengeAction[];
   owner: string;
-  podId?: string;
-  podName?: string;
+  collegeId?: string;
+  collegeName?: string;
   notes?: string;
   createdAt?: string;
   updatedAt?: string;

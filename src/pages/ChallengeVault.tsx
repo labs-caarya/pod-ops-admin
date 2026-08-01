@@ -20,7 +20,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Input, Select } from "@/components/ui/Field";
 import { ProgressBar, EmptyState } from "@/components/ui/Misc";
 import { actionProgress, rcaProgress, vaultStats } from "@/lib/data/challenges";
-import { challengesQueryOptions, managedPodsQueryOptions } from "@/lib/adminQueries";
+import { challengesQueryOptions, collegesQueryOptions } from "@/lib/adminQueries";
 import {
   CHALLENGE_SEVERITY_TONE,
   CHALLENGE_STATUSES,
@@ -32,8 +32,8 @@ import { cn } from "@/lib/utils";
 type StatusFilter = "all" | ChallengeStatus;
 type ViewMode = "cards" | "table";
 
-function podLabel(challenge: Challenge) {
-  return challenge.podName || challenge.podId || "Unknown pod";
+function collegeLabel(challenge: Challenge) {
+  return challenge.collegeName || challenge.collegeId || "All colleges";
 }
 
 function ChallengeCards({ items }: { items: Challenge[] }) {
@@ -53,7 +53,7 @@ function ChallengeCards({ items }: { items: Challenge[] }) {
                 <ChevronRight className="h-4 w-4 shrink-0 text-ink-faint" />
               </div>
               <div className="mt-3 flex flex-wrap gap-1.5">
-                <Badge tone="info">{podLabel(c)}</Badge>
+                <Badge tone="info">{collegeLabel(c)}</Badge>
                 <Badge tone={CHALLENGE_STATUS_TONE[c.status] ?? "muted"}>{c.status}</Badge>
                 <Badge tone={CHALLENGE_SEVERITY_TONE[c.severity] ?? "muted"}>{c.severity}</Badge>
                 <Badge tone="muted">{c.pillar}</Badge>
@@ -113,7 +113,7 @@ function ChallengeTable({ items }: { items: Challenge[] }) {
           <thead>
             <tr className="border-b border-line bg-surface-2 text-xs font-bold uppercase tracking-widest text-ink-faint">
               <th className="px-4 py-3 font-bold">Challenge</th>
-              <th className="px-4 py-3 font-bold">Pod</th>
+              <th className="px-4 py-3 font-bold">College</th>
               <th className="px-4 py-3 font-bold">Pillar</th>
               <th className="px-4 py-3 font-bold">Status</th>
               <th className="px-4 py-3 font-bold">Severity</th>
@@ -148,7 +148,7 @@ function ChallengeTable({ items }: { items: Challenge[] }) {
                     </Link>
                   </td>
                   <td className="px-4 py-3">
-                    <Badge tone="info">{podLabel(c)}</Badge>
+                    <Badge tone="info">{collegeLabel(c)}</Badge>
                   </td>
                   <td className="px-4 py-3">
                     <Badge tone="muted">{c.pillar}</Badge>
@@ -187,33 +187,33 @@ function ChallengeTable({ items }: { items: Challenge[] }) {
 
 export default function ChallengeVault() {
   const challengesQuery = useQuery(challengesQueryOptions());
-  const podsQuery = useQuery(managedPodsQueryOptions());
+  const collegesQuery = useQuery(collegesQueryOptions());
   const challenges = challengesQuery.data || [];
-  const pods = podsQuery.data || [];
+  const colleges = (collegesQuery.data || []).filter((college) => college.isPod);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [pillarFilter, setPillarFilter] = useState("all");
-  const [podFilter, setPodFilter] = useState("all");
+  const [collegeFilter, setCollegeFilter] = useState("all");
   const [viewMode, setViewMode] = useState<ViewMode>("table");
 
   const stats = useMemo(() => vaultStats(challenges), [challenges]);
 
-  const podOptions = useMemo(() => {
+  const collegeOptions = useMemo(() => {
     const fromChallenges = new Map<string, string>();
     for (const challenge of challenges) {
-      if (challenge.podId) fromChallenges.set(challenge.podId, challenge.podName || challenge.podId);
+      if (challenge.collegeId) fromChallenges.set(challenge.collegeId, challenge.collegeName || challenge.collegeId);
     }
-    for (const pod of pods) {
-      fromChallenges.set(pod.id, pod.name);
+    for (const college of colleges) {
+      fromChallenges.set(college.id, college.name);
     }
     return [...fromChallenges.entries()].map(([id, name]) => ({ id, name }));
-  }, [challenges, pods]);
+  }, [challenges, colleges]);
 
   const filtered = useMemo(() => {
     return challenges.filter((c) => {
       if (statusFilter !== "all" && c.status !== statusFilter) return false;
       if (pillarFilter !== "all" && c.pillar !== pillarFilter) return false;
-      if (podFilter !== "all" && c.podId !== podFilter) return false;
+      if (collegeFilter !== "all" && c.collegeId !== collegeFilter) return false;
       if (!search) return true;
       const q = search.toLowerCase();
       return (
@@ -221,17 +221,17 @@ export default function ChallengeVault() {
         c.description.toLowerCase().includes(q) ||
         c.pillar.toLowerCase().includes(q) ||
         c.owner.toLowerCase().includes(q) ||
-        podLabel(c).toLowerCase().includes(q)
+        collegeLabel(c).toLowerCase().includes(q)
       );
     });
-  }, [challenges, search, statusFilter, pillarFilter, podFilter]);
+  }, [challenges, search, statusFilter, pillarFilter, collegeFilter]);
 
   return (
     <div>
       <PageHeader
         icon={Vault}
         title="Challenge Vault"
-        description="See every challenge pods have mapped — symptoms, RCA progress, and action plans across the network."
+        description="See every challenge colleges have mapped — symptoms, RCA progress, and action plans across the network."
         actions={<Link to="/challenges/new"><Button>Map challenge</Button></Link>}
       />
 
@@ -264,17 +264,17 @@ export default function ChallengeVault() {
         <div className="relative min-w-[220px] flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
           <Input
-            placeholder="Search challenges or pods…"
+            placeholder="Search challenges or colleges…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
           />
         </div>
-        <Select value={podFilter} onChange={(e) => setPodFilter(e.target.value)} className="w-44">
-          <option value="all">All pods</option>
-          {podOptions.map((pod) => (
-            <option key={pod.id} value={pod.id}>
-              {pod.name}
+        <Select value={collegeFilter} onChange={(e) => setCollegeFilter(e.target.value)} className="w-44">
+          <option value="all">All colleges</option>
+          {collegeOptions.map((college) => (
+            <option key={college.id} value={college.id}>
+              {college.name}
             </option>
           ))}
         </Select>
@@ -328,7 +328,7 @@ export default function ChallengeVault() {
         <EmptyState
           icon={Vault}
           title="No challenges mapped"
-          description="When pods map blockers in their Challenge Vault, they will appear here for Caarya oversight."
+          description="When colleges map blockers in their Challenge Vault, they will appear here for Caarya oversight."
         />
       ) : viewMode === "cards" ? (
         <ChallengeCards items={filtered} />

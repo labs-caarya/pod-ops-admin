@@ -14,26 +14,26 @@ import { collegesQueryOptions, podActivationQueryOptions } from "@/lib/adminQuer
 import { cn } from "@/lib/utils";
 
 export default function AdminPodActivationDetail() {
-  const { podId = "" } = useParams();
+  const { collegeId = "" } = useParams();
   const collegesQuery = useQuery(collegesQueryOptions());
   const activationQuery = useQuery(podActivationQueryOptions());
   const progress = activationQuery.data?.progress || [];
   const artifacts = activationQuery.data?.artifacts || [];
-  const pod = collegesQuery.data?.find((item) => item.id === podId && item.isPod);
+  const college = collegesQuery.data?.find((item) => item.id === collegeId && item.isPod);
 
   const snapshot = useMemo(() => {
     void progress;
-    return buildActivationSnapshot(podId, progress, artifacts);
-  }, [artifacts, podId, progress]);
+    return buildActivationSnapshot(collegeId, progress, artifacts);
+  }, [artifacts, collegeId, progress]);
 
   if (collegesQuery.isPending || activationQuery.isPending) {
     return <Card className="p-8 text-center text-sm text-ink-muted">Loading pod…</Card>;
   }
 
-  if (!pod) {
+  if (!college) {
     return (
       <Card className="p-8 text-center">
-        <p className="font-display font-bold text-ink">Pod not found</p>
+        <p className="font-display font-bold text-ink">College not found</p>
         <Link to="/pod-activation" className="mt-2 inline-block text-sm text-ruby-bright hover:underline">
           ← Back to activation overview
         </Link>
@@ -45,14 +45,14 @@ export default function AdminPodActivationDetail() {
     <div>
       <PageHeader
         icon={Rocket}
-        title={`${pod.name} · Activation`}
-        description={`${pod.crew} — Level 0 progress and category breakdown.`}
+        title={`${college.name} · Activation`}
+        description={`${college.crew} — Level 0 progress and category breakdown.`}
         actions={
           <Link
             to="/pod-activation"
             className="inline-flex items-center gap-2 text-sm text-ink-muted hover:text-ink"
           >
-            <ArrowLeft className="h-4 w-4" /> All pods
+            <ArrowLeft className="h-4 w-4" /> All colleges
           </Link>
         }
       />
