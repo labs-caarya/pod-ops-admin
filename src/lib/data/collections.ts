@@ -731,8 +731,8 @@ const goalsSeed: PodGoal[] = [
 const leaderGoalsSeed: PodLeaderGoal[] = [
   {
     id: "lg_1",
-    podId: "",
-    podName: "All pods",
+    collegeId: "",
+    collegeName: "",
     assignedPodRole: "Pod Leader",
     assigneeName: "Karan Mehta",
     icon: "target",
@@ -743,8 +743,8 @@ const leaderGoalsSeed: PodLeaderGoal[] = [
   },
   {
     id: "lg_2",
-    podId: "",
-    podName: "All pods",
+    collegeId: "",
+    collegeName: "",
     assignedPodRole: "Pod Researcher",
     assigneeName: "Priya Sharma",
     icon: "microscope",
@@ -755,8 +755,8 @@ const leaderGoalsSeed: PodLeaderGoal[] = [
   },
   {
     id: "lg_3",
-    podId: "",
-    podName: "All pods",
+    collegeId: "",
+    collegeName: "",
     assignedPodRole: "Pod Talent Manager",
     assigneeName: "Arjun Reddy",
     icon: "users",
@@ -767,8 +767,8 @@ const leaderGoalsSeed: PodLeaderGoal[] = [
   },
   {
     id: "lg_4",
-    podId: "",
-    podName: "All pods",
+    collegeId: "",
+    collegeName: "",
     assignedPodRole: "Pod Outreach Manager",
     assigneeName: "Sneha Iyer",
     icon: "megaphone",
@@ -779,8 +779,8 @@ const leaderGoalsSeed: PodLeaderGoal[] = [
   },
   {
     id: "lg_5",
-    podId: "",
-    podName: "All pods",
+    collegeId: "",
+    collegeName: "",
     assignedPodRole: "Pod Partner Manager",
     assigneeName: "Rahul Das",
     icon: "handshake",
@@ -794,22 +794,22 @@ const leaderGoalsSeed: PodLeaderGoal[] = [
 const mentorsSeed: PodMentor[] = [
   {
     id: "mnt_1",
-    podId: "",
-    podName: "All pods",
+    collegeId: "",
+    collegeName: "",
     name: "Dr. Ananya Krishnan",
     expertise: ["Startup fundraising", "D2C growth", "Pitch decks", "Investor relations"],
   },
   {
     id: "mnt_2",
-    podId: "",
-    podName: "All pods",
+    collegeId: "",
+    collegeName: "",
     name: "Vikram Joshi",
     expertise: ["Campus partnerships", "Employer branding", "HR ops"],
   },
   {
     id: "mnt_3",
-    podId: "",
-    podName: "All pods",
+    collegeId: "",
+    collegeName: "",
     name: "Meera Nair",
     expertise: ["Content strategy", "Social media", "Brand storytelling", "Community building", "UGC"],
   },

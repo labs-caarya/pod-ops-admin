@@ -17,19 +17,19 @@ import { cn } from "@/lib/utils";
 type MentorDraft = {
   name: string;
   expertise: string;
-  podId: string;
+  collegeId: string;
 };
 
 const EMPTY_DRAFT: MentorDraft = {
   name: "",
   expertise: "",
-  podId: "",
+  collegeId: "",
 };
 
-function podLabel(podId: string, podName?: string, pods: { id: string; name: string; crew: string }[] = []) {
-  if (!podId) return podName || "All pods";
-  const pod = pods.find((item) => item.id === podId);
-  return pod ? `${pod.name} · ${pod.crew}` : podName || podId;
+function collegeLabel(collegeId: string, collegeName?: string, colleges: { id: string; name: string; crew: string }[] = []) {
+  if (!collegeId) return collegeName || "No college";
+  const college = colleges.find((item) => item.id === collegeId);
+  return college ? `${college.name} · ${college.crew}` : collegeName || collegeId;
 }
 
 export default function AdminPodMentors() {
@@ -43,13 +43,13 @@ export default function AdminPodMentors() {
   const mentorsQuery = useQuery(mentorsQueryOptions());
   const collegesQuery = useQuery(collegesQueryOptions());
   const mentors = mentorsQuery.data || [];
-  const pods = collegesQuery.data || [];
+  const colleges = collegesQuery.data || [];
   const loading = mentorsQuery.isPending || collegesQuery.isPending;
   const refreshing = !loading && (mentorsQuery.isFetching || collegesQuery.isFetching);
 
   const filteredMentors = useMemo(() => {
     if (!podFilter) return mentors;
-    return mentors.filter((mentor) => mentor.podId === podFilter);
+    return mentors.filter((mentor) => mentor.collegeId === podFilter);
   }, [mentors, podFilter]);
 
   function openCreateDrawer() {
@@ -65,7 +65,7 @@ export default function AdminPodMentors() {
     setDraft({
       name: mentor.name,
       expertise: formatExpertiseTags(mentor.expertise),
-      podId: mentor.podId || "",
+      collegeId: mentor.collegeId || "",
     });
     setMessage(null);
   }
@@ -89,14 +89,18 @@ export default function AdminPodMentors() {
       setMessage({ text: "Add at least one expertise tag.", tone: "bad" });
       return;
     }
+    if (!draft.collegeId) {
+      setMessage({ text: "College is required.", tone: "bad" });
+      return;
+    }
 
     setSaving(true);
     try {
-      const selectedPod = pods.find((pod) => pod.id === draft.podId);
+      const selectedCollege = colleges.find((college) => college.id === draft.collegeId);
       const payload: PodMentor = {
         id: editingMentorId || makeId("mnt"),
-        podId: draft.podId,
-        podName: draft.podId ? selectedPod?.name : "All pods",
+        collegeId: draft.collegeId,
+        collegeName: selectedCollege?.name,
         name: draft.name.trim(),
         expertise,
       };
@@ -148,7 +152,7 @@ export default function AdminPodMentors() {
     <div className="flex min-h-[calc(100dvh-11rem)] flex-col gap-6">
       <PageHeader
         title="Pod mentors"
-        description="Assign mentors to pods. Mentors appear on the pod dashboard with their areas of expertise."
+        description="Assign mentors to colleges."
         icon={GraduationCap}
         actions={
           <Button onClick={openCreateDrawer}>
@@ -194,10 +198,10 @@ export default function AdminPodMentors() {
 
           <div className="flex flex-wrap items-center gap-2 border-b border-line px-5 py-4">
             <Select value={podFilter} onChange={(e) => setPodFilter(e.target.value)} className="w-full sm:w-56">
-              <option value="">All pods</option>
-              {pods.map((pod) => (
-                <option key={pod.id} value={pod.id}>
-                  {pod.name} · {pod.crew}
+              <option value="">All colleges</option>
+              {colleges.map((college) => (
+                <option key={college.id} value={college.id}>
+                  {college.name} · {college.crew}
                 </option>
               ))}
             </Select>
@@ -228,7 +232,7 @@ export default function AdminPodMentors() {
                       <div className="mt-3 border-t border-line pt-3">
                         <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">Pod</p>
                         <p className="mt-1 text-sm text-ink-muted">
-                          {podLabel(mentor.podId, mentor.podName, pods)}
+                          {collegeLabel(mentor.collegeId, mentor.collegeName, colleges)}
                         </p>
                       </div>
                       <div className="mt-4 grid grid-cols-2 gap-2">
@@ -262,7 +266,7 @@ export default function AdminPodMentors() {
                         <ExpertiseTags tags={mentor.expertise} />
                       </td>
                       <td className="px-5 py-4 align-top text-ink-muted">
-                        {podLabel(mentor.podId, mentor.podName, pods)}
+                        {collegeLabel(mentor.collegeId, mentor.collegeName, colleges)}
                       </td>
                       <td className="px-5 py-4 align-top">
                         <div className="flex justify-end gap-2">
@@ -308,15 +312,16 @@ export default function AdminPodMentors() {
             />
             <p className="mt-1.5 text-xs text-ink-faint">Separate tags with commas.</p>
           </FieldRow>
-          <FieldRow label="Pod">
+          <FieldRow label="College">
             <Select
-              value={draft.podId}
-              onChange={(e) => setDraft((current) => ({ ...current, podId: e.target.value }))}
+              value={draft.collegeId}
+              onChange={(e) => setDraft((current) => ({ ...current, collegeId: e.target.value }))}
+              required
             >
-              <option value="">All pods</option>
-              {pods.map((pod) => (
-                <option key={pod.id} value={pod.id}>
-                  {pod.name} · {pod.crew}
+              <option value="">Select college</option>
+              {colleges.map((college) => (
+                <option key={college.id} value={college.id}>
+                  {college.name} · {college.crew}
                 </option>
               ))}
             </Select>

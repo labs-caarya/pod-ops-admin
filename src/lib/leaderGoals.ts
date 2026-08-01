@@ -3,8 +3,8 @@ import type { PodLeaderGoal } from "@/lib/types";
 export function normalizeLeaderGoal(goal: Partial<PodLeaderGoal> & { id: string }): PodLeaderGoal {
   return {
     id: goal.id,
-    podId: goal.podId ?? "",
-    podName: goal.podName,
+    collegeId: goal.collegeId ?? "",
+    collegeName: goal.collegeName,
     assignedPodRole: goal.assignedPodRole ?? "Pod Leader",
     assigneeName: goal.assigneeName ?? "",
     icon: goal.icon ?? "target",

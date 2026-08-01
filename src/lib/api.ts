@@ -240,7 +240,7 @@ async function requestJson(path: string, options: RequestInit = {}) {
 export async function loginWithCredentials(
   username: string,
   password: string,
-  podId?: string,
+  collegeId?: string,
   podRole?: PodRoleApi,
 ): Promise<{ access_token: string; user: AllowedUser }> {
   ensureApiBaseUrl();
@@ -251,7 +251,7 @@ export async function loginWithCredentials(
     body: JSON.stringify({
       username: String(username || "").trim(),
       password: String(password || ""),
-      ...(podId ? { podId } : {}),
+      ...(collegeId ? { collegeId } : {}),
       ...(podRole ? { podRole } : {}),
     }),
   });
@@ -538,8 +538,8 @@ export async function savePodActivationProgress(
   return data;
 }
 
-export async function deletePodActivationProgress(podId: string, itemId: string): Promise<void> {
-  await requestJson(`/pod-activation/progress/${encodeURIComponent(podId)}/${encodeURIComponent(itemId)}`, {
+export async function deletePodActivationProgress(collegeId: string, itemId: string): Promise<void> {
+  await requestJson(`/pod-activation/progress/${encodeURIComponent(collegeId)}/${encodeURIComponent(itemId)}`, {
     method: "DELETE",
   });
 }
@@ -556,8 +556,8 @@ export async function savePodActivationArtifact(
   return data;
 }
 
-export async function deletePodActivationArtifact(podId: string, itemId: string): Promise<void> {
-  await requestJson(`/pod-activation/artifacts/${encodeURIComponent(podId)}/${encodeURIComponent(itemId)}`, {
+export async function deletePodActivationArtifact(collegeId: string, itemId: string): Promise<void> {
+  await requestJson(`/pod-activation/artifacts/${encodeURIComponent(collegeId)}/${encodeURIComponent(itemId)}`, {
     method: "DELETE",
   });
 }
