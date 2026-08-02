@@ -42,6 +42,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Pod Activation", to: "/pod-activation", icon: Rocket },
       { label: "Leader goals", to: "/leader-goals", icon: ClipboardList },
       { label: "Pod mentors", to: "/mentors", icon: BookOpen },
+      { label: "Knowledge Space", to: "/knowledge-space", icon: BookOpen },
     ],
   },
   {

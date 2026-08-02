@@ -4,6 +4,11 @@ import { normalizeMentor } from "@/lib/mentors";
 import type { PodActivationArtifact, PodActivationProgress } from "@/lib/podActivation/types";
 import type { PodRoleApi } from "@/lib/podRoles";
 import type { Challenge, PodLeaderGoal, PodMentor } from "@/lib/types";
+import type {
+  KnowledgeResource,
+  KnowledgeResourceOptions,
+  KnowledgeResourceWriteInput,
+} from "@/lib/knowledgeSpace/types";
 
 const API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || "")
   .trim()
@@ -628,4 +633,45 @@ export async function upsertMentor(mentor: PodMentor): Promise<PodMentor> {
 
 export async function deleteMentor(id: string): Promise<void> {
   await requestJson(`/mentors/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
+export async function listKnowledgeResources(): Promise<KnowledgeResource[]> {
+  const payload = await requestJson("/knowledge-resources");
+  return unwrapList<KnowledgeResource>(payload, "resources");
+}
+
+export async function getKnowledgeResourceOptions(): Promise<KnowledgeResourceOptions> {
+  const payload = await requestJson("/knowledge-resources/options");
+  const data = unwrapData<KnowledgeResourceOptions>(payload);
+  if (!data?.domains || !data?.permissions) {
+    throw new Error("Knowledge Space options response was incomplete.");
+  }
+  return data;
+}
+
+export async function createKnowledgeResource(input: KnowledgeResourceWriteInput): Promise<KnowledgeResource> {
+  const payload = await requestJson("/knowledge-resources", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  const data = unwrapData<KnowledgeResource>(payload);
+  if (!data?.id) throw new Error("Knowledge resource response was incomplete.");
+  return data;
+}
+
+export async function updateKnowledgeResource(
+  id: string,
+  input: KnowledgeResourceWriteInput,
+): Promise<KnowledgeResource> {
+  const payload = await requestJson(`/knowledge-resources/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+  const data = unwrapData<KnowledgeResource>(payload);
+  if (!data?.id) throw new Error("Knowledge resource response was incomplete.");
+  return data;
+}
+
+export async function deleteKnowledgeResource(id: string): Promise<void> {
+  await requestJson(`/knowledge-resources/${encodeURIComponent(id)}`, { method: "DELETE" });
 }
