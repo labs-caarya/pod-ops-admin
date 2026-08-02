@@ -9,6 +9,8 @@ import {
   listPodPortfolio,
   listChallenges,
   listPodActivationData,
+  listKnowledgeResources,
+  getKnowledgeResourceOptions,
   type College,
   type FutureCraftApplicant,
   type AllowedUser,
@@ -16,6 +18,7 @@ import {
   type PodPortfolioEntry,
   type PodActivationData,
 } from "@/lib/api";
+import type { KnowledgeResource, KnowledgeResourceOptions } from "@/lib/knowledgeSpace/types";
 import type { Challenge, PodLeaderGoal, PodMentor } from "@/lib/types";
 
 const TEN_MINUTES = 10 * 60 * 1000;
@@ -31,6 +34,8 @@ export const adminQueryKeys = {
   podPortfolio: ["admin", "pod-portfolio"] as const,
   challenges: ["admin", "challenges"] as const,
   podActivation: ["admin", "pod-activation"] as const,
+  knowledgeResources: ["admin", "knowledge-resources"] as const,
+  knowledgeResourceOptions: ["admin", "knowledge-resource-options"] as const,
 };
 
 export function collegesQueryOptions() {
@@ -74,6 +79,24 @@ export function podActivationQueryOptions() {
     queryKey: adminQueryKeys.podActivation,
     queryFn: listPodActivationData,
     staleTime: TEN_MINUTES,
+    gcTime: THIRTY_MINUTES,
+  });
+}
+
+export function knowledgeResourcesQueryOptions() {
+  return queryOptions<KnowledgeResource[]>({
+    queryKey: adminQueryKeys.knowledgeResources,
+    queryFn: listKnowledgeResources,
+    staleTime: TEN_MINUTES,
+    gcTime: THIRTY_MINUTES,
+  });
+}
+
+export function knowledgeResourceOptionsQueryOptions() {
+  return queryOptions<KnowledgeResourceOptions>({
+    queryKey: adminQueryKeys.knowledgeResourceOptions,
+    queryFn: getKnowledgeResourceOptions,
+    staleTime: THIRTY_MINUTES,
     gcTime: THIRTY_MINUTES,
   });
 }
@@ -125,5 +148,7 @@ export function warmAdminWorkspaceCache(queryClient: QueryClient) {
     queryClient.prefetchQuery(podPortfolioQueryOptions()),
     queryClient.prefetchQuery(challengesQueryOptions()),
     queryClient.prefetchQuery(podActivationQueryOptions()),
+    queryClient.prefetchQuery(knowledgeResourcesQueryOptions()),
+    queryClient.prefetchQuery(knowledgeResourceOptionsQueryOptions()),
   ]);
 }
