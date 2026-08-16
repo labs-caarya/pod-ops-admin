@@ -48,7 +48,7 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     heading: "Applicants",
     items: [
-      { label: "Futurecraft", to: "/applicants/futurecraft", icon: GraduationCap },
+      { label: "Observership", to: "/applicants/futurecraft", icon: GraduationCap },
       { label: "Castle", to: "/applicants/castle", icon: Castle },
       { label: "Industry", to: "/applicants/industry", icon: Briefcase },
     ],

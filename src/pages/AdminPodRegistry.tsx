@@ -15,6 +15,7 @@ import {
   type College,
   type AllowedUser,
 } from "@/lib/api";
+import { normalizePodRole, POD_ROLES } from "@/lib/podRoles";
 import { cn } from "@/lib/utils";
 
 type CollegeDraft = {
@@ -52,7 +53,7 @@ type ViewDrawerMode = "leadership" | "clubs" | null;
 
 function findCollegeLead(college: College, users: AllowedUser[]) {
   return users.find(
-    (user) => user.collegeId === college.id && user.podRole === "Pod Leader" && user.isActive !== false,
+    (user) => user.collegeId === college.id && normalizePodRole(user.podRole) === "exec" && user.isActive !== false,
   );
 }
 
@@ -139,13 +140,10 @@ export default function AdminPodRegistry() {
       : []),
     [usersQuery.data, viewCollege],
   );
-  const leadership = useMemo(() => [
-    { role: "Exec Lead", name: collegeUsers.find((user) => user.podRole === "Pod Leader")?.name },
-    { role: "Talent Manager", name: collegeUsers.find((user) => user.podRole === "Pod Talent Manager")?.name },
-    { role: "Outreach Manager", name: collegeUsers.find((user) => user.podRole === "Pod Outreach Manager")?.name },
-    { role: "Researcher", name: collegeUsers.find((user) => user.podRole === "Pod Researcher")?.name },
-    { role: "Partner Manager", name: collegeUsers.find((user) => user.podRole === "Pod Partner Manager")?.name },
-  ], [collegeUsers]);
+  const leadership = useMemo(() => POD_ROLES.map((role) => ({
+    role: role.label,
+    name: collegeUsers.find((user) => normalizePodRole(user.podRole) === role.apiValue)?.name,
+  })), [collegeUsers]);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();

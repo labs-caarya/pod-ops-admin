@@ -151,7 +151,7 @@ export default function AdminDashboard() {
                   <YAxis tick={{ fill: "#7c6a6c", fontSize: 11 }} axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={{ background: "#1a1113", border: "1px solid #36262b", borderRadius: 12 }} />
                   <Area type="monotone" dataKey="challenges" stroke="#fb3a63" fill="#fb3a6333" />
-                  <Area type="monotone" dataKey="futurecraft" stroke="#38bdf8" fill="#38bdf833" />
+                  <Area type="monotone" dataKey="futurecraft" name="Observership" stroke="#38bdf8" fill="#38bdf833" />
                   <Area type="monotone" dataKey="industry" stroke="#34d399" fill="#34d39922" />
                 </AreaChart>
               </ResponsiveContainer>
