@@ -112,11 +112,12 @@ function Stat({ label, value }: { label: string; value: number }) {
 function PodDrawer({ pod, onClose }: { pod: PodPortfolioEntry | null; onClose: () => void }) {
   if (!pod) return null;
   const leadership = [
-    ["Pod Leader", pod.podLeader],
-    ["Talent Manager", pod.podTalentManager],
-    ["Outreach Manager", pod.podOutreachManager],
-    ["Researcher", pod.podResearcher],
-    ["Partner Manager", pod.podPartnerManager],
+    ["Exec Lead", pod.podLeader],
+    ["Talent Development Lead", pod.podTalentManager],
+    ["Marketing Lead", pod.podOutreachManager],
+    ["Ops Lead", pod.podResearcher],
+    ["Partner Relations Lead", pod.podPartnerManager],
+    ["Strategic Partnership Associate", pod.podStrategicPartnershipAssociate],
   ];
   return (
     <Drawer open={Boolean(pod)} onClose={onClose} title={pod.name} subtitle={pod.collegeName} width="max-w-3xl">

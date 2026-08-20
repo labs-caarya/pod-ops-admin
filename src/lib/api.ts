@@ -40,6 +40,7 @@ export interface ManagedPod {
   podOutreachManager: string;
   podResearcher: string;
   podPartnerManager: string;
+  podStrategicPartnershipAssociate?: string;
   createdAt?: string | null;
   updatedAt?: string | null;
 }

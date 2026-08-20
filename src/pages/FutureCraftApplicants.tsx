@@ -60,7 +60,7 @@ export default function FutureCraftApplicants() {
   );
 
   const hasActiveFilters = yearFilter !== "all" || podFilter !== "all";
-  const message = applicantsQuery.error instanceof Error ? applicantsQuery.error.message : "Could not load Futurecraft applicants.";
+  const message = applicantsQuery.error instanceof Error ? applicantsQuery.error.message : "Could not load Observership applicants.";
 
   function clearFilters() {
     setYearFilter("all");
@@ -70,8 +70,8 @@ export default function FutureCraftApplicants() {
   return (
     <div className="flex min-h-[calc(100dvh-11rem)] flex-col gap-6">
       <PageHeader
-        title="Futurecraft applicants"
-        description="Review every application submitted through Futurecraft and quickly see which colleges already have a pod."
+        title="Observership applicants"
+        description="Review every Observership application and quickly see which colleges already have a pod."
         icon={GraduationCap}
         actions={
           <Button variant="secondary" onClick={() => void applicantsQuery.refetch()} disabled={loading || refreshing}>
@@ -227,7 +227,7 @@ export default function FutureCraftApplicants() {
             <div className="flex min-h-64 items-center justify-center px-6 text-center text-sm text-ink-muted">
               {applicants.length
                 ? "No applicants match the selected year or pod filters."
-                : "No Futurecraft applications have been submitted yet."}
+                : "No Observership applications have been submitted yet."}
             </div>
           )}
         </div>
