@@ -1,6 +1,6 @@
 import { useDeferredValue, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Building2, Network, Search, ShieldAlert, Users2 } from "lucide-react";
+import { Building2, Info, Network, Search, ShieldAlert, Star, Users2 } from "lucide-react";
 import { podPortfolioQueryOptions } from "@/lib/adminQueries";
 import type { PodPortfolioEntry } from "@/lib/api";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -21,6 +21,7 @@ export default function AdminPods() {
   const portfolioQuery = useQuery(podPortfolioQueryOptions());
   const [query, setQuery] = useState("");
   const [health, setHealth] = useState("all");
+  const [showScoreGuide, setShowScoreGuide] = useState(false);
   const [selectedPod, setSelectedPod] = useState<PodPortfolioEntry | null>(null);
   const deferredQuery = useDeferredValue(query);
   const pods = portfolioQuery.data || [];
@@ -55,8 +56,20 @@ export default function AdminPods() {
             <option value="Watching">Watching</option>
             <option value="At Risk">At Risk</option>
           </Select>
+          <Button
+            type="button"
+            variant="secondary"
+            aria-expanded={showScoreGuide}
+            onClick={() => setShowScoreGuide((current) => !current)}
+            className="w-full shrink-0 lg:w-auto"
+          >
+            <Info className="h-4 w-4" />
+            Score Guide
+          </Button>
         </div>
       </Card>
+
+      {showScoreGuide ? <ScoreGuide /> : null}
 
       {portfolioQuery.isPending ? (
         <Card className="p-8 text-center text-sm text-ink-muted">Loading pod portfolio…</Card>
@@ -77,9 +90,12 @@ export default function AdminPods() {
                     </div>
                     <p className="mt-1 text-sm text-ink-muted">{pod.collegeName} · Lead {pod.podLeader || "Unassigned"}</p>
                   </div>
-                  <div className="rounded-xl border border-line bg-surface-2 px-3 py-2 text-right">
-                    <p className="text-[11px] uppercase tracking-[0.14em] text-ink-faint">Activation</p>
-                    <p className="font-display text-2xl font-black text-gradient">{pod.activationPercent}%</p>
+                  <div className="flex flex-wrap items-start justify-end gap-2">
+                    <PodStrengthStars memberCount={pod.memberCount} />
+                    <div className="rounded-xl border border-line bg-surface-2 px-3 py-2 text-right">
+                      <p className="text-[11px] uppercase tracking-[0.14em] text-ink-faint">Activation</p>
+                      <p className="font-display text-2xl font-black text-gradient">{pod.activationPercent}%</p>
+                    </div>
                   </div>
                 </div>
                 <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -96,6 +112,75 @@ export default function AdminPods() {
       )}
 
       <PodDrawer pod={selectedPod} onClose={() => setSelectedPod(null)} />
+    </div>
+  );
+}
+
+function ScoreGuide() {
+  const guideItems = [
+    ["Strength", "Active users linked to the pod. 1 user equals 1 star, capped at 5 stars."],
+    ["Activation", "Progress through the pod activation journey and its required tasks."],
+    ["Health", "Overall pod status: Thriving, Watching, or At Risk."],
+    ["Open Challenges", "Live blockers or requests that still need movement."],
+    ["Resolved", "Challenges already closed by the pod team."],
+  ];
+
+  return (
+    <Card className="mb-4 p-4 sm:p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <Info className="h-4 w-4 text-ruby-bright" />
+            <h2 className="font-display text-base font-bold text-ink">Pod Score Guide</h2>
+          </div>
+          <p className="mt-1 text-sm text-ink-muted">A quick read of the rules behind each portfolio signal.</p>
+        </div>
+        <div className="flex items-center gap-1" aria-label="Maximum pod strength is 5 stars">
+          {Array.from({ length: 5 }, (_, index) => (
+            <Star key={index} className="h-4 w-4 text-amber-bright" fill="currentColor" strokeWidth={0} aria-hidden="true" />
+          ))}
+        </div>
+      </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-5">
+        {guideItems.map(([label, description]) => (
+          <div key={label} className="rounded-xl border border-line bg-surface-2 p-3">
+            <p className="text-[11px] uppercase tracking-[0.12em] text-ink-faint">{label}</p>
+            <p className="mt-1 text-sm text-ink-muted">{description}</p>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function podStrengthFromMembers(memberCount: number) {
+  return Math.min(Math.max(memberCount, 0), 5);
+}
+
+function PodStrengthStars({ memberCount }: { memberCount: number }) {
+  const strength = podStrengthFromMembers(memberCount);
+
+  return (
+    <div
+      className="rounded-xl border border-line bg-surface-2 px-3 py-2 text-right"
+      aria-label={`Pod strength ${strength} out of 5 stars`}
+      title={`${memberCount} linked account${memberCount === 1 ? "" : "s"} · ${strength}/5 strength`}
+    >
+      <p className="text-[11px] uppercase tracking-[0.14em] text-ink-faint">Strength</p>
+      <div className="mt-1 flex items-center justify-end gap-1">
+        {Array.from({ length: 5 }, (_, index) => {
+          const filled = index < strength;
+          return (
+            <Star
+              key={index}
+              className={`h-5 w-5 ${filled ? "text-amber-bright" : "text-black"}`}
+              fill="currentColor"
+              strokeWidth={0}
+              aria-hidden="true"
+            />
+          );
+        })}
+      </div>
     </div>
   );
 }
