@@ -8,6 +8,7 @@ export const loadChallengeDetailPage = () => import("@/pages/ChallengeDetail");
 export const loadFutureCraftApplicantsPage = () => import("@/pages/FutureCraftApplicants");
 export const loadCastleApplicantsPage = () => import("@/pages/CastleApplicants");
 export const loadIndustryApplicantsPage = () => import("@/pages/IndustryApplicants");
+export const loadAtsCandidatesPage = () => import("@/pages/AtsCandidates");
 export const loadAdminPodActivationPage = () => import("@/pages/AdminPodActivation");
 export const loadAdminPodActivationDetailPage = () => import("@/pages/AdminPodActivationDetail");
 export const loadAdminKnowledgeSpacePage = () => import("@/pages/AdminKnowledgeSpace");
@@ -24,6 +25,7 @@ const routePreloaders: Record<string, () => Promise<unknown>> = {
   "/applicants/futurecraft": loadFutureCraftApplicantsPage,
   "/applicants/castle": loadCastleApplicantsPage,
   "/applicants/industry": loadIndustryApplicantsPage,
+  "/applicants/ats-candidates": loadAtsCandidatesPage,
   "/future-craft-applicants": loadFutureCraftApplicantsPage,
 };
 

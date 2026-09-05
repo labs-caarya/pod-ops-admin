@@ -10,9 +10,11 @@ import {
   listChallenges,
   listPodActivationData,
   listKnowledgeResources,
+  listAtsCandidates,
   getKnowledgeResourceOptions,
   type College,
   type FutureCraftApplicant,
+  type AtsCandidate,
   type AllowedUser,
   type AdminDashboardData,
   type PodPortfolioEntry,
@@ -36,6 +38,7 @@ export const adminQueryKeys = {
   podActivation: ["admin", "pod-activation"] as const,
   knowledgeResources: ["admin", "knowledge-resources"] as const,
   knowledgeResourceOptions: ["admin", "knowledge-resource-options"] as const,
+  atsCandidates: ["admin", "ats-candidates"] as const,
 };
 
 export function collegesQueryOptions() {
@@ -119,6 +122,15 @@ export function futureCraftApplicantsQueryOptions() {
   });
 }
 
+export function atsCandidatesQueryOptions() {
+  return queryOptions<AtsCandidate[]>({
+    queryKey: adminQueryKeys.atsCandidates,
+    queryFn: listAtsCandidates,
+    staleTime: TEN_MINUTES,
+    gcTime: THIRTY_MINUTES,
+  });
+}
+
 export function leaderGoalsQueryOptions() {
   return queryOptions<PodLeaderGoal[]>({
     queryKey: adminQueryKeys.leaderGoals,
@@ -142,6 +154,7 @@ export function warmAdminWorkspaceCache(queryClient: QueryClient) {
     queryClient.prefetchQuery(collegesQueryOptions()),
     queryClient.prefetchQuery(managedUsersQueryOptions()),
     queryClient.prefetchQuery(futureCraftApplicantsQueryOptions()),
+    queryClient.prefetchQuery(atsCandidatesQueryOptions()),
     queryClient.prefetchQuery(leaderGoalsQueryOptions()),
     queryClient.prefetchQuery(mentorsQueryOptions()),
     queryClient.prefetchQuery(dashboardQueryOptions()),

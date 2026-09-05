@@ -104,6 +104,117 @@ export interface Profile {
   submittedAt: string;
 }
 
+export type AtsProcessingStatus =
+  | "manual"
+  | "uploaded"
+  | "queued"
+  | "extracting_text"
+  | "extracting_profile"
+  | "validating"
+  | "normalizing"
+  | "generating_embeddings"
+  | "indexed"
+  | "needs_review"
+  | "failed";
+
+export type AtsRosterType = "Castle" | "Internship" | "Observership";
+
+export interface AtsCandidate {
+  id: string;
+  tenantId?: string;
+  sourceProfileId?: string;
+  contact: {
+    name: string;
+    email?: string;
+    phone?: string;
+    location?: string;
+    linkedin?: string;
+    github?: string;
+  };
+  professionalSummary?: string;
+  currentRole?: string;
+  currentCompany?: string;
+  totalExperienceMonths?: number;
+  skills?: {
+    raw: string;
+    normalized?: string;
+    category?: string;
+    evidence?: string;
+  }[];
+  experience?: {
+    title?: string;
+    company?: string;
+    startDate?: string;
+    endDate?: string;
+    isCurrent?: boolean;
+    summary?: string;
+    evidence?: string;
+  }[];
+  education?: {
+    institution?: string;
+    degree?: string;
+    field?: string;
+    startDate?: string;
+    endDate?: string;
+  }[];
+  projects?: {
+    name?: string;
+    description?: string;
+    technologies?: string[];
+    evidence?: string;
+  }[];
+  preferredRoles?: string[];
+  sourceResume?: {
+    fileName?: string;
+    fileKey?: string;
+    mimeType?: string;
+    fileHash?: string;
+    uploadedAt?: string | null;
+  };
+  processingStatus: AtsProcessingStatus;
+  processingErrors?: string[];
+  is_roster: boolean;
+  roster_type?: AtsRosterType | null;
+  schemaVersion?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface AtsProcessingJob {
+  id: string;
+  tenantId: string;
+  candidateId?: string;
+  source: "resume_upload" | "manual";
+  status: AtsProcessingStatus;
+  fileName: string;
+  fileHash: string;
+  fileKey: string;
+  processingErrors: string[];
+  statusHistory: {
+    status: AtsProcessingStatus;
+    message?: string;
+    changedAt?: string;
+    changedBy?: string;
+  }[];
+  attemptCount: number;
+  maxAttempts: number;
+  queuedAt?: string;
+  startedAt?: string | null;
+  completedAt?: string | null;
+  lockedAt?: string | null;
+  lockedBy?: string;
+  lastHeartbeatAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface AtsResumeUploadResponse {
+  duplicate: boolean;
+  processingId: string;
+  processingJob?: AtsProcessingJob;
+  candidate: AtsCandidate;
+}
+
 export interface PodPortfolioEntry extends ManagedPod {
   memberCount: number;
   openChallenges: number;
@@ -437,6 +548,46 @@ export async function listIndustryApplicants(): Promise<Profile[]> {
   }
   const data = unwrapData<Profile[]>(payload);
   return Array.isArray(data) ? data : [];
+}
+
+export async function listAtsCandidates(): Promise<AtsCandidate[]> {
+  const payload = await requestJson("/ats/candidates");
+  const data = unwrapData<AtsCandidate[]>(payload);
+  return Array.isArray(data) ? data : [];
+}
+
+export async function getAtsCandidate(id: string): Promise<AtsCandidate> {
+  const payload = await requestJson(`/ats/candidates/${encodeURIComponent(id)}`);
+  return unwrapEntity<AtsCandidate>(payload, "candidate");
+}
+
+export async function getAtsProcessingJob(id: string): Promise<AtsProcessingJob> {
+  const payload = await requestJson(`/ats/processing/${encodeURIComponent(id)}?tenantId=global`);
+  return unwrapData<AtsProcessingJob>(payload) as AtsProcessingJob;
+}
+
+export async function uploadAtsResume(file: File): Promise<AtsResumeUploadResponse> {
+  ensureApiBaseUrl();
+  const token = localStorage.getItem(TOKEN_KEY);
+  const extension = file.name.toLowerCase().split(".").pop();
+  const mimeType = file.type || (extension === "docx"
+    ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    : "application/pdf");
+  const res = await fetch(`${API_BASE_URL}/ats/resumes/upload`, {
+    method: "POST",
+    headers: {
+      "Content-Type": mimeType,
+      "X-File-Name": file.name,
+      "X-Tenant-Id": "global",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: file,
+  });
+  const payload = await readJson(res);
+  if (!res.ok) {
+    throw new Error(apiErrorMessage(payload, `Could not upload resume (${res.status}).`));
+  }
+  return unwrapData<AtsResumeUploadResponse>(payload) as AtsResumeUploadResponse;
 }
 
 export async function listColleges(): Promise<College[]> {

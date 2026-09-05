@@ -17,6 +17,7 @@ import {
   loadFutureCraftApplicantsPage,
   loadCastleApplicantsPage,
   loadIndustryApplicantsPage,
+  loadAtsCandidatesPage,
   loadAdminPodActivationPage,
   loadAdminPodActivationDetailPage,
   loadAdminKnowledgeSpacePage,
@@ -32,6 +33,7 @@ const ChallengeDetail = lazy(loadChallengeDetailPage);
 const FutureCraftApplicants = lazy(loadFutureCraftApplicantsPage);
 const CastleApplicants = lazy(loadCastleApplicantsPage);
 const IndustryApplicants = lazy(loadIndustryApplicantsPage);
+const AtsCandidates = lazy(loadAtsCandidatesPage);
 const AdminPodActivation = lazy(loadAdminPodActivationPage);
 const AdminPodActivationDetail = lazy(loadAdminPodActivationDetailPage);
 const AdminKnowledgeSpace = lazy(loadAdminKnowledgeSpacePage);
@@ -81,6 +83,7 @@ export default function App() {
           <Route path="/applicants/futurecraft" element={<FutureCraftApplicants />} />
           <Route path="/applicants/castle" element={<CastleApplicants />} />
           <Route path="/applicants/industry" element={<IndustryApplicants />} />
+          <Route path="/applicants/ats-candidates" element={<AtsCandidates />} />
           <Route path="/future-craft-applicants" element={<Navigate to="/applicants/futurecraft" replace />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

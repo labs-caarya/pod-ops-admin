@@ -10,6 +10,7 @@ import {
   Rocket,
   Castle,
   Briefcase,
+  FileSearch,
   type LucideIcon,
 } from "lucide-react";
 
@@ -51,6 +52,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Observership", to: "/applicants/futurecraft", icon: GraduationCap },
       { label: "Castle", to: "/applicants/castle", icon: Castle },
       { label: "Industry", to: "/applicants/industry", icon: Briefcase },
+      { label: "ATS Candidates", to: "/applicants/ats-candidates", icon: FileSearch },
     ],
   },
 ];
