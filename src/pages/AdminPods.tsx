@@ -1,6 +1,6 @@
 import { useDeferredValue, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Building2, Info, Network, Search, ShieldAlert, Star, Users2 } from "lucide-react";
+import { ArrowRight, Building2, Info, Network, Search, ShieldAlert, Star, Users2 } from "lucide-react";
 import { podPortfolioQueryOptions } from "@/lib/adminQueries";
 import type { PodPortfolioEntry } from "@/lib/api";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -78,41 +78,54 @@ export default function AdminPods() {
           {portfolioQuery.error instanceof Error ? portfolioQuery.error.message : "Could not load pod portfolio."}
         </Card>
       ) : (
-        <div className="grid gap-3 xl:grid-cols-2">
+        <div className="grid gap-6 xl:grid-cols-2">
           {rows.map((pod) => (
-            <button key={pod.id} type="button" onClick={() => setSelectedPod(pod)} className="block w-full text-left">
-              <Card hover className="p-4 sm:p-5">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="font-display text-lg font-bold text-ink">{pod.name}</h2>
-                      <Badge tone={healthTone[pod.health]}>{pod.health}</Badge>
-                    </div>
-                    <p className="mt-1 text-sm text-ink-muted">{pod.collegeName} · Lead {pod.podLeader || "Unassigned"}</p>
-                  </div>
-                  <div className="flex flex-wrap items-start justify-end gap-2">
-                    <PodStrengthStars memberCount={pod.memberCount} />
-                    <div className="rounded-xl border border-line bg-surface-2 px-3 py-2 text-right">
-                      <p className="text-[11px] uppercase tracking-[0.14em] text-ink-faint">Activation</p>
-                      <p className="font-display text-2xl font-black text-gradient">{pod.activationPercent}%</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <Stat label="Active users" value={pod.memberCount} />
-                  <Stat label="Clubs" value={pod.clubs.length} />
-                  <Stat label="Open challenges" value={pod.openChallenges} />
-                  <Stat label="Resolved" value={pod.resolvedChallenges} />
-                </div>
-                <ProgressBar value={pod.activationPercent} tone={pod.activationPercent >= 80 ? "good" : pod.activationPercent >= 40 ? "amber" : "ruby"} className="mt-4" />
-              </Card>
-            </button>
+            <PodPortfolioCard key={pod.id} pod={pod} onSelect={() => setSelectedPod(pod)} />
           ))}
         </div>
       )}
 
       <PodDrawer pod={selectedPod} onClose={() => setSelectedPod(null)} />
     </div>
+  );
+}
+
+function PodPortfolioCard({ pod, onSelect }: { pod: PodPortfolioEntry; onSelect: () => void }) {
+  return (
+    <button type="button" onClick={onSelect} className="block h-full w-full text-left">
+      <Card hover className="flex h-full flex-col p-5 shadow-none sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="font-display text-lg font-bold text-ink">{pod.name}</h2>
+              <Badge tone={healthTone[pod.health]}>{pod.health}</Badge>
+            </div>
+            <p className="mt-1 text-sm text-ink-muted">{pod.collegeName} · Lead {pod.podLeader || "Unassigned"}</p>
+          </div>
+          <span className="inline-flex items-center gap-1 text-sm font-semibold text-ruby-bright">
+            View pod
+            <ArrowRight className="h-4 w-4" />
+          </span>
+        </div>
+
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border-y border-line py-3">
+          <PodStrengthStars memberCount={pod.memberCount} />
+          <div className="text-right">
+            <p className="text-[11px] uppercase tracking-[0.14em] text-ink-faint">Activation</p>
+            <p className="font-display text-2xl font-black text-gradient">{pod.activationPercent}%</p>
+          </div>
+        </div>
+
+        <ProgressBar value={pod.activationPercent} tone={pod.activationPercent >= 80 ? "good" : pod.activationPercent >= 40 ? "amber" : "ruby"} className="mt-4" />
+
+        <div className="mt-auto grid grid-cols-2 divide-x divide-y divide-line border-t border-line pt-4 sm:grid-cols-4 sm:divide-y-0">
+          <InlineStat label="Active users" value={pod.memberCount} />
+          <InlineStat label="Clubs" value={pod.clubs.length} />
+          <InlineStat label="Open challenges" value={pod.openChallenges} />
+          <InlineStat label="Resolved" value={pod.resolvedChallenges} />
+        </div>
+      </Card>
+    </button>
   );
 }
 
@@ -162,12 +175,12 @@ function PodStrengthStars({ memberCount }: { memberCount: number }) {
 
   return (
     <div
-      className="rounded-xl border border-line bg-surface-2 px-3 py-2 text-right"
+      className="text-left"
       aria-label={`Pod strength ${strength} out of 5 stars`}
       title={`${memberCount} linked account${memberCount === 1 ? "" : "s"} · ${strength}/5 strength`}
     >
       <p className="text-[11px] uppercase tracking-[0.14em] text-ink-faint">Strength</p>
-      <div className="mt-1 flex items-center justify-end gap-1">
+      <div className="mt-1 flex items-center gap-1">
         {Array.from({ length: 5 }, (_, index) => {
           const filled = index < strength;
           return (
@@ -181,6 +194,15 @@ function PodStrengthStars({ memberCount }: { memberCount: number }) {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function InlineStat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="px-3 first:pl-0 odd:border-l-0 sm:first:pl-0">
+      <p className="text-[11px] uppercase tracking-[0.12em] text-ink-faint">{label}</p>
+      <p className="mt-1 font-display text-lg font-black text-ink">{value}</p>
     </div>
   );
 }
