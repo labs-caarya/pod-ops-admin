@@ -78,7 +78,7 @@ export default function AdminPods() {
           {portfolioQuery.error instanceof Error ? portfolioQuery.error.message : "Could not load pod portfolio."}
         </Card>
       ) : (
-        <div className="space-y-3">
+        <div className="grid gap-3 xl:grid-cols-2">
           {rows.map((pod) => (
             <button key={pod.id} type="button" onClick={() => setSelectedPod(pod)} className="block w-full text-left">
               <Card hover className="p-4 sm:p-5">
