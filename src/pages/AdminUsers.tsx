@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Eye, EyeOff, LayoutGrid, List, Loader2, Pencil, Plus, Trash2, UserRound } from "lucide-react";
+import { Eye, EyeOff, LayoutGrid, List, Loader2, Pencil, Plus, RefreshCw, Trash2, UserRound } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Drawer } from "@/components/ui/Drawer";
+import { MobileFilterDrawer } from "@/components/ui/MobileFilterDrawer";
 import { FieldRow, Input, Select } from "@/components/ui/Field";
 import {
   createManagedUser,
@@ -57,6 +58,7 @@ export default function AdminUsers() {
   const [showPassword, setShowPassword] = useState(false);
   const [viewMode, setViewMode] = useState<"cards" | "table">("table");
   const [collegeFilter, setCollegeFilter] = useState("");
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [message, setMessage] = useState<{ text: string; tone: "good" | "bad" | "info" } | null>(null);
   const queryClient = useQueryClient();
   const usersQuery = useQuery(managedUsersQueryOptions());
@@ -203,11 +205,24 @@ export default function AdminUsers() {
         description="Create and manage portal accounts. Every non-admin user is assigned to an active college and a pod role."
         icon={UserRound}
         className="mb-0 shrink-0"
+        actionsClassName="w-auto justify-end"
         actions={
-          <Button className="w-full sm:w-auto" onClick={openCreateDrawer} disabled={!firstAssignableCollegeId || loading}>
-            <Plus className="h-4 w-4" />
-            Create user
-          </Button>
+          <>
+            <Button
+              size="icon"
+              className="sm:hidden"
+              aria-label="Create user"
+              title="Create user"
+              onClick={openCreateDrawer}
+              disabled={!firstAssignableCollegeId || loading}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+            <Button className="hidden sm:inline-flex" onClick={openCreateDrawer} disabled={!firstAssignableCollegeId || loading}>
+              <Plus className="h-4 w-4" />
+              Create user
+            </Button>
+          </>
         }
       />
 
@@ -222,7 +237,7 @@ export default function AdminUsers() {
                   : formatLeadershipSummary(users.length, filteredUsers.length)}
               </p>
             </div>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="flex flex-row items-center gap-2 sm:flex-row sm:items-center">
               <div className="hidden items-center gap-1 rounded-xl border border-line bg-surface-2 p-1 sm:flex">
                 <button
                   type="button"
@@ -255,7 +270,41 @@ export default function AdminUsers() {
               </div>
               <Button
                 variant="secondary"
-                className="w-full sm:w-auto"
+                size="icon"
+                className="sm:hidden"
+                aria-label="Refresh leadership"
+                title="Refresh leadership"
+                onClick={() => void Promise.all([
+                  usersQuery.refetch(),
+                  collegesQuery.refetch(),
+                ])}
+                disabled={loading || refreshing || saving}
+              >
+                {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              </Button>
+              <MobileFilterDrawer
+                open={filterDrawerOpen}
+                onOpen={() => setFilterDrawerOpen(true)}
+                onClose={() => setFilterDrawerOpen(false)}
+                active={hasActiveFilters}
+                title="Leadership filters"
+                triggerLabel="Open leadership filters"
+                onClear={() => setCollegeFilter("")}
+              >
+                <FieldRow label="College">
+                  <Select value={collegeFilter} onChange={(e) => setCollegeFilter(e.target.value)}>
+                    <option value="">All colleges</option>
+                    {registeredPods.map((college) => (
+                      <option key={college.id} value={college.id}>
+                        {college.name} · {college.crew}
+                      </option>
+                    ))}
+                  </Select>
+                </FieldRow>
+              </MobileFilterDrawer>
+              <Button
+                variant="secondary"
+                className="hidden sm:inline-flex"
                 onClick={() => void Promise.all([
                   usersQuery.refetch(),
                   collegesQuery.refetch(),
@@ -268,7 +317,7 @@ export default function AdminUsers() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-2 border-b border-line px-4 py-4 sm:flex-row sm:items-center sm:px-5">
+          <div className="hidden flex-col gap-2 border-b border-line px-4 py-4 sm:flex sm:flex-row sm:items-center sm:px-5">
             <Select value={collegeFilter} onChange={(e) => setCollegeFilter(e.target.value)} className="w-full sm:w-64">
               <option value="">All colleges</option>
               {registeredPods.map((college) => (

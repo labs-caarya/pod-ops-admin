@@ -5,7 +5,8 @@ import { Rocket, Search, ChevronRight } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { Input } from "@/components/ui/Field";
+import { MobileFilterDrawer } from "@/components/ui/MobileFilterDrawer";
+import { FieldRow, Input } from "@/components/ui/Field";
 import { ProgressBar, EmptyState } from "@/components/ui/Misc";
 import { StatCard } from "@/components/ui/StatCard";
 import { buildActivationSnapshot, POD_ACTIVATION_CATEGORIES } from "@/lib/podActivation";
@@ -19,6 +20,7 @@ function podActivationTone(percent: number) {
 
 export default function AdminPodActivation() {
   const [query, setQuery] = useState("");
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const collegesQuery = useQuery(collegesQueryOptions());
   const activationQuery = useQuery(podActivationQueryOptions());
   const progress = activationQuery.data?.progress || [];
@@ -46,6 +48,12 @@ export default function AdminPodActivation() {
       .sort((a, b) => b.snapshot.percent - a.snapshot.percent);
   }, [artifacts, pods, progress, query]);
 
+  const hasActiveFilters = Boolean(query.trim());
+
+  function clearFilters() {
+    setQuery("");
+  }
+
   const stats = useMemo(() => {
     if (!rows.length) {
       return { avg: 0, complete: 0, inProgress: 0, notStarted: 0 };
@@ -64,6 +72,22 @@ export default function AdminPodActivation() {
         title="Pod Activation"
         description="Level 0 progress across all pods — 10 categories, 50 steps per pod."
         className="mb-0 shrink-0"
+        actionsClassName="w-auto justify-end"
+        actions={
+          <MobileFilterDrawer
+            open={filterDrawerOpen}
+            onOpen={() => setFilterDrawerOpen(true)}
+            onClose={() => setFilterDrawerOpen(false)}
+            active={hasActiveFilters}
+            title="Pod activation filters"
+            triggerLabel="Open pod activation filters"
+            onClear={clearFilters}
+          >
+            <FieldRow label="Search">
+              <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search pods by name, crew, or id…" />
+            </FieldRow>
+          </MobileFilterDrawer>
+        }
       />
 
       <div className="grid shrink-0 grid-cols-1 gap-3 min-[420px]:grid-cols-2 lg:grid-cols-4">
@@ -73,7 +97,7 @@ export default function AdminPodActivation() {
         <StatCard label="Not started" value={stats.notStarted} icon={Rocket} tone="muted" />
       </div>
 
-      <Card className="shrink-0 p-4">
+      <Card className="hidden shrink-0 p-4 sm:block">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
           <Input

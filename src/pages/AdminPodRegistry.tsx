@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, Landmark, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { Building2, Landmark, Loader2, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Drawer } from "@/components/ui/Drawer";
+import { MobileFilterDrawer } from "@/components/ui/MobileFilterDrawer";
 import { FieldRow, Input, Select } from "@/components/ui/Field";
 import { adminQueryKeys, collegesQueryOptions, managedUsersQueryOptions } from "@/lib/adminQueries";
 import {
@@ -64,6 +65,7 @@ export default function AdminPodRegistry() {
   const [viewCollege, setViewCollege] = useState<College | null>(null);
   const [draft, setDraft] = useState<CollegeDraft>(EMPTY_DRAFT);
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [message, setMessage] = useState<{ text: string; tone: "good" | "bad" | "info" } | null>(null);
   const queryClient = useQueryClient();
   const collegesQuery = useQuery(collegesQueryOptions());
@@ -215,18 +217,42 @@ export default function AdminPodRegistry() {
         description="Manage industrial pods and pod assignments."
         icon={Building2}
         className="mb-0 shrink-0"
+        actionsClassName="w-auto justify-end"
         actions={
-          <div className="grid w-full grid-cols-1 gap-2 sm:flex sm:w-auto sm:items-center">
-            <Button className="w-full sm:w-auto" onClick={openCreateDrawer}>
+          <div className="flex items-center gap-2">
+            <Button
+              className="hidden sm:inline-flex"
+              onClick={openCreateDrawer}
+            >
               <Plus className="h-4 w-4" />
               Add Pod
             </Button>
             {hasActiveFilters ? (
-              <Button className="w-full sm:w-auto" variant="secondary" onClick={resetFilters}>
+              <Button className="hidden sm:inline-flex" variant="secondary" onClick={resetFilters}>
                 Clear Filters
               </Button>
             ) : null}
-            <Button className="w-full sm:w-auto" variant="secondary" onClick={() => void collegesQuery.refetch()} disabled={loading || refreshing || saving}>
+            <Button
+              variant="secondary"
+              size="icon"
+              className="sm:hidden"
+              aria-label="Refresh pods"
+              title="Refresh pods"
+              onClick={() => void collegesQuery.refetch()}
+              disabled={loading || refreshing || saving}
+            >
+              {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            </Button>
+            <Button
+              size="icon"
+              className="sm:hidden"
+              aria-label="Add pod"
+              title="Add pod"
+              onClick={openCreateDrawer}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+            <Button className="hidden sm:inline-flex" variant="secondary" onClick={() => void collegesQuery.refetch()} disabled={loading || refreshing || saving}>
               {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Building2 className="h-4 w-4" />}
               Refresh
             </Button>
@@ -234,7 +260,34 @@ export default function AdminPodRegistry() {
         }
       />
 
-      <Card className="shrink-0 p-4">
+      <div className="shrink-0 sm:hidden">
+        <MobileFilterDrawer
+          open={filterDrawerOpen}
+          onOpen={() => setFilterDrawerOpen(true)}
+          onClose={() => setFilterDrawerOpen(false)}
+          active={hasActiveFilters}
+          title="Pod registry filters"
+          triggerLabel="Open pod registry filters"
+          onClear={resetFilters}
+        >
+          <FieldRow label="Search">
+            <Input
+              value={filters.search}
+              onChange={(event) => updateFilter("search", event.target.value)}
+              placeholder="Pod name or crew"
+            />
+          </FieldRow>
+          <FieldRow label="Type">
+            <Select value={filters.type} onChange={(event) => updateFilter("type", event.target.value as Filters["type"])}>
+              <option value="">All Types</option>
+              <option value="pod">Pod</option>
+              <option value="non-pod">Non-Pod</option>
+            </Select>
+          </FieldRow>
+        </MobileFilterDrawer>
+      </div>
+
+      <Card className="hidden shrink-0 p-4 sm:block">
         <div className="mb-3">
           <h3 className="font-display text-sm font-bold text-ink">Search & Filters</h3>
           <p className="text-sm text-ink-muted">Filter pods by name, crew, or type.</p>

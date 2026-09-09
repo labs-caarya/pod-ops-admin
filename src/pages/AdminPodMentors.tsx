@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { GraduationCap, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { GraduationCap, Loader2, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Drawer } from "@/components/ui/Drawer";
+import { MobileFilterDrawer } from "@/components/ui/MobileFilterDrawer";
 import { ExpertiseTags } from "@/components/ui/ExpertiseTags";
 import { FieldRow, Input, Select, Textarea } from "@/components/ui/Field";
 import { deleteMentor, upsertMentor } from "@/lib/api";
@@ -38,6 +39,7 @@ export default function AdminPodMentors() {
   const [editingMentorId, setEditingMentorId] = useState<string | null>(null);
   const [draft, setDraft] = useState<MentorDraft>(EMPTY_DRAFT);
   const [podFilter, setPodFilter] = useState("");
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [message, setMessage] = useState<{ text: string; tone: "good" | "bad" | "info" } | null>(null);
   const queryClient = useQueryClient();
   const mentorsQuery = useQuery(mentorsQueryOptions());
@@ -46,6 +48,12 @@ export default function AdminPodMentors() {
   const colleges = collegesQuery.data || [];
   const loading = mentorsQuery.isPending || collegesQuery.isPending;
   const refreshing = !loading && (mentorsQuery.isFetching || collegesQuery.isFetching);
+
+  const hasActiveFilters = Boolean(podFilter);
+
+  function clearFilters() {
+    setPodFilter("");
+  }
 
   const filteredMentors = useMemo(() => {
     if (!podFilter) return mentors;
@@ -155,11 +163,17 @@ export default function AdminPodMentors() {
         description="Assign mentors to colleges."
         icon={GraduationCap}
         className="mb-0 shrink-0"
+        actionsClassName="w-auto justify-end"
         actions={
-          <Button className="w-full sm:w-auto" onClick={openCreateDrawer}>
-            <Plus className="h-4 w-4" />
-            Add mentor
-          </Button>
+          <>
+            <Button size="icon" className="sm:hidden" aria-label="Add mentor" title="Add mentor" onClick={openCreateDrawer}>
+              <Plus className="h-4 w-4" />
+            </Button>
+            <Button className="hidden sm:inline-flex" onClick={openCreateDrawer}>
+              <Plus className="h-4 w-4" />
+              Add mentor
+            </Button>
+          </>
         }
       />
 
@@ -187,18 +201,51 @@ export default function AdminPodMentors() {
                   : `${filteredMentors.length} mentor${filteredMentors.length === 1 ? "" : "s"} shown`}
               </p>
             </div>
-            <Button
-              variant="secondary"
-              className="w-full sm:w-auto"
-              onClick={() => void Promise.all([mentorsQuery.refetch(), collegesQuery.refetch()])}
-              disabled={loading || refreshing || saving}
-            >
-              {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <GraduationCap className="h-4 w-4" />}
-              Refresh
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="secondary"
+                size="icon"
+                className="sm:hidden"
+                aria-label="Refresh pod mentors"
+                title="Refresh pod mentors"
+                onClick={() => void Promise.all([mentorsQuery.refetch(), collegesQuery.refetch()])}
+                disabled={loading || refreshing || saving}
+              >
+                {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              </Button>
+              <MobileFilterDrawer
+                open={filterDrawerOpen}
+                onOpen={() => setFilterDrawerOpen(true)}
+                onClose={() => setFilterDrawerOpen(false)}
+                active={hasActiveFilters}
+                title="Pod mentor filters"
+                triggerLabel="Open pod mentor filters"
+                onClear={clearFilters}
+              >
+                <FieldRow label="College">
+                  <Select value={podFilter} onChange={(e) => setPodFilter(e.target.value)}>
+                    <option value="">All colleges</option>
+                    {colleges.map((college) => (
+                      <option key={college.id} value={college.id}>
+                        {college.name} · {college.crew}
+                      </option>
+                    ))}
+                  </Select>
+                </FieldRow>
+              </MobileFilterDrawer>
+              <Button
+                variant="secondary"
+                className="hidden sm:inline-flex"
+                onClick={() => void Promise.all([mentorsQuery.refetch(), collegesQuery.refetch()])}
+                disabled={loading || refreshing || saving}
+              >
+                {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <GraduationCap className="h-4 w-4" />}
+                Refresh
+              </Button>
+            </div>
           </div>
 
-          <div className="flex flex-col gap-2 border-b border-line px-4 py-4 sm:flex-row sm:items-center sm:px-5">
+          <div className="hidden flex-col gap-2 border-b border-line px-4 py-4 sm:flex sm:flex-row sm:items-center sm:px-5">
             <Select value={podFilter} onChange={(e) => setPodFilter(e.target.value)} className="w-full sm:w-56">
               <option value="">All colleges</option>
               {colleges.map((college) => (

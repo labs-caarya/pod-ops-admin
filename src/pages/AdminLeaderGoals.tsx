@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ClipboardList, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { ClipboardList, Loader2, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Drawer } from "@/components/ui/Drawer";
+import { MobileFilterDrawer } from "@/components/ui/MobileFilterDrawer";
 import { FieldRow, Input, Select, Textarea } from "@/components/ui/Field";
 import { deleteLeaderGoal, upsertLeaderGoal } from "@/lib/api";
 import { adminQueryKeys, collegesQueryOptions, leaderGoalsQueryOptions } from "@/lib/adminQueries";
@@ -48,6 +49,58 @@ function collegeLabel(collegeId: string, collegeName?: string, colleges: { id: s
   return college ? `${college.name} · ${college.crew}` : collegeName || collegeId;
 }
 
+function LeaderGoalFilters({
+  podFilter,
+  roleFilter,
+  statusFilter,
+  colleges,
+  onPodFilterChange,
+  onRoleFilterChange,
+  onStatusFilterChange,
+}: {
+  podFilter: string;
+  roleFilter: string;
+  statusFilter: "" | PodLeaderGoalStatus;
+  colleges: { id: string; name: string; crew: string }[];
+  onPodFilterChange: (value: string) => void;
+  onRoleFilterChange: (value: string) => void;
+  onStatusFilterChange: (value: "" | PodLeaderGoalStatus) => void;
+}) {
+  return (
+    <>
+      <FieldRow label="College">
+        <Select value={podFilter} onChange={(e) => onPodFilterChange(e.target.value)}>
+          <option value="">All colleges</option>
+          {colleges.map((college) => (
+            <option key={college.id} value={college.id}>
+              {college.name} · {college.crew}
+            </option>
+          ))}
+        </Select>
+      </FieldRow>
+      <FieldRow label="Role">
+        <Select value={roleFilter} onChange={(e) => onRoleFilterChange(e.target.value)}>
+          <option value="">All roles</option>
+          {POD_ROLE_OPTIONS.map((role) => (
+            <option key={role} value={podRoleToApiValue(role)}>
+              {role}
+            </option>
+          ))}
+        </Select>
+      </FieldRow>
+      <FieldRow label="Status">
+        <Select
+          value={statusFilter}
+          onChange={(e) => onStatusFilterChange(e.target.value as "" | PodLeaderGoalStatus)}
+        >
+          <option value="">All statuses</option>
+          <option value="active">Active</option>
+          <option value="done">Done</option>
+        </Select>
+      </FieldRow>
+    </>
+  );
+}
 export default function AdminLeaderGoals() {
   const [saving, setSaving] = useState(false);
   const [drawerMode, setDrawerMode] = useState<"create" | "edit" | null>(null);
@@ -56,6 +109,7 @@ export default function AdminLeaderGoals() {
   const [podFilter, setPodFilter] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<"" | PodLeaderGoalStatus>("");
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [message, setMessage] = useState<{ text: string; tone: "good" | "bad" | "info" } | null>(null);
   const queryClient = useQueryClient();
   const goalsQuery = useQuery(leaderGoalsQueryOptions());
@@ -64,6 +118,14 @@ export default function AdminLeaderGoals() {
   const colleges = collegesQuery.data || [];
   const loading = goalsQuery.isPending || collegesQuery.isPending;
   const refreshing = !loading && (goalsQuery.isFetching || collegesQuery.isFetching);
+
+  const hasActiveFilters = Boolean(podFilter || roleFilter || statusFilter);
+
+  function clearFilters() {
+    setPodFilter("");
+    setRoleFilter("");
+    setStatusFilter("");
+  }
 
   const filteredGoals = useMemo(() => {
     return goals.filter((goal) => {
@@ -179,11 +241,17 @@ export default function AdminLeaderGoals() {
         description="Assign focus goals to pod leadership roles. Active goals appear on each leader's dashboard under Currently working on."
         icon={ClipboardList}
         className="mb-0 shrink-0"
+        actionsClassName="w-auto justify-end"
         actions={
-          <Button className="w-full sm:w-auto" onClick={openCreateDrawer}>
-            <Plus className="h-4 w-4" />
-            Add goal
-          </Button>
+          <>
+            <Button size="icon" className="sm:hidden" aria-label="Add goal" title="Add goal" onClick={openCreateDrawer}>
+              <Plus className="h-4 w-4" />
+            </Button>
+            <Button className="hidden sm:inline-flex" onClick={openCreateDrawer}>
+              <Plus className="h-4 w-4" />
+              Add goal
+            </Button>
+          </>
         }
       />
 
@@ -211,18 +279,50 @@ export default function AdminLeaderGoals() {
                   : `${filteredGoals.length} goal${filteredGoals.length === 1 ? "" : "s"} shown`}
               </p>
             </div>
-            <Button
-              variant="secondary"
-              className="w-full sm:w-auto"
-              onClick={() => void Promise.all([goalsQuery.refetch(), collegesQuery.refetch()])}
-              disabled={loading || refreshing || saving}
-            >
-              {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardList className="h-4 w-4" />}
-              Refresh
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="secondary"
+                size="icon"
+                className="sm:hidden"
+                aria-label="Refresh leader goals"
+                title="Refresh leader goals"
+                onClick={() => void Promise.all([goalsQuery.refetch(), collegesQuery.refetch()])}
+                disabled={loading || refreshing || saving}
+              >
+                {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              </Button>
+              <MobileFilterDrawer
+                open={filterDrawerOpen}
+                onOpen={() => setFilterDrawerOpen(true)}
+                onClose={() => setFilterDrawerOpen(false)}
+                active={hasActiveFilters}
+                title="Leader goal filters"
+                triggerLabel="Open leader goal filters"
+                onClear={clearFilters}
+              >
+                <LeaderGoalFilters
+                  podFilter={podFilter}
+                  roleFilter={roleFilter}
+                  statusFilter={statusFilter}
+                  colleges={colleges}
+                  onPodFilterChange={setPodFilter}
+                  onRoleFilterChange={setRoleFilter}
+                  onStatusFilterChange={setStatusFilter}
+                />
+              </MobileFilterDrawer>
+              <Button
+                variant="secondary"
+                className="hidden sm:inline-flex"
+                onClick={() => void Promise.all([goalsQuery.refetch(), collegesQuery.refetch()])}
+                disabled={loading || refreshing || saving}
+              >
+                {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardList className="h-4 w-4" />}
+                Refresh
+              </Button>
+            </div>
           </div>
 
-          <div className="flex flex-col gap-2 border-b border-line px-4 py-4 sm:flex-row sm:items-center sm:px-5">
+          <div className="hidden flex-col gap-2 border-b border-line px-4 py-4 sm:flex sm:flex-row sm:items-center sm:px-5">
             <Select value={podFilter} onChange={(e) => setPodFilter(e.target.value)} className="w-full sm:w-56">
               <option value="">All colleges</option>
               {colleges.map((college) => (

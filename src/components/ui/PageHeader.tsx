@@ -6,12 +6,14 @@ export function PageHeader({
   icon: Icon,
   actions,
   className,
+  actionsClassName,
 }: {
   title: string;
   description?: string;
   icon?: React.ComponentType<{ className?: string }>;
   actions?: React.ReactNode;
   className?: string;
+  actionsClassName?: string;
 }) {
   return (
     <div className={cn("mb-6 flex flex-wrap items-start justify-between gap-4", className)}>
@@ -26,7 +28,7 @@ export function PageHeader({
           {description && <p className="mt-1 max-w-2xl text-sm text-ink-muted">{description}</p>}
         </div>
       </div>
-      {actions && <div className="flex w-full shrink-0 items-center gap-2 sm:w-auto">{actions}</div>}
+      {actions && <div className={cn("flex w-full shrink-0 items-center gap-2 sm:w-auto", actionsClassName)}>{actions}</div>}
     </div>
   );
 }

@@ -11,11 +11,13 @@ import {
   ChevronRight,
   LayoutGrid,
   Table2,
+  Plus,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatCard } from "@/components/ui/StatCard";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { MobileFilterDrawer } from "@/components/ui/MobileFilterDrawer";
 import { Badge } from "@/components/ui/Badge";
 import { Input, Select } from "@/components/ui/Field";
 import { ProgressBar, EmptyState } from "@/components/ui/Misc";
@@ -224,6 +226,7 @@ export default function ChallengeVault() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [pillarFilter, setPillarFilter] = useState("all");
   const [collegeFilter, setCollegeFilter] = useState("all");
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("table");
 
   const stats = useMemo(() => vaultStats(challenges), [challenges]);
@@ -238,6 +241,15 @@ export default function ChallengeVault() {
     }
     return [...fromChallenges.entries()].map(([id, name]) => ({ id, name }));
   }, [challenges, colleges]);
+
+  const hasActiveFilters = Boolean(search.trim() || statusFilter !== "all" || pillarFilter !== "all" || collegeFilter !== "all");
+
+  function clearFilters() {
+    setSearch("");
+    setStatusFilter("all");
+    setPillarFilter("all");
+    setCollegeFilter("all");
+  }
 
   const filtered = useMemo(() => {
     return challenges.filter((c) => {
@@ -263,7 +275,19 @@ export default function ChallengeVault() {
         title="Challenge Vault"
         description="See every challenge colleges have mapped — symptoms, RCA progress, and action plans across the network."
         className="mb-0 shrink-0"
-        actions={<Link to="/challenges/new"><Button>Map challenge</Button></Link>}
+        actionsClassName="w-auto justify-end"
+        actions={
+          <>
+            <Link to="/challenges/new" className="sm:hidden">
+              <Button size="icon" aria-label="Map challenge" title="Map challenge">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Link to="/challenges/new" className="hidden sm:block">
+              <Button>Map challenge</Button>
+            </Link>
+          </>
+        }
       />
 
       <div className="grid shrink-0 grid-cols-2 gap-3 lg:grid-cols-5">
@@ -291,7 +315,47 @@ export default function ChallengeVault() {
         </div>
       </Card>
 
-      <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+      <div className="shrink-0 sm:hidden">
+        <MobileFilterDrawer
+          open={filterDrawerOpen}
+          onOpen={() => setFilterDrawerOpen(true)}
+          onClose={() => setFilterDrawerOpen(false)}
+          active={hasActiveFilters}
+          title="Challenge filters"
+          triggerLabel="Open challenge filters"
+          onClear={clearFilters}
+        >
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
+            <Input
+              placeholder="Search challenges or colleges…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <Select value={collegeFilter} onChange={(e) => setCollegeFilter(e.target.value)}>
+            <option value="all">All colleges</option>
+            {collegeOptions.map((college) => (
+              <option key={college.id} value={college.id}>
+                {college.name}
+              </option>
+            ))}
+          </Select>
+          <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}>
+            <option value="all">All statuses</option>
+            {CHALLENGE_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+          </Select>
+          <Select value={pillarFilter} onChange={(e) => setPillarFilter(e.target.value)}>
+            <option value="all">All pillars</option>
+            {["Research", "Network", "Talent", "Opportunities", "Brand", "Ops"].map((p) => (
+              <option key={p} value={p}>{p}</option>
+            ))}
+          </Select>
+        </MobileFilterDrawer>
+      </div>
+
+      <div className="hidden shrink-0 flex-col gap-2 sm:flex sm:flex-row sm:flex-wrap sm:items-center">
         <div className="relative min-w-[220px] flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
           <Input

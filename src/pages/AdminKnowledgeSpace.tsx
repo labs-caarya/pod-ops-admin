@@ -5,6 +5,7 @@ import { AdminKnowledgeResourceCard } from "@/components/knowledge/AdminKnowledg
 import { AdminResourceEditorDrawer } from "@/components/knowledge/AdminResourceEditorDrawer";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { MobileFilterDrawer } from "@/components/ui/MobileFilterDrawer";
 import { PageHeader } from "@/components/ui/PageHeader";
 import {
   adminQueryKeys,
@@ -39,6 +40,7 @@ export default function AdminKnowledgeSpace() {
   const [search, setSearch] = useState("");
   const [domainFilter, setDomainFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingResource, setEditingResource] = useState<KnowledgeResource | null>(null);
 
@@ -92,6 +94,13 @@ export default function AdminKnowledgeSpace() {
 
   const groupedResources = useMemo(() => groupKnowledgeResourcesByDomain(filteredResources), [filteredResources]);
   const activeQuery = activeTab === "pod" ? activationQuery : resourcesQuery;
+  const hasActiveFilters = Boolean(search.trim() || domainFilter || typeFilter);
+
+  function clearFilters() {
+    setSearch("");
+    setDomainFilter("");
+    setTypeFilter("");
+  }
 
   function openCreate() {
     setEditingResource(null);
@@ -114,7 +123,25 @@ export default function AdminKnowledgeSpace() {
         description="Publish Caarya resources, moderate community guides, and inspect pod contributions across the network."
         icon={BookOpen}
         className="mb-0 shrink-0"
-        actions={<Button onClick={openCreate} disabled={!optionsQuery.data?.permissions.canCreateCurated}><Plus className="h-4 w-4" />Create resource</Button>}
+        actionsClassName="w-auto justify-end"
+        actions={
+          <>
+            <Button
+              size="icon"
+              className="sm:hidden"
+              aria-label="Create resource"
+              title="Create resource"
+              onClick={openCreate}
+              disabled={!optionsQuery.data?.permissions.canCreateCurated}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+            <Button className="hidden sm:inline-flex" onClick={openCreate} disabled={!optionsQuery.data?.permissions.canCreateCurated}>
+              <Plus className="h-4 w-4" />
+              Create resource
+            </Button>
+          </>
+        }
       />
 
       <div className="flex shrink-0 gap-1 overflow-x-auto border-b border-line">
@@ -127,7 +154,7 @@ export default function AdminKnowledgeSpace() {
 
       {activeTab === "pod" ? <Card className="shrink-0 border-dashed p-4 text-sm text-ink-muted">Pod Contributions are sourced from Pod Activation and are read-only here.</Card> : null}
 
-      <Card className="shrink-0 p-4">
+      <Card className="hidden shrink-0 p-4 sm:block">
         <div className="grid gap-3 md:grid-cols-[minmax(0,1.5fr)_repeat(2,minmax(150px,200px))]">
           <label className="grid gap-1.5"><span className="text-xs font-medium text-ink-muted">Search</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Title, curator, college, role, or tag" className="min-h-[40px] rounded-xl border border-line bg-surface-2 px-3.5 py-2 text-sm text-ink outline-none focus:border-ruby" /></label>
           <label className="grid gap-1.5"><span className="text-xs font-medium text-ink-muted">Domain</span><select value={domainFilter} onChange={(event) => setDomainFilter(event.target.value)} className="min-h-[40px] rounded-xl border border-line bg-surface-2 px-3.5 py-2 text-sm text-ink outline-none focus:border-ruby"><option value="">All domains</option>{KNOWLEDGE_RESOURCE_DOMAINS.map((domain) => <option key={domain} value={domain}>{domain}</option>)}</select></label>
@@ -137,7 +164,33 @@ export default function AdminKnowledgeSpace() {
 
       <div className="flex shrink-0 items-center justify-between gap-3">
         <p className="text-sm text-ink-muted">{filteredResources.length} {filteredResources.length === 1 ? "resource" : "resources"}</p>
-        <Button size="sm" variant="ghost" onClick={() => activeQuery.refetch()} disabled={activeQuery.isFetching}><RefreshCw className={cn("h-4 w-4", activeQuery.isFetching && "animate-spin")} />Refresh</Button>
+        <div className="flex items-center gap-2">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="sm:hidden"
+            aria-label="Refresh knowledge space"
+            title="Refresh knowledge space"
+            onClick={() => activeQuery.refetch()}
+            disabled={activeQuery.isFetching}
+          >
+            <RefreshCw className={cn("h-4 w-4", activeQuery.isFetching && "animate-spin")} />
+          </Button>
+          <MobileFilterDrawer
+            open={filterDrawerOpen}
+            onOpen={() => setFilterDrawerOpen(true)}
+            onClose={() => setFilterDrawerOpen(false)}
+            active={hasActiveFilters}
+            title="Knowledge filters"
+            triggerLabel="Open knowledge filters"
+            onClear={clearFilters}
+          >
+            <label className="grid gap-1.5"><span className="text-xs font-medium text-ink-muted">Search</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Title, curator, college, role, or tag" className="min-h-[40px] rounded-xl border border-line bg-surface-2 px-3.5 py-2 text-sm text-ink outline-none focus:border-ruby" /></label>
+            <label className="grid gap-1.5"><span className="text-xs font-medium text-ink-muted">Domain</span><select value={domainFilter} onChange={(event) => setDomainFilter(event.target.value)} className="min-h-[40px] rounded-xl border border-line bg-surface-2 px-3.5 py-2 text-sm text-ink outline-none focus:border-ruby"><option value="">All domains</option>{KNOWLEDGE_RESOURCE_DOMAINS.map((domain) => <option key={domain} value={domain}>{domain}</option>)}</select></label>
+            <label className="grid gap-1.5"><span className="text-xs font-medium text-ink-muted">Type</span><select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} className="min-h-[40px] rounded-xl border border-line bg-surface-2 px-3.5 py-2 text-sm text-ink outline-none focus:border-ruby"><option value="">All types</option><option value="docs">Docs</option><option value="html">HTML</option><option value="pdf">PDF</option><option value="in-app">In-app</option></select></label>
+          </MobileFilterDrawer>
+          <Button size="sm" variant="ghost" className="hidden sm:inline-flex" onClick={() => activeQuery.refetch()} disabled={activeQuery.isFetching}><RefreshCw className={cn("h-4 w-4", activeQuery.isFetching && "animate-spin")} />Refresh</Button>
+        </div>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto pr-1">

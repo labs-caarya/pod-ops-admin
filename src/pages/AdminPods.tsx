@@ -1,6 +1,6 @@
 import { useDeferredValue, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Building2, Info, Network, Search, ShieldAlert, Star, Users2 } from "lucide-react";
+import { ArrowRight, Building2, Info, Network, RefreshCw, Search, ShieldAlert, Star, Users2 } from "lucide-react";
 import { podPortfolioQueryOptions } from "@/lib/adminQueries";
 import type { PodPortfolioEntry } from "@/lib/api";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -8,7 +8,8 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Drawer } from "@/components/ui/Drawer";
-import { Input, Select } from "@/components/ui/Field";
+import { MobileFilterDrawer } from "@/components/ui/MobileFilterDrawer";
+import { FieldRow, Input, Select } from "@/components/ui/Field";
 import { ProgressBar } from "@/components/ui/Misc";
 
 const healthTone = {
@@ -22,9 +23,16 @@ export default function AdminPods() {
   const [query, setQuery] = useState("");
   const [health, setHealth] = useState("all");
   const [showScoreGuide, setShowScoreGuide] = useState(false);
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [selectedPod, setSelectedPod] = useState<PodPortfolioEntry | null>(null);
   const deferredQuery = useDeferredValue(query);
   const pods = portfolioQuery.data || [];
+  const hasActiveFilters = Boolean(query.trim() || health !== "all");
+
+  function clearFilters() {
+    setQuery("");
+    setHealth("all");
+  }
 
   const rows = useMemo(() => {
     const needle = deferredQuery.trim().toLowerCase();
@@ -42,10 +50,57 @@ export default function AdminPods() {
         title="Pod Portfolio"
         description="Live pod membership, activation, leadership, clubs, and challenge health."
         className="mb-0 shrink-0"
-        actions={<Button variant="secondary" onClick={() => void portfolioQuery.refetch()}>Refresh</Button>}
+        actionsClassName="w-auto justify-end"
+        actions={
+          <>
+            <Button
+              variant="secondary"
+              size="icon"
+              className="sm:hidden"
+              aria-label="Refresh pod portfolio"
+              title="Refresh pod portfolio"
+              onClick={() => void portfolioQuery.refetch()}
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+            <MobileFilterDrawer
+              open={filterDrawerOpen}
+              onOpen={() => setFilterDrawerOpen(true)}
+              onClose={() => setFilterDrawerOpen(false)}
+              active={hasActiveFilters}
+              title="Pod portfolio filters"
+              triggerLabel="Open pod portfolio filters"
+              onClear={clearFilters}
+            >
+              <FieldRow label="Search">
+                <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search by pod, college, or lead…" />
+              </FieldRow>
+              <FieldRow label="Health">
+                <Select value={health} onChange={(event) => setHealth(event.target.value)}>
+                  <option value="all">All health states</option>
+                  <option value="Thriving">Thriving</option>
+                  <option value="Watching">Watching</option>
+                  <option value="At Risk">At Risk</option>
+                </Select>
+              </FieldRow>
+              <Button
+                type="button"
+                variant="secondary"
+                aria-expanded={showScoreGuide}
+                onClick={() => setShowScoreGuide((current) => !current)}
+              >
+                <Info className="h-4 w-4" />
+                Score Guide
+              </Button>
+            </MobileFilterDrawer>
+            <Button className="hidden sm:inline-flex" variant="secondary" onClick={() => void portfolioQuery.refetch()}>
+              Refresh
+            </Button>
+          </>
+        }
       />
 
-      <Card className="shrink-0 p-4 sm:p-5">
+      <Card className="hidden shrink-0 p-4 sm:block sm:p-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
