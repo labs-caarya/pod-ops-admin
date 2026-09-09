@@ -63,9 +63,15 @@ export default function AdminDashboard() {
       />
 
       <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Active pods" value={data.metrics.activePods} icon={Building2} tone="ruby" />
-        <StatCard label="Active users" value={data.metrics.activeUsers} icon={UserRound} tone="info" />
-        <StatCard label="Open challenges" value={data.metrics.openChallenges} icon={TriangleAlert} tone="amber" />
+        <DashboardStatLink to="/pods">
+          <StatCard label="Active pods" value={data.metrics.activePods} icon={Building2} tone="ruby" />
+        </DashboardStatLink>
+        <DashboardStatLink to="/access">
+          <StatCard label="Active pod leaders" value={data.metrics.activePodLeaders ?? 0} icon={UserRound} tone="info" />
+        </DashboardStatLink>
+        <DashboardStatLink to="/challenges">
+          <StatCard label="Open challenges" value={data.metrics.openChallenges} icon={TriangleAlert} tone="amber" />
+        </DashboardStatLink>
         <StatCard label="Applicants" value={data.metrics.applicants} icon={BriefcaseBusiness} tone="good" />
       </div>
 
@@ -184,5 +190,16 @@ function MetricChip({ label, value }: { label: string; value: number }) {
       <p className="text-[11px] uppercase tracking-[0.14em] text-ink-faint">{label}</p>
       <p className="mt-1 font-display text-2xl font-black text-ink">{value}</p>
     </div>
+  );
+}
+
+function DashboardStatLink({ to, children }: { to: string; children: React.ReactNode }) {
+  return (
+    <Link
+      to={to}
+      className="block rounded-2xl transition-transform hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-ruby-bright/70"
+    >
+      {children}
+    </Link>
   );
 }

@@ -117,6 +117,7 @@ export interface AdminDashboardData {
   metrics: {
     activePods: number;
     activeUsers: number;
+    activePodLeaders?: number;
     openChallenges: number;
     applicants: number;
   };
