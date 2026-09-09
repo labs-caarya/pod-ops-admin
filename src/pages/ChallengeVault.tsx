@@ -188,8 +188,23 @@ function ChallengeTable({ items }: { items: Challenge[] }) {
 export default function ChallengeVault() {
   const challengesQuery = useQuery(challengesQueryOptions());
   const collegesQuery = useQuery(collegesQueryOptions());
-  const challenges = challengesQuery.data || [];
-  const colleges = (collegesQuery.data || []).filter((college) => college.isPod);
+  const rawChallenges = challengesQuery.data || [];
+  const colleges = useMemo(
+    () => (collegesQuery.data || []).filter((college) => college.isPod),
+    [collegesQuery.data],
+  );
+  const collegeNameById = useMemo(
+    () => new Map(colleges.map((college) => [college.id, college.name])),
+    [colleges],
+  );
+  const challenges = useMemo(
+    () => rawChallenges.map((challenge) => {
+      if (!challenge.collegeId || challenge.collegeName) return challenge;
+      const collegeName = collegeNameById.get(challenge.collegeId);
+      return collegeName ? { ...challenge, collegeName } : challenge;
+    }),
+    [rawChallenges, collegeNameById],
+  );
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [pillarFilter, setPillarFilter] = useState("all");
