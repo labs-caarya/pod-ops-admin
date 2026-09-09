@@ -209,31 +209,32 @@ export default function AdminPodRegistry() {
   }
 
   return (
-    <div className="flex min-h-[calc(100dvh-11rem)] flex-col gap-6">
+    <div className="flex h-[calc(100dvh-6rem)] min-h-0 flex-col gap-4 overflow-hidden lg:h-[calc(100dvh-8rem)]">
       <PageHeader
         title="Industrial Pods"
         description="Manage industrial pods and pod assignments."
         icon={Building2}
+        className="mb-0 shrink-0"
         actions={
-          <>
-            <Button onClick={openCreateDrawer}>
+          <div className="grid w-full grid-cols-1 gap-2 sm:flex sm:w-auto sm:items-center">
+            <Button className="w-full sm:w-auto" onClick={openCreateDrawer}>
               <Plus className="h-4 w-4" />
               Add Pod
             </Button>
             {hasActiveFilters ? (
-              <Button variant="secondary" onClick={resetFilters}>
+              <Button className="w-full sm:w-auto" variant="secondary" onClick={resetFilters}>
                 Clear Filters
               </Button>
             ) : null}
-            <Button variant="secondary" onClick={() => void collegesQuery.refetch()} disabled={loading || refreshing || saving}>
+            <Button className="w-full sm:w-auto" variant="secondary" onClick={() => void collegesQuery.refetch()} disabled={loading || refreshing || saving}>
               {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Building2 className="h-4 w-4" />}
               Refresh
             </Button>
-          </>
+          </div>
         }
       />
 
-      <Card className="p-4">
+      <Card className="shrink-0 p-4">
         <div className="mb-3">
           <h3 className="font-display text-sm font-bold text-ink">Search & Filters</h3>
           <p className="text-sm text-ink-muted">Filter pods by name, crew, or type.</p>
@@ -272,7 +273,19 @@ export default function AdminPodRegistry() {
               <Loader2 className="h-5 w-5 animate-spin text-ruby-bright" />
             </div>
           ) : filteredRows.length ? (
-            <div className="min-h-0 flex-1 overflow-auto">
+            <>
+              <div className="min-h-0 flex-1 overflow-y-auto p-3 sm:hidden">
+                <PodRegistryCards
+                  rows={filteredRows}
+                  users={usersQuery.data || []}
+                  saving={saving}
+                  onViewLeadership={openLeadershipDrawer}
+                  onViewClubs={openClubsDrawer}
+                  onEdit={openEditDrawer}
+                  onDelete={(row) => void handleDelete(row)}
+                />
+              </div>
+              <div className="hidden min-h-0 flex-1 overflow-auto sm:block">
               <table className="min-w-full border-separate border-spacing-0 text-left text-sm">
                 <thead className="sticky top-0 z-10 bg-base">
                   <tr className="text-xs uppercase tracking-[0.14em] text-ink-faint">
@@ -330,7 +343,8 @@ export default function AdminPodRegistry() {
                   })}
                 </tbody>
               </table>
-            </div>
+              </div>
+            </>
           ) : (
             <div className="flex min-h-64 flex-col items-center justify-center px-6 text-center">
               <p className="font-display font-bold text-ink">
@@ -458,6 +472,76 @@ export default function AdminPodRegistry() {
           </p>
         </div>
       </Drawer>
+    </div>
+  );
+}
+
+function PodRegistryCards({
+  rows,
+  users,
+  saving,
+  onViewLeadership,
+  onViewClubs,
+  onEdit,
+  onDelete,
+}: {
+  rows: College[];
+  users: AllowedUser[];
+  saving: boolean;
+  onViewLeadership: (row: College) => void;
+  onViewClubs: (row: College) => void;
+  onEdit: (row: College) => void;
+  onDelete: (row: College) => void;
+}) {
+  return (
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+      {rows.map((row) => {
+        const execLead = findCollegeLead(row, users)?.name;
+        return (
+          <div key={row.id} className="rounded-xl border border-line bg-surface-2 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate font-semibold text-ink">{row.name || "—"}</p>
+                <p className="mt-0.5 truncate text-sm text-ink-muted">{row.crew || "—"}</p>
+              </div>
+              <Badge tone={row.isPod ? "good" : "muted"}>{row.isPod ? "Pod" : "Non-Pod"}</Badge>
+            </div>
+
+            <div className="mt-4 space-y-3 border-t border-line pt-3">
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-ink-faint">Exec Lead</p>
+                <p className="mt-1 text-sm font-medium text-ink">{execLead || "Unassigned"}</p>
+              </div>
+              {row.isPod ? (
+                <button
+                  type="button"
+                  onClick={() => onViewLeadership(row)}
+                  className="focus-ring text-sm text-ruby-bright hover:underline"
+                >
+                  View leadership
+                </button>
+              ) : (
+                <p className="text-xs text-ink-faint">Leadership not applicable</p>
+              )}
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 gap-2 min-[420px]:grid-cols-3">
+              <Button size="sm" variant="secondary" className="w-full" onClick={() => onViewClubs(row)}>
+                <Landmark className="h-4 w-4" />
+                Clubs
+              </Button>
+              <Button size="sm" variant="secondary" className="w-full" onClick={() => onEdit(row)}>
+                <Pencil className="h-4 w-4" />
+                Edit
+              </Button>
+              <Button size="sm" variant="danger" className="w-full" onClick={() => onDelete(row)} disabled={saving}>
+                <Trash2 className="h-4 w-4" />
+                Delete
+              </Button>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
