@@ -197,11 +197,12 @@ export default function AdminUsers() {
   }
 
   return (
-    <div className="flex min-h-[calc(100dvh-11rem)] flex-col gap-6">
+    <div className="flex h-[calc(100dvh-6rem)] min-h-0 flex-col gap-4 overflow-hidden lg:h-[calc(100dvh-8rem)]">
       <PageHeader
         title="Leadership"
         description="Create and manage portal accounts. Every non-admin user is assigned to an active college and a pod role."
         icon={UserRound}
+        className="mb-0 shrink-0"
         actions={
           <Button className="w-full sm:w-auto" onClick={openCreateDrawer} disabled={!firstAssignableCollegeId || loading}>
             <Plus className="h-4 w-4" />
