@@ -45,6 +45,10 @@ const EMPTY_DRAFT: UserDraft = {
   podRole: DEFAULT_ROLE,
 };
 
+function isAdminUser(user: AllowedUser) {
+  return user.primary_role === "super_admin" || Boolean(user.permissions?.includes("*"));
+}
+
 export default function AdminUsers() {
   const [saving, setSaving] = useState(false);
   const [drawerMode, setDrawerMode] = useState<"create" | "edit" | null>(null);
@@ -199,7 +203,7 @@ export default function AdminUsers() {
         description="Create and manage portal accounts. Every non-admin user is assigned to an active college and a pod role."
         icon={UserRound}
         actions={
-          <Button onClick={openCreateDrawer} disabled={!firstAssignableCollegeId || loading}>
+          <Button className="w-full sm:w-auto" onClick={openCreateDrawer} disabled={!firstAssignableCollegeId || loading}>
             <Plus className="h-4 w-4" />
             Create user
           </Button>
@@ -208,7 +212,7 @@ export default function AdminUsers() {
 
       <Card className="flex min-h-0 flex-1 overflow-hidden p-0">
         <div className="flex min-h-0 flex-1 flex-col">
-          <div className="flex items-center justify-between border-b border-line px-5 py-4">
+          <div className="flex flex-col gap-3 border-b border-line px-4 py-4 sm:px-5 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="font-display text-lg font-bold text-ink">Current Leadership</p>
               <p className="text-sm text-ink-muted">
@@ -217,8 +221,8 @@ export default function AdminUsers() {
                   : formatLeadershipSummary(users.length, filteredUsers.length)}
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1 rounded-xl border border-line bg-surface-2 p-1">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <div className="hidden items-center gap-1 rounded-xl border border-line bg-surface-2 p-1 sm:flex">
                 <button
                   type="button"
                   onClick={() => setViewMode("cards")}
@@ -250,6 +254,7 @@ export default function AdminUsers() {
               </div>
               <Button
                 variant="secondary"
+                className="w-full sm:w-auto"
                 onClick={() => void Promise.all([
                   usersQuery.refetch(),
                   collegesQuery.refetch(),
@@ -262,7 +267,7 @@ export default function AdminUsers() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 border-b border-line px-5 py-4">
+          <div className="flex flex-col gap-2 border-b border-line px-4 py-4 sm:flex-row sm:items-center sm:px-5">
             <Select value={collegeFilter} onChange={(e) => setCollegeFilter(e.target.value)} className="w-full sm:w-64">
               <option value="">All colleges</option>
               {registeredPods.map((college) => (
@@ -272,7 +277,7 @@ export default function AdminUsers() {
               ))}
             </Select>
             {hasActiveFilters ? (
-              <Button variant="ghost" size="sm" onClick={() => setCollegeFilter("")}>
+              <Button variant="ghost" size="sm" className="w-full sm:w-auto" onClick={() => setCollegeFilter("")}>
                 Clear filter
               </Button>
             ) : null}
@@ -284,7 +289,16 @@ export default function AdminUsers() {
             </div>
           ) : filteredUsers.length ? (
             viewMode === "table" ? (
-              <div className="min-h-0 flex-1 overflow-auto">
+              <>
+                <div className="min-h-0 flex-1 overflow-y-auto p-3 sm:hidden">
+                  <LeadershipCards
+                    users={filteredUsers}
+                    saving={saving}
+                    onEdit={openEditDrawer}
+                    onDelete={(user) => void handleDelete(user)}
+                  />
+                </div>
+                <div className="hidden min-h-0 flex-1 overflow-auto sm:block">
                 <table className="min-w-full border-separate border-spacing-0 text-left text-sm">
                   <thead className="sticky top-0 z-10 bg-base">
                     <tr className="text-xs uppercase tracking-[0.14em] text-ink-faint">
@@ -297,7 +311,7 @@ export default function AdminUsers() {
                   </thead>
                   <tbody>
                     {filteredUsers.map((user) => {
-                      const isAdmin = user.primary_role === "super_admin" || Boolean(user.permissions?.includes("*"));
+                      const isAdmin = isAdminUser(user);
 
                       return (
                         <tr key={user.id} className="align-top text-ink-muted">
@@ -352,57 +366,16 @@ export default function AdminUsers() {
                     })}
                   </tbody>
                 </table>
-              </div>
-            ) : (
-              <div className="min-h-0 flex-1 overflow-y-auto p-5">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {filteredUsers.map((user) => {
-                  const isAdmin = user.primary_role === "super_admin" || Boolean(user.permissions?.includes("*"));
-
-                  return (
-                    <div key={user.id} className="rounded-2xl border border-line bg-surface-2 p-4">
-                      <div className="space-y-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-semibold text-ink">{user.name || user.username}</p>
-                          <Badge tone={isAdmin ? "info" : "muted"}>
-                            {isAdmin ? "super_admin" : formatPodRole(user.podRole)}
-                          </Badge>
-                          <Badge tone={user.isActive === false ? "warn" : "good"}>
-                            {user.isActive === false ? "Inactive" : "Active"}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-ink-muted">@{user.username}</p>
-                        <p className="text-sm text-ink-faint">
-                          {isAdmin ? "Admin dashboard account" : `${user.collegeName || "No college"} · ${formatPodRole(user.podRole)}`}
-                        </p>
-                      </div>
-
-                      <div className="mt-4 flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => openEditDrawer(user)}
-                          disabled={isAdmin}
-                          title={isAdmin ? "Default admin stays fixed to admin access." : undefined}
-                        >
-                          <Pencil className="h-4 w-4" />
-                          Edit
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="danger"
-                          onClick={() => void handleDelete(user)}
-                          disabled={saving || isAdmin}
-                          title={isAdmin ? "Default admin cannot be deleted." : undefined}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          Delete
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
                 </div>
+              </>
+            ) : (
+              <div className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-5">
+                <LeadershipCards
+                  users={filteredUsers}
+                  saving={saving}
+                  onEdit={openEditDrawer}
+                  onDelete={(user) => void handleDelete(user)}
+                />
               </div>
             )
           ) : (
@@ -530,6 +503,79 @@ export default function AdminUsers() {
           </form>
         </div>
       </Drawer>
+    </div>
+  );
+}
+
+function LeadershipCards({
+  users,
+  saving,
+  onEdit,
+  onDelete,
+}: {
+  users: AllowedUser[];
+  saving: boolean;
+  onEdit: (user: AllowedUser) => void;
+  onDelete: (user: AllowedUser) => void;
+}) {
+  return (
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+      {users.map((user) => {
+        const isAdmin = isAdminUser(user);
+        return (
+          <div key={user.id} className="rounded-xl border border-line bg-surface-2 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate font-semibold text-ink">{user.name || user.username}</p>
+                <p className="mt-0.5 truncate text-sm text-ink-muted">@{user.username}</p>
+              </div>
+              <Badge tone={user.isActive === false ? "warn" : "good"}>
+                {user.isActive === false ? "Inactive" : "Active"}
+              </Badge>
+            </div>
+
+            <div className="mt-4 space-y-3 border-t border-line pt-3">
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-ink-faint">Access</p>
+                <p className="mt-1 text-sm font-medium text-ink">
+                  {isAdmin ? "Admin dashboard account" : formatPodRole(user.podRole)}
+                </p>
+              </div>
+              {!isAdmin && (
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-ink-faint">College</p>
+                  <p className="mt-1 text-sm text-ink-muted">{user.collegeName || "No college"}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                className="w-full"
+                onClick={() => onEdit(user)}
+                disabled={isAdmin}
+                title={isAdmin ? "Default admin stays fixed to admin access." : undefined}
+              >
+                <Pencil className="h-4 w-4" />
+                Edit
+              </Button>
+              <Button
+                size="sm"
+                variant="danger"
+                className="w-full"
+                onClick={() => onDelete(user)}
+                disabled={saving || isAdmin}
+                title={isAdmin ? "Default admin cannot be deleted." : undefined}
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete
+              </Button>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
