@@ -36,6 +36,19 @@ function collegeLabel(challenge: Challenge) {
   return challenge.collegeName || challenge.collegeId || "All colleges";
 }
 
+function CollegeName({ challenge }: { challenge: Challenge }) {
+  const label = collegeLabel(challenge);
+  const [primary, ...rest] = label.split(",").map((part) => part.trim()).filter(Boolean);
+  return (
+    <div className="max-w-[220px] leading-snug">
+      <p className="line-clamp-1 text-sm font-medium text-ink">{primary || label}</p>
+      {rest.length > 0 && (
+        <p className="line-clamp-1 text-xs text-ink-muted">{rest.join(", ")}</p>
+      )}
+    </div>
+  );
+}
+
 function ChallengeCards({ items }: { items: Challenge[] }) {
   return (
     <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
@@ -52,8 +65,10 @@ function ChallengeCards({ items }: { items: Challenge[] }) {
                 </div>
                 <ChevronRight className="h-4 w-4 shrink-0 text-ink-faint" />
               </div>
+              <div className="mt-3 border-t border-line pt-3">
+                <CollegeName challenge={c} />
+              </div>
               <div className="mt-3 flex flex-wrap gap-1.5">
-                <Badge tone="info">{collegeLabel(c)}</Badge>
                 <Badge tone={CHALLENGE_STATUS_TONE[c.status] ?? "muted"}>{c.status}</Badge>
                 <Badge tone={CHALLENGE_SEVERITY_TONE[c.severity] ?? "muted"}>{c.severity}</Badge>
                 <Badge tone="muted">{c.pillar}</Badge>
@@ -148,7 +163,7 @@ function ChallengeTable({ items }: { items: Challenge[] }) {
                     </Link>
                   </td>
                   <td className="px-4 py-3">
-                    <Badge tone="info">{collegeLabel(c)}</Badge>
+                    <CollegeName challenge={c} />
                   </td>
                   <td className="px-4 py-3">
                     <Badge tone="muted">{c.pillar}</Badge>
