@@ -36,15 +36,16 @@ export default function AdminPods() {
   }, [deferredQuery, health, pods]);
 
   return (
-    <div>
+    <div className="flex h-[calc(100dvh-6rem)] min-h-0 flex-col gap-4 overflow-hidden lg:h-[calc(100dvh-8rem)]">
       <PageHeader
         icon={Network}
         title="Pod Portfolio"
         description="Live pod membership, activation, leadership, clubs, and challenge health."
+        className="mb-0 shrink-0"
         actions={<Button variant="secondary" onClick={() => void portfolioQuery.refetch()}>Refresh</Button>}
       />
 
-      <Card className="mb-4 p-4 sm:p-5">
+      <Card className="shrink-0 p-4 sm:p-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
@@ -71,19 +72,21 @@ export default function AdminPods() {
 
       {showScoreGuide ? <ScoreGuide /> : null}
 
-      {portfolioQuery.isPending ? (
+      <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+        {portfolioQuery.isPending ? (
         <Card className="p-8 text-center text-sm text-ink-muted">Loading pod portfolio…</Card>
       ) : portfolioQuery.isError ? (
         <Card className="p-8 text-center text-sm text-bad">
           {portfolioQuery.error instanceof Error ? portfolioQuery.error.message : "Could not load pod portfolio."}
         </Card>
-      ) : (
-        <div className="grid gap-6 xl:grid-cols-2">
+        ) : (
+          <div className="grid gap-6 xl:grid-cols-2">
           {rows.map((pod) => (
             <PodPortfolioCard key={pod.id} pod={pod} onSelect={() => setSelectedPod(pod)} />
           ))}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
       <PodDrawer pod={selectedPod} onClose={() => setSelectedPod(null)} />
     </div>

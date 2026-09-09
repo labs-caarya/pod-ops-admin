@@ -54,13 +54,14 @@ export default function IndustryApplicants() {
   }, [applicants, roleFilter, search]);
 
   return (
-    <div className="flex min-h-[calc(100dvh-11rem)] flex-col gap-6">
+    <div className="flex h-[calc(100dvh-6rem)] min-h-0 flex-col gap-4 overflow-hidden lg:h-[calc(100dvh-8rem)]">
       <PageHeader
         title="Industry applicants"
         description="Browse industry profile submissions with skills, tools, and work preferences across the network."
         icon={Briefcase}
+        className="mb-0 shrink-0"
         actions={
-          <Button variant="secondary" onClick={() => void applicantsQuery.refetch()} disabled={loading || refreshing}>
+          <Button className="w-full sm:w-auto" variant="secondary" onClick={() => void applicantsQuery.refetch()} disabled={loading || refreshing}>
             {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             Refresh
           </Button>
@@ -69,7 +70,7 @@ export default function IndustryApplicants() {
 
       <Card className="flex min-h-0 flex-1 overflow-hidden p-0">
         <div className="flex min-h-0 flex-1 flex-col">
-          <div className="flex flex-wrap items-center gap-2 border-b border-line px-5 py-4">
+          <div className="flex flex-col gap-2 border-b border-line px-4 py-4 sm:flex-row sm:items-center sm:px-5">
             <div className="relative min-w-[220px] flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
               <Input

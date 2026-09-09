@@ -42,11 +42,12 @@ export default function AdminPodActivationDetail() {
   }
 
   return (
-    <div>
+    <div className="flex h-[calc(100dvh-6rem)] min-h-0 flex-col gap-4 overflow-hidden lg:h-[calc(100dvh-8rem)]">
       <PageHeader
         icon={Rocket}
         title={`${college.name} · Activation`}
         description={`${college.crew} — Level 0 progress and category breakdown.`}
+        className="mb-0 shrink-0"
         actions={
           <Link
             to="/pod-activation"
@@ -57,7 +58,7 @@ export default function AdminPodActivationDetail() {
         }
       />
 
-      <Card className="mb-4 p-4 sm:p-5">
+      <Card className="shrink-0 p-4 sm:p-5">
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="font-display text-lg font-bold text-ink">Overall progress</p>
@@ -70,7 +71,7 @@ export default function AdminPodActivationDetail() {
         <ProgressBar value={snapshot.percent} tone={snapshot.percent >= 100 ? "good" : "ruby"} />
       </Card>
 
-      <div className="space-y-4">
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
         {POD_ACTIVATION_CATEGORIES.map((category) => {
           const catSnap = snapshot.byCategory.find((c) => c.categoryId === category.id);
           const catItems = snapshot.items.filter((item) => item.categoryId === category.id);

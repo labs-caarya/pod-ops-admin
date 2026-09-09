@@ -149,13 +149,14 @@ export default function AdminPodMentors() {
   }
 
   return (
-    <div className="flex min-h-[calc(100dvh-11rem)] flex-col gap-6">
+    <div className="flex h-[calc(100dvh-6rem)] min-h-0 flex-col gap-4 overflow-hidden lg:h-[calc(100dvh-8rem)]">
       <PageHeader
         title="Pod mentors"
         description="Assign mentors to colleges."
         icon={GraduationCap}
+        className="mb-0 shrink-0"
         actions={
-          <Button onClick={openCreateDrawer}>
+          <Button className="w-full sm:w-auto" onClick={openCreateDrawer}>
             <Plus className="h-4 w-4" />
             Add mentor
           </Button>
@@ -165,7 +166,7 @@ export default function AdminPodMentors() {
       {message && (
         <div
           className={cn(
-            "rounded-xl border px-4 py-3 text-sm",
+            "shrink-0 rounded-xl border px-4 py-3 text-sm",
             message.tone === "good" && "border-good/30 bg-good/10 text-good",
             message.tone === "bad" && "border-bad/30 bg-bad/10 text-bad",
             message.tone === "info" && "border-line bg-surface-2 text-ink-muted",
@@ -177,7 +178,7 @@ export default function AdminPodMentors() {
 
       <Card className="flex min-h-0 flex-1 overflow-hidden p-0">
         <div className="flex min-h-0 flex-1 flex-col">
-          <div className="flex items-center justify-between border-b border-line px-5 py-4">
+          <div className="flex flex-col gap-3 border-b border-line px-4 py-4 sm:px-5 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="font-display text-lg font-bold text-ink">Mentor roster</p>
               <p className="text-sm text-ink-muted">
@@ -188,6 +189,7 @@ export default function AdminPodMentors() {
             </div>
             <Button
               variant="secondary"
+              className="w-full sm:w-auto"
               onClick={() => void Promise.all([mentorsQuery.refetch(), collegesQuery.refetch()])}
               disabled={loading || refreshing || saving}
             >
@@ -196,7 +198,7 @@ export default function AdminPodMentors() {
             </Button>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 border-b border-line px-5 py-4">
+          <div className="flex flex-col gap-2 border-b border-line px-4 py-4 sm:flex-row sm:items-center sm:px-5">
             <Select value={podFilter} onChange={(e) => setPodFilter(e.target.value)} className="w-full sm:w-56">
               <option value="">All colleges</option>
               {colleges.map((college) => (

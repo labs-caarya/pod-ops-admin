@@ -68,13 +68,14 @@ export default function FutureCraftApplicants() {
   }
 
   return (
-    <div className="flex min-h-[calc(100dvh-11rem)] flex-col gap-6">
+    <div className="flex h-[calc(100dvh-6rem)] min-h-0 flex-col gap-4 overflow-hidden lg:h-[calc(100dvh-8rem)]">
       <PageHeader
         title="Observership applicants"
         description="Review every Observership application and quickly see which colleges already have a pod."
         icon={GraduationCap}
+        className="mb-0 shrink-0"
         actions={
-          <Button variant="secondary" onClick={() => void applicantsQuery.refetch()} disabled={loading || refreshing}>
+          <Button className="w-full sm:w-auto" variant="secondary" onClick={() => void applicantsQuery.refetch()} disabled={loading || refreshing}>
             {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             Refresh
           </Button>
@@ -83,7 +84,7 @@ export default function FutureCraftApplicants() {
 
       <Card className="flex min-h-0 flex-1 overflow-hidden p-0">
         <div className="flex min-h-0 flex-1 flex-col">
-          <div className="flex items-center justify-between border-b border-line px-5 py-4">
+          <div className="flex flex-col gap-3 border-b border-line px-4 py-4 sm:px-5 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="font-display text-lg font-bold text-ink">Application inbox</p>
               <p className="text-sm text-ink-muted">
@@ -91,7 +92,7 @@ export default function FutureCraftApplicants() {
                 {hasActiveFilters ? ` shown of ${applicants.length}` : ""} across matched and unmatched colleges
               </p>
             </div>
-            <div className="flex items-center gap-1 rounded-xl border border-line bg-surface-2 p-1">
+            <div className="hidden items-center gap-1 rounded-xl border border-line bg-surface-2 p-1 sm:flex">
               <button
                 type="button"
                 onClick={() => setViewMode("cards")}
@@ -123,7 +124,7 @@ export default function FutureCraftApplicants() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 border-b border-line px-5 py-4">
+          <div className="flex flex-col gap-2 border-b border-line px-4 py-4 sm:flex-row sm:items-center sm:px-5">
             <Select value={yearFilter} onChange={(e) => setYearFilter(e.target.value)} className="w-full sm:w-44">
               <option value="all">All years</option>
               {yearOptions.map((year) => (
@@ -142,7 +143,7 @@ export default function FutureCraftApplicants() {
               <option value="__unmatched__">No pod match</option>
             </Select>
             {hasActiveFilters && (
-              <Button variant="ghost" size="sm" onClick={clearFilters}>
+              <Button variant="ghost" size="sm" className="w-full sm:w-auto" onClick={clearFilters}>
                 <X className="h-3.5 w-3.5" />
                 Clear filters
               </Button>

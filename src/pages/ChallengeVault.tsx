@@ -257,15 +257,16 @@ export default function ChallengeVault() {
   }, [challenges, search, statusFilter, pillarFilter, collegeFilter]);
 
   return (
-    <div>
+    <div className="flex h-[calc(100dvh-6rem)] min-h-0 flex-col gap-4 overflow-hidden lg:h-[calc(100dvh-8rem)]">
       <PageHeader
         icon={Vault}
         title="Challenge Vault"
         description="See every challenge colleges have mapped — symptoms, RCA progress, and action plans across the network."
+        className="mb-0 shrink-0"
         actions={<Link to="/challenges/new"><Button>Map challenge</Button></Link>}
       />
 
-      <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-5">
+      <div className="grid shrink-0 grid-cols-2 gap-3 lg:grid-cols-5">
         <StatCard label="Open challenges" value={stats.open} icon={AlertTriangle} tone="amber" />
         <StatCard label="In RCA" value={stats.investigating} icon={GitBranch} tone="info" />
         <StatCard label="Action plans" value={stats.actionPlan} icon={ListChecks} tone="ruby" />
@@ -273,7 +274,7 @@ export default function ChallengeVault() {
         <StatCard label="High priority" value={stats.critical} icon={AlertTriangle} tone="bad" />
       </div>
 
-      <Card className="mb-4 p-4">
+      <Card className="shrink-0 p-4">
         <p className="mb-3 font-display text-sm font-bold text-ink">How the vault works</p>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           {[
@@ -290,7 +291,7 @@ export default function ChallengeVault() {
         </div>
       </Card>
 
-      <div className="mb-4 flex flex-wrap items-center gap-2">
+      <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
         <div className="relative min-w-[220px] flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
           <Input
@@ -348,7 +349,8 @@ export default function ChallengeVault() {
         </div>
       </div>
 
-      {challengesQuery.isPending ? (
+      <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+        {challengesQuery.isPending ? (
         <Card className="p-8 text-center text-sm text-ink-muted">Loading challenges…</Card>
       ) : challengesQuery.isError ? (
         <Card className="p-8 text-center text-sm text-bad">
@@ -362,16 +364,17 @@ export default function ChallengeVault() {
         />
       ) : viewMode === "cards" ? (
         <ChallengeCards items={filtered} />
-      ) : (
-        <>
+        ) : (
+          <>
           <div className="sm:hidden">
             <ChallengeCards items={filtered} />
           </div>
           <div className="hidden sm:block">
             <ChallengeTable items={filtered} />
           </div>
-        </>
-      )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

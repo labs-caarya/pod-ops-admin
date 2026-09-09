@@ -49,11 +49,12 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div>
+    <div className="flex h-[calc(100dvh-6rem)] min-h-0 flex-col gap-4 overflow-hidden lg:h-[calc(100dvh-8rem)]">
       <PageHeader
         icon={LayoutDashboard}
         title="Pod Ops Control Room"
         description="Live network health, leadership, applicants, and delivery blockers from the backend."
+        className="mb-0 shrink-0"
         actions={
           <>
             <Link to="/access"><Button variant="outline">Leadership</Button></Link>
@@ -62,7 +63,8 @@ export default function AdminDashboard() {
         }
       />
 
-      <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 xl:grid-cols-4">
+      <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+        <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 xl:grid-cols-4">
         <DashboardStatLink to="/pods">
           <StatCard label="Active pods" value={data.metrics.activePods} icon={Building2} tone="ruby" />
         </DashboardStatLink>
@@ -179,6 +181,7 @@ export default function AdminDashboard() {
             </div>
           </Card>
         </div>
+      </div>
       </div>
     </div>
   );

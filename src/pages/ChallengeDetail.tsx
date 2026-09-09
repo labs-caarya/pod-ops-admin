@@ -147,12 +147,12 @@ function ChallengeDetailBody({
   }
 
   return (
-    <div className="pb-8">
-      <Link to="/challenges" className="mb-4 inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink">
+    <div className="flex h-[calc(100dvh-6rem)] min-h-0 flex-col gap-4 overflow-hidden lg:h-[calc(100dvh-8rem)]">
+      <Link to="/challenges" className="inline-flex shrink-0 items-center gap-1.5 text-sm text-ink-muted hover:text-ink">
         <ArrowLeft className="h-4 w-4" /> Challenge Vault
       </Link>
 
-      <div className="mb-6">
+      <div className="shrink-0">
         <h1 className="font-display text-2xl font-black tracking-tight text-ink sm:text-3xl">
           {isNew ? "Map a new challenge" : editor.form.title || "Untitled challenge"}
         </h1>
@@ -165,7 +165,7 @@ function ChallengeDetailBody({
       </div>
 
       {isNew ? (
-        <Card className="mb-4 p-4">
+        <Card className="shrink-0 p-4">
           <FieldRow label="College">
             <Select
               value={editor.form.collegeId || ""}
@@ -182,38 +182,41 @@ function ChallengeDetailBody({
         </Card>
       ) : null}
 
-      <div className="mb-5 space-y-4">
+      <div className="shrink-0 space-y-4">
         <ChallengeProgressStrip rcaPct={editor.rcaPct} actionPct={editor.actionPct} />
         <ChallengeStepNav active={activeStep} onChange={onStepChange} stepComplete={editor.stepComplete} />
       </div>
-      <ChallengeFormSections
-        activeStep={activeStep}
-        form={editor.form}
-        set={editor.set}
-        setWhy={editor.setWhy}
-        addSymptom={editor.addSymptom}
-        updateSymptom={editor.updateSymptom}
-        removeSymptom={editor.removeSymptom}
-        addAction={editor.addAction}
-        updateAction={editor.updateAction}
-        removeAction={editor.removeAction}
-      />
 
-      {message ? <p className="mt-4 rounded-xl border border-bad/30 bg-bad/10 px-3 py-2 text-sm text-bad">{message}</p> : null}
+      <div className="min-h-0 flex-1 overflow-y-auto pb-24 pr-1">
+        <ChallengeFormSections
+          activeStep={activeStep}
+          form={editor.form}
+          set={editor.set}
+          setWhy={editor.setWhy}
+          addSymptom={editor.addSymptom}
+          updateSymptom={editor.updateSymptom}
+          removeSymptom={editor.removeSymptom}
+          addAction={editor.addAction}
+          updateAction={editor.updateAction}
+          removeAction={editor.removeAction}
+        />
 
-      <div className="mt-4 flex items-center justify-between gap-2">
-        <Button variant="ghost" size="sm" onClick={() => onStepChange(STEP_ORDER[stepIndex - 1])} disabled={stepIndex === 0}>
-          <ChevronLeft className="h-4 w-4" /> Previous
-        </Button>
-        <Button variant="secondary" size="sm" onClick={() => onStepChange(STEP_ORDER[stepIndex + 1])} disabled={stepIndex === STEP_ORDER.length - 1}>
-          Next step <ChevronRight className="h-4 w-4" />
-        </Button>
-      </div>
+        {message ? <p className="mt-4 rounded-xl border border-bad/30 bg-bad/10 px-3 py-2 text-sm text-bad">{message}</p> : null}
 
-      <div className="sticky bottom-0 -mx-4 mt-8 border-t border-line bg-base-2/95 px-4 py-3 backdrop-blur-sm sm:-mx-6 lg:-mx-8">
-        <div className="flex items-center justify-between gap-3">
-          {!isNew ? <Button variant="danger" size="sm" onClick={() => void remove()} disabled={saving}><Trash2 className="h-4 w-4" /> Delete</Button> : <Button variant="ghost" size="sm" onClick={onCancel}>Cancel</Button>}
-          <Button onClick={() => void save()} disabled={saving}>{saving ? "Saving…" : isNew ? "Create challenge" : "Save changes"}</Button>
+        <div className="mt-4 flex items-center justify-between gap-2">
+          <Button variant="ghost" size="sm" onClick={() => onStepChange(STEP_ORDER[stepIndex - 1])} disabled={stepIndex === 0}>
+            <ChevronLeft className="h-4 w-4" /> Previous
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => onStepChange(STEP_ORDER[stepIndex + 1])} disabled={stepIndex === STEP_ORDER.length - 1}>
+            Next step <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <div className="sticky bottom-0 -mx-4 mt-8 border-t border-line bg-base-2/95 px-4 py-3 backdrop-blur-sm sm:-mx-6 lg:-mx-8">
+          <div className="flex items-center justify-between gap-3">
+            {!isNew ? <Button variant="danger" size="sm" onClick={() => void remove()} disabled={saving}><Trash2 className="h-4 w-4" /> Delete</Button> : <Button variant="ghost" size="sm" onClick={onCancel}>Cancel</Button>}
+            <Button onClick={() => void save()} disabled={saving}>{saving ? "Saving…" : isNew ? "Create challenge" : "Save changes"}</Button>
+          </div>
         </div>
       </div>
     </div>

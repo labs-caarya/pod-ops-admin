@@ -58,21 +58,22 @@ export default function AdminPodActivation() {
   }, [rows]);
 
   return (
-    <div>
+    <div className="flex h-[calc(100dvh-6rem)] min-h-0 flex-col gap-4 overflow-hidden lg:h-[calc(100dvh-8rem)]">
       <PageHeader
         icon={Rocket}
         title="Pod Activation"
         description="Level 0 progress across all pods — 10 categories, 50 steps per pod."
+        className="mb-0 shrink-0"
       />
 
-      <div className="mb-4 grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 lg:grid-cols-4">
+      <div className="grid shrink-0 grid-cols-1 gap-3 min-[420px]:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Network average" value={`${stats.avg}%`} icon={Rocket} tone="ruby" />
         <StatCard label="Fully activated" value={stats.complete} icon={Rocket} tone="good" />
         <StatCard label="In progress" value={stats.inProgress} icon={Rocket} tone="amber" />
         <StatCard label="Not started" value={stats.notStarted} icon={Rocket} tone="muted" />
       </div>
 
-      <Card className="mb-4 p-4">
+      <Card className="shrink-0 p-4">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
           <Input
@@ -84,7 +85,8 @@ export default function AdminPodActivation() {
         </div>
       </Card>
 
-      {collegesQuery.isPending || activationQuery.isPending ? (
+      <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+        {collegesQuery.isPending || activationQuery.isPending ? (
         <Card className="p-8 text-center text-sm text-ink-muted">Loading pods…</Card>
       ) : collegesQuery.isError || activationQuery.isError ? (
         <Card className="p-8 text-center text-sm text-bad">
@@ -124,12 +126,13 @@ export default function AdminPodActivation() {
             </Link>
           ))}
         </div>
-      ) : (
-        <EmptyState
+        ) : (
+          <EmptyState
           title="No pods found"
           description={query ? "Try a different search." : "No industrial pods are registered yet."}
-        />
-      )}
+          />
+        )}
+      </div>
     </div>
   );
 }
