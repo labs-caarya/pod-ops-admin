@@ -14,6 +14,8 @@ export type KnowledgeResourceWriteType = "docs" | "html";
 export type KnowledgeResourceCategory = "caarya-curated" | "community";
 export type KnowledgeResourceDomain = (typeof KNOWLEDGE_RESOURCE_DOMAINS)[number];
 
+import type { ActivationResourceMetadata, ResourceScope } from "@/lib/podActivation/activationLearning";
+
 export interface KnowledgeResource {
   id: string;
   title: string;
@@ -23,6 +25,9 @@ export interface KnowledgeResource {
   category: KnowledgeResourceCategory | "pod";
   domain: string;
   tags: string[];
+  content?: string;
+  resourceScope?: ResourceScope;
+  activation?: ActivationResourceMetadata | null;
   curatedByName: string;
   createdByUserId?: string | null;
   createdByName?: string | null;
@@ -44,6 +49,7 @@ export interface KnowledgeResourceOptions {
   permissions: {
     canCreateCommunity: boolean;
     canCreateCurated: boolean;
+    canManageActivation?: boolean;
   };
 }
 

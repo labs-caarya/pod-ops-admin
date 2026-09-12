@@ -1,6 +1,7 @@
 import { TOKEN_KEY } from "@/lib/constants";
 import { normalizeLeaderGoal } from "@/lib/leaderGoals";
 import { normalizeMentor } from "@/lib/mentors";
+import type { ActivationKnowledgeResourceInput } from "@/lib/podActivation/activationLearning";
 import type { PodActivationArtifact, PodActivationProgress } from "@/lib/podActivation/types";
 import type { PodRoleApi } from "@/lib/podRoles";
 import type { Challenge, PodLeaderGoal, PodMentor } from "@/lib/types";
@@ -637,8 +638,28 @@ export async function deleteMentor(id: string): Promise<void> {
   await requestJson(`/mentors/${encodeURIComponent(id)}`, { method: "DELETE" });
 }
 
-export async function listKnowledgeResources(): Promise<KnowledgeResource[]> {
-  const payload = await requestJson("/knowledge-resources");
+export interface KnowledgeResourceListParams {
+  resourceScope?: number;
+  activationStage?: string;
+  activationSectionKey?: string;
+  activationAudienceType?: string;
+  activationRoleId?: string;
+  includeUnpublishedActivation?: boolean;
+  search?: string;
+}
+
+function buildQueryString(params: KnowledgeResourceListParams = {}) {
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === null || value === "") continue;
+    query.set(key, String(value));
+  }
+  const serialized = query.toString();
+  return serialized ? `?${serialized}` : "";
+}
+
+export async function listKnowledgeResources(params: KnowledgeResourceListParams = {}): Promise<KnowledgeResource[]> {
+  const payload = await requestJson(`/knowledge-resources${buildQueryString(params)}`);
   return unwrapList<KnowledgeResource>(payload, "resources");
 }
 
@@ -676,4 +697,27 @@ export async function updateKnowledgeResource(
 
 export async function deleteKnowledgeResource(id: string): Promise<void> {
   await requestJson(`/knowledge-resources/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
+export async function createActivationKnowledgeResource(input: ActivationKnowledgeResourceInput): Promise<KnowledgeResource> {
+  const payload = await requestJson("/knowledge-resources/activation", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  const data = unwrapData<KnowledgeResource>(payload);
+  if (!data?.id) throw new Error("Activation resource response was incomplete.");
+  return data;
+}
+
+export async function updateActivationKnowledgeResource(
+  id: string,
+  input: ActivationKnowledgeResourceInput,
+): Promise<KnowledgeResource> {
+  const payload = await requestJson(`/knowledge-resources/activation/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+  const data = unwrapData<KnowledgeResource>(payload);
+  if (!data?.id) throw new Error("Activation resource response was incomplete.");
+  return data;
 }

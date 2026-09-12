@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Rocket, Search, ChevronRight } from "lucide-react";
+import { ChevronRight, ListChecks, Rocket, Search } from "lucide-react";
+import { ActivationSetupPanel } from "@/components/podActivation/ActivationSetupPanel";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -21,6 +22,7 @@ function podActivationTone(percent: number) {
 export default function AdminPodActivation() {
   const [query, setQuery] = useState("");
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+  const [activeView, setActiveView] = useState<"overview" | "setup">("overview");
   const collegesQuery = useQuery(collegesQueryOptions());
   const activationQuery = useQuery(podActivationQueryOptions());
   const progress = activationQuery.data?.progress || [];
@@ -90,6 +92,16 @@ export default function AdminPodActivation() {
         }
       />
 
+      <div className="flex shrink-0 gap-2 overflow-x-auto border-b border-line pb-2">
+        <button type="button" onClick={() => setActiveView("overview")} className={"flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors " + (activeView === "overview" ? "bg-ruby/15 text-ruby-bright" : "text-ink-muted hover:bg-surface-2 hover:text-ink")}>
+          <Rocket className="h-4 w-4" />Pod overview
+        </button>
+        <button type="button" onClick={() => setActiveView("setup")} className={"flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors " + (activeView === "setup" ? "bg-ruby/15 text-ruby-bright" : "text-ink-muted hover:bg-surface-2 hover:text-ink")}>
+          <ListChecks className="h-4 w-4" />Activation setup
+        </button>
+      </div>
+
+      {activeView === "setup" ? <ActivationSetupPanel /> : <>
       <div className="grid shrink-0 grid-cols-1 gap-3 min-[420px]:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Network average" value={`${stats.avg}%`} icon={Rocket} tone="ruby" />
         <StatCard label="Fully activated" value={stats.complete} icon={Rocket} tone="good" />
@@ -157,6 +169,7 @@ export default function AdminPodActivation() {
           />
         )}
       </div>
+      </>}
     </div>
   );
 }

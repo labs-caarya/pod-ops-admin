@@ -9,6 +9,7 @@ import { MobileFilterDrawer } from "@/components/ui/MobileFilterDrawer";
 import { PageHeader } from "@/components/ui/PageHeader";
 import {
   adminQueryKeys,
+  activationKnowledgeResourcesQueryOptions,
   knowledgeResourceOptionsQueryOptions,
   knowledgeResourcesQueryOptions,
   podActivationQueryOptions,
@@ -23,12 +24,13 @@ import {
 import { POD_ACTIVATION_CATEGORIES } from "@/lib/podActivation/categories";
 import { cn } from "@/lib/utils";
 
-type AdminKnowledgeTab = KnowledgeResourceCategory | "pod";
+type AdminKnowledgeTab = KnowledgeResourceCategory | "pod" | "activation";
 
 const TABS: { key: AdminKnowledgeTab; label: string; icon: typeof BookOpen }[] = [
   { key: "caarya-curated", label: "Caarya Curated", icon: BookOpen },
   { key: "community", label: "Community Guides", icon: Users },
   { key: "pod", label: "Pod Contributions", icon: Package },
+  { key: "activation", label: "Activation Library", icon: BookOpen },
 ];
 
 export default function AdminKnowledgeSpace() {
@@ -36,6 +38,7 @@ export default function AdminKnowledgeSpace() {
   const resourcesQuery = useQuery(knowledgeResourcesQueryOptions());
   const optionsQuery = useQuery(knowledgeResourceOptionsQueryOptions());
   const activationQuery = useQuery(podActivationQueryOptions());
+  const activationLibraryQuery = useQuery(activationKnowledgeResourcesQueryOptions());
   const [activeTab, setActiveTab] = useState<AdminKnowledgeTab>("caarya-curated");
   const [search, setSearch] = useState("");
   const [domainFilter, setDomainFilter] = useState("");
@@ -46,7 +49,10 @@ export default function AdminKnowledgeSpace() {
 
   const deleteMutation = useMutation({
     mutationFn: deleteKnowledgeResource,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.knowledgeResources }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: adminQueryKeys.knowledgeResources });
+      void queryClient.invalidateQueries({ queryKey: adminQueryKeys.activationKnowledgeResources });
+    },
   });
 
   const podResources = useMemo<KnowledgeResource[]>(() => (
@@ -73,27 +79,33 @@ export default function AdminKnowledgeSpace() {
     }) ?? []
   ), [activationQuery.data?.artifacts]);
 
+  const activationLibraryResources = useMemo<KnowledgeResource[]>(() => (activationLibraryQuery.data ?? []).map((resource) => ({
+    ...resource,
+    url: resource.url || "/pod-activation",
+  })), [activationLibraryQuery.data]);
+
   const allResources = useMemo(() => [...(resourcesQuery.data ?? []), ...podResources], [podResources, resourcesQuery.data]);
+  const visibleResources = activeTab === "activation" ? activationLibraryResources : allResources;
   const counts = useMemo(() => {
-    const result: Record<AdminKnowledgeTab, number> = { "caarya-curated": 0, community: 0, pod: 0 };
+    const result: Record<AdminKnowledgeTab, number> = { "caarya-curated": 0, community: 0, pod: 0, activation: activationLibraryResources.length };
     for (const resource of allResources) result[resource.category] += 1;
     return result;
-  }, [allResources]);
+  }, [activationLibraryResources.length, allResources]);
 
   const filteredResources = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
-    return allResources.filter((resource) => {
-      if (resource.category !== activeTab) return false;
+    return visibleResources.filter((resource) => {
+      if (activeTab !== "activation" && resource.category !== activeTab) return false;
       if (domainFilter && resource.domain !== domainFilter) return false;
       if (typeFilter && resource.type !== typeFilter) return false;
       if (!normalizedSearch) return true;
       return [resource.title, resource.description, resource.domain, resource.curatedByName, resource.createdByName, resource.createdByCollegeName, resource.createdByRole, ...resource.tags]
         .some((value) => String(value || "").toLowerCase().includes(normalizedSearch));
     });
-  }, [activeTab, allResources, domainFilter, search, typeFilter]);
+  }, [activeTab, domainFilter, search, typeFilter, visibleResources]);
 
   const groupedResources = useMemo(() => groupKnowledgeResourcesByDomain(filteredResources), [filteredResources]);
-  const activeQuery = activeTab === "pod" ? activationQuery : resourcesQuery;
+  const activeQuery = activeTab === "pod" ? activationQuery : activeTab === "activation" ? activationLibraryQuery : resourcesQuery;
   const hasActiveFilters = Boolean(search.trim() || domainFilter || typeFilter);
 
   function clearFilters() {
@@ -132,11 +144,11 @@ export default function AdminKnowledgeSpace() {
               aria-label="Create resource"
               title="Create resource"
               onClick={openCreate}
-              disabled={!optionsQuery.data?.permissions.canCreateCurated}
+              disabled={activeTab === "activation" || !optionsQuery.data?.permissions.canCreateCurated}
             >
               <Plus className="h-4 w-4" />
             </Button>
-            <Button className="hidden sm:inline-flex" onClick={openCreate} disabled={!optionsQuery.data?.permissions.canCreateCurated}>
+            <Button className="hidden sm:inline-flex" onClick={openCreate} disabled={activeTab === "activation" || !optionsQuery.data?.permissions.canCreateCurated}>
               <Plus className="h-4 w-4" />
               Create resource
             </Button>
@@ -153,6 +165,7 @@ export default function AdminKnowledgeSpace() {
       </div>
 
       {activeTab === "pod" ? <Card className="shrink-0 border-dashed p-4 text-sm text-ink-muted">Pod Contributions are sourced from Pod Activation and are read-only here.</Card> : null}
+      {activeTab === "activation" ? <Card className="shrink-0 border-dashed p-4 text-sm text-ink-muted">Activation Library resources are created from Pod Activation setup and stored in Knowledge Space with activation scope.</Card> : null}
 
       <Card className="hidden shrink-0 p-4 sm:block">
         <div className="grid gap-3 md:grid-cols-[minmax(0,1.5fr)_repeat(2,minmax(150px,200px))]">

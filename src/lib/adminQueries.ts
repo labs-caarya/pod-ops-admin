@@ -18,6 +18,7 @@ import {
   type PodPortfolioEntry,
   type PodActivationData,
 } from "@/lib/api";
+import { RESOURCE_SCOPES } from "@/lib/podActivation/activationLearning";
 import type { KnowledgeResource, KnowledgeResourceOptions } from "@/lib/knowledgeSpace/types";
 import type { Challenge, PodLeaderGoal, PodMentor } from "@/lib/types";
 
@@ -35,6 +36,7 @@ export const adminQueryKeys = {
   challenges: ["admin", "challenges"] as const,
   podActivation: ["admin", "pod-activation"] as const,
   knowledgeResources: ["admin", "knowledge-resources"] as const,
+  activationKnowledgeResources: ["admin", "activation-knowledge-resources"] as const,
   knowledgeResourceOptions: ["admin", "knowledge-resource-options"] as const,
 };
 
@@ -86,7 +88,20 @@ export function podActivationQueryOptions() {
 export function knowledgeResourcesQueryOptions() {
   return queryOptions<KnowledgeResource[]>({
     queryKey: adminQueryKeys.knowledgeResources,
-    queryFn: listKnowledgeResources,
+    queryFn: () => listKnowledgeResources(),
+    staleTime: TEN_MINUTES,
+    gcTime: THIRTY_MINUTES,
+  });
+}
+
+export function activationKnowledgeResourcesQueryOptions() {
+  return queryOptions<KnowledgeResource[]>({
+    queryKey: adminQueryKeys.activationKnowledgeResources,
+    queryFn: () => listKnowledgeResources({
+      resourceScope: RESOURCE_SCOPES.ACTIVATION,
+      activationStage: "learn",
+      includeUnpublishedActivation: true,
+    }),
     staleTime: TEN_MINUTES,
     gcTime: THIRTY_MINUTES,
   });
