@@ -107,7 +107,8 @@ export default function IndustryApplicants() {
               />
             </div>
           ) : (
-            <div className="min-h-0 flex-1 overflow-auto">
+            <>
+              <div className="hidden min-h-0 flex-1 overflow-auto sm:block">
               <table className="min-w-full border-separate border-spacing-0 text-left text-sm">
                 <thead className="sticky top-0 z-10 bg-base">
                   <tr className="text-xs uppercase tracking-[0.14em] text-ink-faint">
@@ -153,7 +154,9 @@ export default function IndustryApplicants() {
                   ))}
                 </tbody>
               </table>
-            </div>
+              </div>
+              <IndustryApplicantCards applicants={filtered} />
+            </>
           )}
         </div>
       </Card>
@@ -165,6 +168,42 @@ export default function IndustryApplicants() {
             : "Could not load industry applicants."}
         </p>
       )}
+    </div>
+  );
+}
+
+function IndustryApplicantCards({ applicants }: { applicants: Profile[] }) {
+  return (
+    <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:hidden">
+      <div className="grid grid-cols-1 gap-3">
+        {applicants.map((profile) => {
+          const roles = profileRoles(profile);
+          return (
+            <div key={profile.id} className="rounded-xl border border-line bg-surface-2 p-4">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="font-semibold text-ink">{profile.personal.fullName}</p>
+                  <p className="mt-1 truncate text-sm text-ink-muted">{profile.personal.email}</p>
+                </div>
+                <Badge tone="muted">{profile.status || "Submitted"}</Badge>
+              </div>
+              {profile.personal.headline && <p className="mt-2 text-sm text-ink-muted">{profile.personal.headline}</p>}
+              <p className="mt-2 text-sm text-ink">{profile.personal.collegeName || "No college listed"}</p>
+              {roles.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {roles.slice(0, 3).map((role) => (
+                    <Badge key={role} tone="muted" className="text-[10px]">
+                      {role}
+                    </Badge>
+                  ))}
+                  {roles.length > 3 && <span className="text-xs text-ink-faint">+{roles.length - 3} more</span>}
+                </div>
+              )}
+              <p className="mt-3 text-xs text-ink-faint">Submitted {formatDate(profile.submittedAt || profile.createdAt)}</p>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

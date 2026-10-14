@@ -573,18 +573,48 @@ function LeadershipCards({
       {users.map((user) => {
         const isAdmin = isAdminUser(user);
         return (
-          <div key={user.id} className="rounded-xl border border-line bg-surface-2 p-4">
+          <div key={user.id} className="rounded-xl border border-line bg-surface-2 p-3 sm:p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="truncate font-semibold text-ink">{user.name || user.username}</p>
-                <p className="mt-0.5 truncate text-sm text-ink-muted">@{user.username}</p>
+                <p className="mt-0.5 truncate text-sm font-medium text-ink-muted sm:hidden">
+                  {isAdmin ? "Admin dashboard account" : formatPodRole(user.podRole)}
+                </p>
+                {!isAdmin && (
+                  <p className="mt-0.5 truncate text-xs text-ink-faint sm:hidden">{user.collegeName || "No college"}</p>
+                )}
+                <p className="mt-0.5 hidden truncate text-sm text-ink-muted sm:block">@{user.username}</p>
               </div>
-              <Badge tone={user.isActive === false ? "warn" : "good"}>
-                {user.isActive === false ? "Inactive" : "Active"}
-              </Badge>
+              <div className="flex shrink-0 items-center gap-1.5">
+                <Badge tone={user.isActive === false ? "warn" : "good"}>
+                  {user.isActive === false ? "Inactive" : "Active"}
+                </Badge>
+                <div className="flex items-center gap-1 sm:hidden">
+                  <Button
+                    size="icon"
+                    variant="secondary"
+                    onClick={() => onEdit(user)}
+                    disabled={isAdmin}
+                    aria-label={`Edit ${user.name || user.username}`}
+                    title={isAdmin ? "Default admin stays fixed to admin access." : `Edit ${user.name || user.username}`}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="danger"
+                    onClick={() => onDelete(user)}
+                    disabled={saving || isAdmin}
+                    aria-label={`Delete ${user.name || user.username}`}
+                    title={isAdmin ? "Default admin cannot be deleted." : `Delete ${user.name || user.username}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             </div>
 
-            <div className="mt-4 space-y-3 border-t border-line pt-3">
+            <div className="mt-4 hidden space-y-3 border-t border-line pt-3 sm:block">
               <div>
                 <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-ink-faint">Access</p>
                 <p className="mt-1 text-sm font-medium text-ink">
@@ -599,7 +629,7 @@ function LeadershipCards({
               )}
             </div>
 
-            <div className="mt-4 grid grid-cols-2 gap-2">
+            <div className="mt-4 hidden grid-cols-2 gap-2 sm:grid">
               <Button
                 size="sm"
                 variant="secondary"

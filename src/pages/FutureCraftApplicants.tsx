@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Field";
 import { futureCraftApplicantsQueryOptions } from "@/lib/adminQueries";
+import type { FutureCraftApplicant } from "@/lib/api";
 import { cn, formatDate } from "@/lib/utils";
 
 export default function FutureCraftApplicants() {
@@ -156,73 +157,51 @@ export default function FutureCraftApplicants() {
             </div>
           ) : filteredApplicants.length ? (
             viewMode === "table" ? (
-              <div className="min-h-0 flex-1 overflow-auto">
-                <table className="min-w-full border-separate border-spacing-0 text-left text-sm">
-                  <thead className="sticky top-0 z-10 bg-base">
-                    <tr className="text-xs uppercase tracking-[0.14em] text-ink-faint">
-                      <th className="border-b border-line px-5 py-3 font-medium">Applicant</th>
-                      <th className="border-b border-line px-5 py-3 font-medium">College</th>
-                      <th className="border-b border-line px-5 py-3 font-medium">Year</th>
-                      <th className="border-b border-line px-5 py-3 font-medium">Status</th>
-                      <th className="border-b border-line px-5 py-3 font-medium">Applied</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredApplicants.map((applicant) => (
-                      <tr key={applicant.id} className="align-top text-ink-muted">
-                        <td className="border-b border-line px-5 py-4">
-                          <p className="font-semibold text-ink">{applicant.name}</p>
-                          <p className="mt-1 text-xs text-ink-faint">{applicant.email}</p>
-                        </td>
-                        <td className="border-b border-line px-5 py-4">
-                          <p className="text-ink">{applicant.college}</p>
-                          {applicant.hasMatchingPod && (
-                            <p className="mt-1 text-xs text-ink-faint">
-                              {applicant.matchingPodName || applicant.matchingPodCollegeName}
-                            </p>
-                          )}
-                        </td>
-                        <td className="border-b border-line px-5 py-4 text-ink">{applicant.year}</td>
-                        <td className="border-b border-line px-5 py-4">
-                          <Badge tone={applicant.hasMatchingPod ? "good" : "muted"}>
-                            {applicant.hasMatchingPod ? "Pod exists" : "No pod match"}
-                          </Badge>
-                        </td>
-                        <td className="border-b border-line px-5 py-4 text-ink-faint">
-                          {formatDate(applicant.createdAt)}
-                        </td>
+              <>
+                <div className="hidden min-h-0 flex-1 overflow-auto sm:block">
+                  <table className="min-w-full border-separate border-spacing-0 text-left text-sm">
+                    <thead className="sticky top-0 z-10 bg-base">
+                      <tr className="text-xs uppercase tracking-[0.14em] text-ink-faint">
+                        <th className="border-b border-line px-5 py-3 font-medium">Applicant</th>
+                        <th className="border-b border-line px-5 py-3 font-medium">College</th>
+                        <th className="border-b border-line px-5 py-3 font-medium">Year</th>
+                        <th className="border-b border-line px-5 py-3 font-medium">Status</th>
+                        <th className="border-b border-line px-5 py-3 font-medium">Applied</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="min-h-0 flex-1 overflow-y-auto p-5">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {filteredApplicants.map((applicant) => (
-                  <div key={applicant.id} className="rounded-2xl border border-line bg-surface-2 p-4">
-                    <div className="space-y-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-semibold text-ink">{applicant.name}</p>
-                        <Badge tone={applicant.hasMatchingPod ? "good" : "muted"}>
-                          {applicant.hasMatchingPod ? "Pod exists" : "No pod match"}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-ink-muted">{applicant.email}</p>
-                      <p className="text-sm text-ink">{applicant.college}</p>
-                      <p className="text-sm text-ink-faint">
-                        Year {applicant.year} · Applied {formatDate(applicant.createdAt)}
-                      </p>
-                      {applicant.hasMatchingPod && (
-                        <p className="text-sm text-ink-faint">
-                          Matched pod: {applicant.matchingPodName || applicant.matchingPodCollegeName}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                    </thead>
+                    <tbody>
+                      {filteredApplicants.map((applicant) => (
+                        <tr key={applicant.id} className="align-top text-ink-muted">
+                          <td className="border-b border-line px-5 py-4">
+                            <p className="font-semibold text-ink">{applicant.name}</p>
+                            <p className="mt-1 text-xs text-ink-faint">{applicant.email}</p>
+                          </td>
+                          <td className="border-b border-line px-5 py-4">
+                            <p className="text-ink">{applicant.college}</p>
+                            {applicant.hasMatchingPod && (
+                              <p className="mt-1 text-xs text-ink-faint">
+                                {applicant.matchingPodName || applicant.matchingPodCollegeName}
+                              </p>
+                            )}
+                          </td>
+                          <td className="border-b border-line px-5 py-4 text-ink">{applicant.year}</td>
+                          <td className="border-b border-line px-5 py-4">
+                            <Badge tone={applicant.hasMatchingPod ? "good" : "muted"}>
+                              {applicant.hasMatchingPod ? "Pod exists" : "No pod match"}
+                            </Badge>
+                          </td>
+                          <td className="border-b border-line px-5 py-4 text-ink-faint">
+                            {formatDate(applicant.createdAt)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-              </div>
+                <ApplicantCards applicants={filteredApplicants} className="sm:hidden" />
+              </>
+            ) : (
+              <ApplicantCards applicants={filteredApplicants} />
             )
           ) : (
             <div className="flex min-h-64 items-center justify-center px-6 text-center text-sm text-ink-muted">
@@ -244,6 +223,43 @@ export default function FutureCraftApplicants() {
           {message}
         </p>
       )}
+    </div>
+  );
+}
+
+function ApplicantCards({
+  applicants,
+  className,
+}: {
+  applicants: FutureCraftApplicant[];
+  className?: string;
+}) {
+  return (
+    <div className={cn("min-h-0 flex-1 overflow-y-auto p-4 sm:p-5", className)}>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 sm:gap-4">
+        {applicants.map((applicant) => (
+          <div key={applicant.id} className="rounded-xl border border-line bg-surface-2 p-4 sm:rounded-2xl">
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="font-semibold text-ink">{applicant.name}</p>
+                <Badge tone={applicant.hasMatchingPod ? "good" : "muted"}>
+                  {applicant.hasMatchingPod ? "Pod exists" : "No pod match"}
+                </Badge>
+              </div>
+              <p className="text-sm text-ink-muted">{applicant.email}</p>
+              <p className="text-sm text-ink">{applicant.college}</p>
+              <p className="text-sm text-ink-faint">
+                Year {applicant.year} · Applied {formatDate(applicant.createdAt)}
+              </p>
+              {applicant.hasMatchingPod && (
+                <p className="text-sm text-ink-faint">
+                  Matched pod: {applicant.matchingPodName || applicant.matchingPodCollegeName}
+                </p>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

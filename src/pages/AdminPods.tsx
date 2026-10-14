@@ -1,6 +1,6 @@
 import { useDeferredValue, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Building2, Info, Network, RefreshCw, Search, ShieldAlert, Star, Users2 } from "lucide-react";
+import { ArrowRight, Building2, ChevronDown, Info, Network, RefreshCw, Search, ShieldAlert, Star, Users2 } from "lucide-react";
 import { podPortfolioQueryOptions } from "@/lib/adminQueries";
 import type { PodPortfolioEntry } from "@/lib/api";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -150,8 +150,8 @@ export default function AdminPods() {
 
 function PodPortfolioCard({ pod, onSelect }: { pod: PodPortfolioEntry; onSelect: () => void }) {
   return (
-    <button type="button" onClick={onSelect} className="block h-full w-full text-left">
-      <Card hover className="flex h-full flex-col p-5 shadow-none sm:p-6">
+    <Card hover className="flex h-full flex-col p-5 shadow-none sm:p-6">
+      <button type="button" onClick={onSelect} className="flex w-full flex-1 flex-col text-left">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
@@ -176,14 +176,27 @@ function PodPortfolioCard({ pod, onSelect }: { pod: PodPortfolioEntry; onSelect:
 
         <ProgressBar value={pod.activationPercent} tone={pod.activationPercent >= 80 ? "good" : pod.activationPercent >= 40 ? "amber" : "ruby"} className="mt-4" />
 
-        <div className="mt-auto grid grid-cols-2 divide-x divide-y divide-line border-t border-line pt-4 sm:grid-cols-4 sm:divide-y-0">
+        <div className="mt-auto hidden grid-cols-4 divide-x divide-line border-t border-line pt-4 sm:grid">
           <InlineStat label="Active users" value={pod.memberCount} />
           <InlineStat label="Clubs" value={pod.clubs.length} />
           <InlineStat label="Open challenges" value={pod.openChallenges} />
           <InlineStat label="Resolved" value={pod.resolvedChallenges} />
         </div>
-      </Card>
-    </button>
+      </button>
+
+      <details className="group mt-4 border-t border-line pt-3 sm:hidden">
+        <summary className="flex cursor-pointer list-none items-center justify-between py-1 text-sm font-semibold text-ink [&::-webkit-details-marker]:hidden">
+          Pod metrics
+          <ChevronDown className="h-4 w-4 text-ink-muted transition-transform group-open:rotate-180" aria-hidden="true" />
+        </summary>
+        <div className="mt-3 grid auto-rows-fr grid-cols-2 gap-2">
+          <MobileMetric label="Active users" value={pod.memberCount} />
+          <MobileMetric label="Clubs" value={pod.clubs.length} />
+          <MobileMetric label="Open challenges" value={pod.openChallenges} />
+          <MobileMetric label="Resolved" value={pod.resolvedChallenges} />
+        </div>
+      </details>
+    </Card>
   );
 }
 
@@ -261,6 +274,15 @@ function InlineStat({ label, value }: { label: string; value: number }) {
     <div className="px-3 first:pl-0 odd:border-l-0 sm:first:pl-0">
       <p className="text-[11px] uppercase tracking-[0.12em] text-ink-faint">{label}</p>
       <p className="mt-1 font-display text-lg font-black text-ink">{value}</p>
+    </div>
+  );
+}
+
+function MobileMetric({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="flex min-h-[76px] flex-col justify-between rounded-lg border border-line bg-surface-2 p-3">
+      <p className="text-[11px] uppercase tracking-[0.12em] text-ink-faint">{label}</p>
+      <p className="mt-2 font-display text-xl font-black leading-none text-ink">{value}</p>
     </div>
   );
 }
