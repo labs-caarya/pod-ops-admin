@@ -90,7 +90,7 @@ export default function AdminDashboard() {
           </div>
         </Card>
 
-        <Card className="p-4 sm:p-5">
+        <Card className="flex max-h-[22rem] flex-col p-4 sm:max-h-none sm:p-5">
           <div className="mb-4 flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.14em] text-ink-faint">Priorities</p>
@@ -98,24 +98,26 @@ export default function AdminDashboard() {
             </div>
             <Badge tone="amber">{data.priorities.length} open</Badge>
           </div>
-          <div className="space-y-2.5">
-            {data.priorities.length ? data.priorities.map((item) => (
-              <Link key={item.id} to={`/challenges/${item.id}`} className="block rounded-xl border border-line bg-surface-2 p-3 hover:border-line-strong">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-semibold text-ink">{item.title}</p>
-                  <Badge tone={item.severity === "Critical" ? "bad" : item.severity === "High" ? "amber" : "muted"}>
-                    {item.severity}
-                  </Badge>
-                </div>
-                <p className="mt-1 text-xs text-ink-muted">{item.owner || "Unassigned"} · {item.status}</p>
-              </Link>
-            )) : <p className="text-sm text-ink-muted">No open challenges.</p>}
+          <div className="min-h-0 flex-1 overscroll-contain overflow-y-auto pr-1 sm:overflow-visible sm:pr-0">
+            <div className="space-y-2.5">
+              {data.priorities.length ? data.priorities.map((item) => (
+                <Link key={item.id} to={`/challenges/${item.id}`} className="block rounded-xl border border-line bg-surface-2 p-3 hover:border-line-strong">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-ink">{item.title}</p>
+                    <Badge tone={item.severity === "Critical" ? "bad" : item.severity === "High" ? "amber" : "muted"}>
+                      {item.severity}
+                    </Badge>
+                  </div>
+                  <p className="mt-1 text-xs text-ink-muted">{item.owner || "Unassigned"} · {item.status}</p>
+                </Link>
+              )) : <p className="text-sm text-ink-muted">No open challenges.</p>}
+            </div>
           </div>
         </Card>
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-        <Card className="p-4 sm:p-5">
+        <Card className="flex max-h-[28rem] flex-col p-4 sm:max-h-none sm:p-5">
           <div className="mb-4 flex items-start justify-between gap-2">
             <div>
               <h3 className="font-display text-lg font-bold text-ink">Pod health board</h3>
@@ -123,22 +125,24 @@ export default function AdminDashboard() {
             </div>
             <Link to="/pods" className="text-sm text-ruby-bright hover:underline">View all</Link>
           </div>
-          <div className="space-y-3">
-            {data.pods.slice(0, 6).map((pod) => (
-              <div key={pod.id} className="rounded-2xl border border-line bg-surface-2 p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="font-display font-bold text-ink">{pod.name}</p>
-                    <p className="text-xs text-ink-muted">{pod.collegeName} · {pod.memberCount} active users</p>
+          <div className="min-h-0 flex-1 overscroll-contain overflow-y-auto pr-1 sm:overflow-visible sm:pr-0">
+            <div className="space-y-3">
+              {data.pods.slice(0, 6).map((pod) => (
+                <div key={pod.id} className="rounded-2xl border border-line bg-surface-2 p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="font-display font-bold text-ink">{pod.name}</p>
+                      <p className="text-xs text-ink-muted">{pod.collegeName} · {pod.memberCount} active users</p>
+                    </div>
+                    <Badge tone={healthTone[pod.health]}>{pod.health}</Badge>
                   </div>
-                  <Badge tone={healthTone[pod.health]}>{pod.health}</Badge>
+                  <div className="mt-3 flex items-center gap-3">
+                    <ProgressBar value={pod.activationPercent} tone={pod.activationPercent >= 80 ? "good" : pod.activationPercent >= 40 ? "amber" : "ruby"} className="flex-1" />
+                    <span className="text-xs tabular-nums text-ink-muted">{pod.activationPercent}% activated</span>
+                  </div>
                 </div>
-                <div className="mt-3 flex items-center gap-3">
-                  <ProgressBar value={pod.activationPercent} tone={pod.activationPercent >= 80 ? "good" : pod.activationPercent >= 40 ? "amber" : "ruby"} className="flex-1" />
-                  <span className="text-xs tabular-nums text-ink-muted">{pod.activationPercent}% activated</span>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </Card>
 
