@@ -3,7 +3,6 @@ import { Loader2, LockKeyhole, User2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Field";
-import { CaaryaLogo } from "@/components/layout/CaaryaLogo";
 import { cn } from "@/lib/utils";
 
 export default function Login() {
@@ -23,8 +22,13 @@ export default function Login() {
       <div className="relative z-10 w-full max-w-md">
         <div className={cn("p-6 sm:p-8", "card-glass", "md:card md:shadow-none")}>
           <div className="mb-6 flex flex-col items-center text-center">
-            <CaaryaLogo className="h-9" />
-            <h1 className="mt-5 font-display text-2xl font-black text-ink">Pod Ops Admin</h1>
+            <img
+              src="/admin-login-badge.png"
+              alt=""
+              aria-hidden
+              className="h-20 w-20 object-contain"
+            />
+            <h1 className="mt-3 font-display text-2xl font-black text-ink">Pod Ops Admin</h1>
             <p className="mt-1 text-sm text-ink-muted">
               Sign in with the admin account to manage pod ops access and the live control room.
             </p>

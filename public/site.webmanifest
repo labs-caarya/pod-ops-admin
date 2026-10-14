@@ -1,6 +1,6 @@
 {
-  "name": "Caarya · Pod Admin Portal",
-  "short_name": "Pod Admin",
+  "name": "Pod Ops Admin",
+  "short_name": "Pod Ops Admin",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",

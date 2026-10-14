@@ -1,16 +1,18 @@
 import { cn } from "@/lib/utils";
 
-/** Caarya mark + wordmark — uses `public/logo.svg` */
-export function CaaryaLogo({ className }: { className?: string }) {
+export function AdminLogo({ className, showText = true }: { className?: string; showText?: boolean }) {
   return (
-    <div className={cn("flex items-center gap-2", className)}>
+    <div className={cn("flex items-center gap-2.5", className)}>
       <img
-        src="/logo.svg"
-        alt=""
-        aria-hidden
+        src="/admin-logo.png"
+        alt="Pod Ops Admin"
         className="h-full w-auto shrink-0"
       />
-      <span className="font-display text-lg font-black lowercase tracking-tight text-ink">caarya</span>
+      {showText && (
+        <span className="font-display text-lg font-black tracking-tight text-ink">Pod Ops Admin</span>
+      )}
     </div>
   );
 }
+
+export const CaaryaLogo = AdminLogo;
