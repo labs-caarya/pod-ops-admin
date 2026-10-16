@@ -90,11 +90,11 @@ export default function AdminPodActivation() {
         }
       />
 
-      <div className="grid shrink-0 grid-cols-1 gap-3 min-[420px]:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Network average" value={`${stats.avg}%`} icon={Rocket} tone="ruby" />
-        <StatCard label="Fully activated" value={stats.complete} icon={Rocket} tone="good" />
-        <StatCard label="In progress" value={stats.inProgress} icon={Rocket} tone="amber" />
-        <StatCard label="Not started" value={stats.notStarted} icon={Rocket} tone="muted" />
+      <div className="-mx-4 flex shrink-0 snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4">
+        <div className="w-44 shrink-0 snap-start sm:w-auto"><StatCard className="h-24 p-3" label="Network avg." value={`${stats.avg}%`} icon={Rocket} tone="ruby" /></div>
+        <div className="w-44 shrink-0 snap-start sm:w-auto"><StatCard className="h-24 p-3" label="Activated" value={stats.complete} icon={Rocket} tone="good" /></div>
+        <div className="w-44 shrink-0 snap-start sm:w-auto"><StatCard className="h-24 p-3" label="In progress" value={stats.inProgress} icon={Rocket} tone="amber" /></div>
+        <div className="w-44 shrink-0 snap-start sm:w-auto"><StatCard className="h-24 p-3" label="Not started" value={stats.notStarted} icon={Rocket} tone="muted" /></div>
       </div>
 
       <Card className="hidden shrink-0 p-4 sm:block">
@@ -122,22 +122,22 @@ export default function AdminPodActivation() {
         <div className="space-y-3">
           {rows.map(({ pod, snapshot }) => (
             <Link key={pod.id} to={`/pod-activation/${pod.id}`} className="block">
-              <Card hover className="p-4 sm:p-5">
-                <div className="flex flex-wrap items-start justify-between gap-3">
+              <Card hover className="flex h-[118px] flex-col p-3 sm:h-auto sm:p-5">
+                <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="font-display text-lg font-bold text-ink">{pod.name}</h2>
-                      <Badge tone="muted">{pod.crew}</Badge>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <h2 className="truncate font-display text-base font-bold text-ink sm:text-lg">{pod.name}</h2>
+                      <Badge tone="muted" className="hidden shrink-0 sm:inline-flex">{pod.crew}</Badge>
                       {snapshot.percent >= 100 ? (
-                        <Badge tone="good">Complete</Badge>
+                        <Badge tone="good" className="shrink-0">Complete</Badge>
                       ) : snapshot.percent > 0 ? (
-                        <Badge tone="amber">In progress</Badge>
+                        <Badge tone="amber" className="shrink-0">In progress</Badge>
                       ) : (
-                        <Badge tone="muted">Not started</Badge>
+                        <Badge tone="muted" className="shrink-0">Not started</Badge>
                       )}
                     </div>
-                    <p className="mt-1 text-sm text-ink-muted">
-                      {snapshot.complete} of {snapshot.total} steps · {POD_ACTIVATION_CATEGORIES.length} categories
+                    <p className="mt-1 text-xs text-ink-muted sm:text-sm">
+                      {snapshot.complete}/{snapshot.total} steps <span className="hidden sm:inline">· {POD_ACTIVATION_CATEGORIES.length} categories</span>
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
@@ -145,7 +145,7 @@ export default function AdminPodActivation() {
                     <ChevronRight className="h-4 w-4 text-ink-faint" />
                   </div>
                 </div>
-                <ProgressBar value={snapshot.percent} tone={podActivationTone(snapshot.percent)} className="mt-3" />
+                <ProgressBar value={snapshot.percent} tone={podActivationTone(snapshot.percent)} className="mt-auto pt-2 sm:mt-3 sm:pt-0" />
               </Card>
             </Link>
           ))}

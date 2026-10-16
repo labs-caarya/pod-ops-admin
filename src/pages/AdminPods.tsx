@@ -1,6 +1,6 @@
 import { useDeferredValue, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Building2, ChevronDown, Info, Network, RefreshCw, Search, ShieldAlert, Star, Users2 } from "lucide-react";
+import { ArrowRight, Building2, ChevronDown, Info, Network, RefreshCw, Search, ShieldAlert, Star, Users2, X } from "lucide-react";
 import { podPortfolioQueryOptions } from "@/lib/adminQueries";
 import type { PodPortfolioEntry } from "@/lib/api";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -22,26 +22,34 @@ export default function AdminPods() {
   const portfolioQuery = useQuery(podPortfolioQueryOptions());
   const [query, setQuery] = useState("");
   const [health, setHealth] = useState("all");
+  const [strength, setStrength] = useState("all");
   const [showScoreGuide, setShowScoreGuide] = useState(false);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [selectedPod, setSelectedPod] = useState<PodPortfolioEntry | null>(null);
   const deferredQuery = useDeferredValue(query);
   const pods = portfolioQuery.data || [];
-  const hasActiveFilters = Boolean(query.trim() || health !== "all");
+  const hasActiveFilters = Boolean(query.trim() || health !== "all" || strength !== "all");
+  const strengthLabel = strengthFilterLabel(strength);
 
   function clearFilters() {
     setQuery("");
     setHealth("all");
+    setStrength("all");
   }
 
   const rows = useMemo(() => {
     const needle = deferredQuery.trim().toLowerCase();
     return pods.filter((pod) => {
       if (health !== "all" && pod.health !== health) return false;
+      const podStrength = podStrengthFromMembers(pod.memberCount);
+      if (strength === "none" && podStrength !== 0) return false;
+      if (strength === "low" && (podStrength < 1 || podStrength > 2)) return false;
+      if (strength === "growing" && (podStrength < 3 || podStrength > 4)) return false;
+      if (strength === "full" && podStrength !== 5) return false;
       if (!needle) return true;
       return [pod.name, pod.collegeName, pod.podLeader].join(" ").toLowerCase().includes(needle);
     });
-  }, [deferredQuery, health, pods]);
+  }, [deferredQuery, health, pods, strength]);
 
   return (
     <div className="flex h-[calc(100dvh-6rem)] min-h-0 flex-col gap-4 overflow-hidden lg:h-[calc(100dvh-8rem)]">
@@ -83,15 +91,18 @@ export default function AdminPods() {
                   <option value="At Risk">At Risk</option>
                 </Select>
               </FieldRow>
-              <Button
-                type="button"
-                variant="secondary"
-                aria-expanded={showScoreGuide}
-                onClick={() => setShowScoreGuide((current) => !current)}
-              >
-                <Info className="h-4 w-4" />
-                Score Guide
-              </Button>
+              <FieldRow label="Strength">
+                <Select value={strength} onChange={(event) => setStrength(event.target.value)}>
+                  <option value="all">All strengths</option>
+                  <option value="none">No linked users</option>
+                  <option value="low">1–2 stars</option>
+                  <option value="growing">3–4 stars</option>
+                  <option value="full">5 stars</option>
+                </Select>
+              </FieldRow>
+              <p className="rounded-lg border border-line bg-surface-2 px-3 py-2 text-xs text-ink-muted" aria-live="polite">
+                {rows.length} of {pods.length} pod{pods.length === 1 ? "" : "s"} match these filters. Results update immediately.
+              </p>
             </MobileFilterDrawer>
             <Button className="hidden sm:inline-flex" variant="secondary" onClick={() => void portfolioQuery.refetch()}>
               Refresh
@@ -112,6 +123,13 @@ export default function AdminPods() {
             <option value="Watching">Watching</option>
             <option value="At Risk">At Risk</option>
           </Select>
+          <Select value={strength} onChange={(event) => setStrength(event.target.value)} className="w-full lg:w-44">
+            <option value="all">All strengths</option>
+            <option value="none">No linked users</option>
+            <option value="low">1–2 stars</option>
+            <option value="growing">3–4 stars</option>
+            <option value="full">5 stars</option>
+          </Select>
           <Button
             type="button"
             variant="secondary"
@@ -125,7 +143,28 @@ export default function AdminPods() {
         </div>
       </Card>
 
-      {showScoreGuide ? <ScoreGuide /> : null}
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 sm:hidden">
+        <p className="text-xs text-ink-muted" aria-live="polite">
+          {rows.length} of {pods.length} pod{pods.length === 1 ? "" : "s"} shown
+        </p>
+        <div className="flex flex-wrap items-center justify-end gap-1.5">
+          {strength !== "all" ? <Badge tone="ruby">Strength: {strengthLabel}</Badge> : null}
+          {health !== "all" ? <Badge tone={healthTone[health as keyof typeof healthTone]}>Health: {health}</Badge> : null}
+          {query.trim() ? <Badge tone="muted">Search active</Badge> : null}
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            aria-expanded={showScoreGuide}
+            onClick={() => setShowScoreGuide((current) => !current)}
+          >
+            <Info className="h-3.5 w-3.5" />
+            {showScoreGuide ? "Hide guide" : "Score guide"}
+          </Button>
+        </div>
+      </div>
+
+      {showScoreGuide ? <ScoreGuide onClose={() => setShowScoreGuide(false)} /> : null}
 
       <div className="min-h-0 flex-1 overflow-y-auto pr-1">
         {portfolioQuery.isPending ? (
@@ -200,7 +239,7 @@ function PodPortfolioCard({ pod, onSelect }: { pod: PodPortfolioEntry; onSelect:
   );
 }
 
-function ScoreGuide() {
+function ScoreGuide({ onClose }: { onClose: () => void }) {
   const guideItems = [
     ["Strength", "Active users linked to the pod. 1 user equals 1 star, capped at 5 stars."],
     ["Activation", "Progress through the pod activation journey and its required tasks."],
@@ -219,10 +258,15 @@ function ScoreGuide() {
           </div>
           <p className="mt-1 text-sm text-ink-muted">A quick read of the rules behind each portfolio signal.</p>
         </div>
-        <div className="flex items-center gap-1" aria-label="Maximum pod strength is 5 stars">
-          {Array.from({ length: 5 }, (_, index) => (
-            <Star key={index} className="h-4 w-4 text-amber-bright" fill="currentColor" strokeWidth={0} aria-hidden="true" />
-          ))}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1" aria-label="Maximum pod strength is 5 stars">
+            {Array.from({ length: 5 }, (_, index) => (
+              <Star key={index} className="h-4 w-4 text-amber-bright" fill="currentColor" strokeWidth={0} aria-hidden="true" />
+            ))}
+          </div>
+          <Button type="button" variant="ghost" size="icon" aria-label="Hide score guide" title="Hide score guide" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
         </div>
       </div>
       <div className="mt-4 grid gap-3 md:grid-cols-5">
@@ -235,6 +279,14 @@ function ScoreGuide() {
       </div>
     </Card>
   );
+}
+
+function strengthFilterLabel(value: string) {
+  if (value === "none") return "No users";
+  if (value === "low") return "1–2 stars";
+  if (value === "growing") return "3–4 stars";
+  if (value === "full") return "5 stars";
+  return "All";
 }
 
 function podStrengthFromMembers(memberCount: number) {

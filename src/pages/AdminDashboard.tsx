@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   Activity,
-  ArrowRight,
   BriefcaseBusiness,
   Building2,
   LayoutDashboard,
@@ -24,7 +23,6 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { StatCard } from "@/components/ui/StatCard";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
 import { ProgressBar } from "@/components/ui/Misc";
 
 const healthTone = {
@@ -55,26 +53,20 @@ export default function AdminDashboard() {
         title="Pod Ops Control Room"
         description="Live network health, leadership, applicants, and delivery blockers from the backend."
         className="mb-0 shrink-0"
-        actions={
-          <>
-            <Link to="/access"><Button variant="outline">Leadership</Button></Link>
-            <Link to="/pods"><Button>Open pod portfolio <ArrowRight className="h-4 w-4" /></Button></Link>
-          </>
-        }
       />
 
       <div className="min-h-0 flex-1 overflow-y-auto pr-1">
-        <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 xl:grid-cols-4">
-        <DashboardStatLink to="/pods">
+        <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 xl:grid-cols-4">
+        <DashboardStatLink to="/pods" className="w-44 shrink-0 snap-start sm:w-auto">
           <StatCard label="Active pods" value={data.metrics.activePods} icon={Building2} tone="ruby" />
         </DashboardStatLink>
-        <DashboardStatLink to="/access">
+        <DashboardStatLink to="/access" className="w-44 shrink-0 snap-start sm:w-auto">
           <StatCard label="Active pod leaders" value={data.metrics.activePodLeaders ?? 0} icon={UserRound} tone="info" />
         </DashboardStatLink>
-        <DashboardStatLink to="/challenges">
+        <DashboardStatLink to="/challenges" className="w-44 shrink-0 snap-start sm:w-auto">
           <StatCard label="Open challenges" value={data.metrics.openChallenges} icon={TriangleAlert} tone="amber" />
         </DashboardStatLink>
-        <StatCard label="Applicants" value={data.metrics.applicants} icon={BriefcaseBusiness} tone="good" />
+        <div className="w-44 shrink-0 snap-start sm:w-auto"><StatCard label="Applicants" value={data.metrics.applicants} icon={BriefcaseBusiness} tone="good" /></div>
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(340px,0.8fr)]">
@@ -200,11 +192,11 @@ function MetricChip({ label, value }: { label: string; value: number }) {
   );
 }
 
-function DashboardStatLink({ to, children }: { to: string; children: React.ReactNode }) {
+function DashboardStatLink({ to, children, className }: { to: string; children: React.ReactNode; className?: string }) {
   return (
     <Link
       to={to}
-      className="block rounded-2xl transition-transform hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-ruby-bright/70"
+      className={`block rounded-2xl transition-transform hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-ruby-bright/70 ${className || ""}`}
     >
       {children}
     </Link>

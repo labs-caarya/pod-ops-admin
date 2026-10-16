@@ -5,7 +5,8 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Select } from "@/components/ui/Field";
+import { MobileFilterDrawer } from "@/components/ui/MobileFilterDrawer";
+import { FieldRow, Select } from "@/components/ui/Field";
 import { futureCraftApplicantsQueryOptions } from "@/lib/adminQueries";
 import type { FutureCraftApplicant } from "@/lib/api";
 import { cn, formatDate } from "@/lib/utils";
@@ -14,6 +15,7 @@ export default function FutureCraftApplicants() {
   const [yearFilter, setYearFilter] = useState("all");
   const [podFilter, setPodFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"cards" | "table">("table");
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const applicantsQuery = useQuery(futureCraftApplicantsQueryOptions());
   const applicants = applicantsQuery.data || [];
   const loading = applicantsQuery.isPending;
@@ -75,11 +77,40 @@ export default function FutureCraftApplicants() {
         description="Review every Observership application and quickly see which colleges already have a pod."
         icon={GraduationCap}
         className="mb-0 shrink-0"
+        actionsClassName="w-auto justify-end"
         actions={
-          <Button className="w-full sm:w-auto" variant="secondary" onClick={() => void applicantsQuery.refetch()} disabled={loading || refreshing}>
-            {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-            Refresh
-          </Button>
+          <>
+            <MobileFilterDrawer
+              open={filterDrawerOpen}
+              onOpen={() => setFilterDrawerOpen(true)}
+              onClose={() => setFilterDrawerOpen(false)}
+              active={hasActiveFilters}
+              title="Observership filters"
+              triggerLabel="Open Observership filters"
+              onClear={clearFilters}
+            >
+              <FieldRow label="Year">
+                <Select value={yearFilter} onChange={(e) => setYearFilter(e.target.value)}>
+                  <option value="all">All years</option>
+                  {yearOptions.map((year) => <option key={year} value={year}>{year}</option>)}
+                </Select>
+              </FieldRow>
+              <FieldRow label="Pod">
+                <Select value={podFilter} onChange={(e) => setPodFilter(e.target.value)}>
+                  <option value="all">All pods</option>
+                  {podOptions.map((pod) => <option key={pod.value} value={pod.value}>{pod.label}</option>)}
+                  <option value="__unmatched__">No pod match</option>
+                </Select>
+              </FieldRow>
+            </MobileFilterDrawer>
+            <Button size="icon" className="sm:hidden" variant="secondary" aria-label="Refresh Observership applicants" title="Refresh Observership applicants" onClick={() => void applicantsQuery.refetch()} disabled={loading || refreshing}>
+              {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            </Button>
+            <Button className="hidden sm:inline-flex" variant="secondary" onClick={() => void applicantsQuery.refetch()} disabled={loading || refreshing}>
+              {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              Refresh
+            </Button>
+          </>
         }
       />
 
@@ -125,7 +156,7 @@ export default function FutureCraftApplicants() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-2 border-b border-line px-4 py-4 sm:flex-row sm:items-center sm:px-5">
+          <div className="hidden gap-2 border-b border-line px-4 py-4 sm:flex sm:flex-row sm:items-center sm:px-5">
             <Select value={yearFilter} onChange={(e) => setYearFilter(e.target.value)} className="w-full sm:w-44">
               <option value="all">All years</option>
               {yearOptions.map((year) => (

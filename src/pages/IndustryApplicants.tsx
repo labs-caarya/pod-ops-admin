@@ -5,7 +5,8 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Input, Select } from "@/components/ui/Field";
+import { MobileFilterDrawer } from "@/components/ui/MobileFilterDrawer";
+import { FieldRow, Input, Select } from "@/components/ui/Field";
 import { EmptyState } from "@/components/ui/Misc";
 import { listIndustryApplicants, type Profile } from "@/lib/api";
 import { queryOptions } from "@tanstack/react-query";
@@ -27,10 +28,17 @@ function industryApplicantsQueryOptions() {
 export default function IndustryApplicants() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const applicantsQuery = useQuery(industryApplicantsQueryOptions());
   const applicants = applicantsQuery.data || [];
   const loading = applicantsQuery.isPending;
   const refreshing = !loading && applicantsQuery.isFetching;
+  const hasActiveFilters = Boolean(search.trim() || roleFilter !== "all");
+
+  function clearFilters() {
+    setSearch("");
+    setRoleFilter("all");
+  }
 
   const roleOptions = useMemo(() => {
     const roles = new Set<string>();
@@ -60,17 +68,42 @@ export default function IndustryApplicants() {
         description="Browse industry profile submissions with skills, tools, and work preferences across the network."
         icon={Briefcase}
         className="mb-0 shrink-0"
+        actionsClassName="w-auto justify-end"
         actions={
-          <Button className="w-full sm:w-auto" variant="secondary" onClick={() => void applicantsQuery.refetch()} disabled={loading || refreshing}>
-            {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-            Refresh
-          </Button>
+          <>
+            <MobileFilterDrawer
+              open={filterDrawerOpen}
+              onOpen={() => setFilterDrawerOpen(true)}
+              onClose={() => setFilterDrawerOpen(false)}
+              active={hasActiveFilters}
+              title="Industry applicant filters"
+              triggerLabel="Open Industry applicant filters"
+              onClear={clearFilters}
+            >
+              <FieldRow label="Search">
+                <Input placeholder="Search by name, headline, college, or role…" value={search} onChange={(e) => setSearch(e.target.value)} />
+              </FieldRow>
+              <FieldRow label="Role">
+                <Select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
+                  <option value="all">All roles</option>
+                  {roleOptions.map((role) => <option key={role} value={role}>{role}</option>)}
+                </Select>
+              </FieldRow>
+            </MobileFilterDrawer>
+            <Button size="icon" className="sm:hidden" variant="secondary" aria-label="Refresh Industry applicants" title="Refresh Industry applicants" onClick={() => void applicantsQuery.refetch()} disabled={loading || refreshing}>
+              {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            </Button>
+            <Button className="hidden sm:inline-flex" variant="secondary" onClick={() => void applicantsQuery.refetch()} disabled={loading || refreshing}>
+              {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              Refresh
+            </Button>
+          </>
         }
       />
 
       <Card className="flex min-h-0 flex-1 overflow-hidden p-0">
         <div className="flex min-h-0 flex-1 flex-col">
-          <div className="flex flex-col gap-2 border-b border-line px-4 py-4 sm:flex-row sm:items-center sm:px-5">
+          <div className="hidden gap-2 border-b border-line px-4 py-4 sm:flex sm:flex-row sm:items-center sm:px-5">
             <div className="relative min-w-[220px] flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
               <Input
@@ -179,27 +212,27 @@ function IndustryApplicantCards({ applicants }: { applicants: Profile[] }) {
         {applicants.map((profile) => {
           const roles = profileRoles(profile);
           return (
-            <div key={profile.id} className="rounded-xl border border-line bg-surface-2 p-4">
+            <div key={profile.id} className="rounded-xl border border-line bg-surface-2 p-3">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="font-semibold text-ink">{profile.personal.fullName}</p>
-                  <p className="mt-1 truncate text-sm text-ink-muted">{profile.personal.email}</p>
+                  <p className="truncate font-semibold text-ink">{profile.personal.fullName}</p>
+                  <p className="mt-0.5 truncate text-xs text-ink-muted">{profile.personal.email}</p>
                 </div>
                 <Badge tone="muted">{profile.status || "Submitted"}</Badge>
               </div>
-              {profile.personal.headline && <p className="mt-2 text-sm text-ink-muted">{profile.personal.headline}</p>}
-              <p className="mt-2 text-sm text-ink">{profile.personal.collegeName || "No college listed"}</p>
+              {profile.personal.headline && <p className="mt-1 line-clamp-1 text-xs text-ink-muted">{profile.personal.headline}</p>}
+              <p className="mt-1 truncate text-xs font-medium text-ink">{profile.personal.collegeName || "No college listed"}</p>
               {roles.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {roles.slice(0, 3).map((role) => (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {roles.slice(0, 2).map((role) => (
                     <Badge key={role} tone="muted" className="text-[10px]">
                       {role}
                     </Badge>
                   ))}
-                  {roles.length > 3 && <span className="text-xs text-ink-faint">+{roles.length - 3} more</span>}
+                  {roles.length > 2 && <span className="text-xs text-ink-faint">+{roles.length - 2} more</span>}
                 </div>
               )}
-              <p className="mt-3 text-xs text-ink-faint">Submitted {formatDate(profile.submittedAt || profile.createdAt)}</p>
+              <p className="mt-2 text-[11px] text-ink-faint">Submitted {formatDate(profile.submittedAt || profile.createdAt)}</p>
             </div>
           );
         })}

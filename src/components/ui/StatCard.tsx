@@ -18,15 +18,17 @@ export function StatCard({
   hint,
   icon: Icon,
   tone = "ruby",
+  className,
 }: {
   label: string;
   value: React.ReactNode;
   hint?: string;
   icon?: React.ComponentType<{ className?: string }>;
   tone?: Tone;
+  className?: string;
 }) {
   return (
-    <Card className="p-4">
+    <Card className={cn("p-4", className)}>
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium uppercase tracking-wide text-ink-faint">{label}</span>
         {Icon && <Icon className={cn("h-4 w-4", accent[tone])} />}
