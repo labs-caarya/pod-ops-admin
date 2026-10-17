@@ -20,6 +20,7 @@ import {
   loadAdminPodActivationPage,
   loadAdminPodActivationDetailPage,
   loadAdminKnowledgeSpacePage,
+  loadPodReportsPage,
 } from "@/lib/adminRouteModules";
 
 const AdminPods = lazy(loadAdminPodsPage);
@@ -35,6 +36,7 @@ const IndustryApplicants = lazy(loadIndustryApplicantsPage);
 const AdminPodActivation = lazy(loadAdminPodActivationPage);
 const AdminPodActivationDetail = lazy(loadAdminPodActivationDetailPage);
 const AdminKnowledgeSpace = lazy(loadAdminKnowledgeSpacePage);
+const PodReports = lazy(loadPodReportsPage);
 
 function ProtectedRoutes() {
   const { isAuthenticated, isAuthenticating } = useAuth();
@@ -69,6 +71,7 @@ export default function App() {
         <Route element={<ProtectedRoutes />}>
           <Route path="/" element={<AdminDashboard />} />
           <Route path="/pods" element={<AdminPods />} />
+          <Route path="/reports" element={<PodReports />} />
           <Route path="/pods-admin" element={<AdminPodRegistry />} />
           <Route path="/access" element={<AdminUsers />} />
           <Route path="/challenges" element={<ChallengeVault />} />

@@ -16,19 +16,19 @@ export function PageHeader({
   actionsClassName?: string;
 }) {
   return (
-    <div className={cn("mb-6 flex flex-wrap items-start justify-between gap-4", className)}>
-      <div className="flex min-w-0 flex-1 items-start gap-3">
+    <div className={cn("mb-5", className)}>
+      <div className="flex min-w-0 items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-1 items-start gap-2.5">
         {Icon && (
-          <div className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-ruby/30 bg-ruby/10 text-ruby-bright">
-            <Icon className="h-5 w-5" />
+          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-ruby/25 bg-ruby/10 text-ruby-bright">
+            <Icon className="h-4.5 w-4.5" />
           </div>
         )}
-        <div className="min-w-0">
-          <h1 className="font-display text-xl font-black tracking-tight text-ink break-words sm:text-2xl">{title}</h1>
-          {description && <p className="mt-1 max-w-2xl text-sm text-ink-muted">{description}</p>}
+          <h1 className="min-w-0 break-words font-display text-xl font-black tracking-tight text-ink sm:text-2xl">{title}</h1>
         </div>
+        {actions && <div className={cn("flex shrink-0 items-center gap-1.5", actionsClassName)}>{actions}</div>}
       </div>
-      {actions && <div className={cn("flex w-full shrink-0 items-center gap-2 sm:w-auto", actionsClassName)}>{actions}</div>}
+      {description && <p className="mt-2 w-full text-sm leading-relaxed text-ink-muted">{description}</p>}
     </div>
   );
 }

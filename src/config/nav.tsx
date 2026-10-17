@@ -10,6 +10,7 @@ import {
   Rocket,
   Castle,
   Briefcase,
+  CalendarRange,
   type LucideIcon,
 } from "lucide-react";
 
@@ -30,6 +31,7 @@ export const NAV_SECTIONS: NavSection[] = [
     heading: "Admin overview",
     items: [
       { label: "Dashboard", to: "/", icon: LayoutDashboard, end: true },
+      { label: "Daily & weekly", to: "/reports", icon: CalendarRange },
       { label: "Pod Portfolio", to: "/pods", icon: Network },
       { label: "Pod Registry", to: "/pods-admin", icon: Building2 },
       { label: "Leadership", to: "/access", icon: UserRound },

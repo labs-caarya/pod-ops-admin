@@ -113,6 +113,57 @@ export interface PodPortfolioEntry extends ManagedPod {
   health: "Thriving" | "Watching" | "At Risk";
 }
 
+export interface PodPeriodMetrics {
+  researchCreated: number;
+  researchScored: number;
+  outreachActivities: number;
+  meetings: number;
+  opportunitiesCreated: number;
+  opportunitiesShared: number;
+  offersSent: number;
+  offersAccepted: number;
+  placements: number;
+  challengesOpened: number;
+  challengesResolved: number;
+  goalsCompleted: number;
+}
+
+export interface PodInsight {
+  collegeId: string;
+  podName: string;
+  collegeName: string;
+  health: PodPortfolioEntry["health"];
+  activationPercent: number;
+  daily: PodPeriodMetrics;
+  weekly: PodPeriodMetrics;
+  previousWeek: PodPeriodMetrics;
+  snapshot: {
+    activePartners: number;
+    talentMapped: number;
+    openOpportunities: number;
+    openChallenges: number;
+    criticalChallenges: number;
+    overdueGoals: number;
+    mentors: number;
+    contactsInConversation: number;
+  };
+  level: {
+    current: number;
+    next: number;
+    progress: number;
+    name: string;
+    nextName: string;
+    checks: {
+      id: string;
+      label: string;
+      current: number;
+      target: number;
+      unit: string;
+      met: boolean;
+    }[];
+  };
+}
+
 export interface AdminDashboardData {
   metrics: {
     activePods: number;
@@ -136,6 +187,7 @@ export interface AdminDashboardData {
     updatedAt?: string;
   }[];
   pods: PodPortfolioEntry[];
+  insights: PodInsight[];
   throughput: {
     week: string;
     challenges: number;
