@@ -7,6 +7,7 @@ import {
   listManagedUsers,
   getAdminDashboard,
   listPodPortfolio,
+  listPodComments,
   listChallenges,
   listPodActivationData,
   listKnowledgeResources,
@@ -16,6 +17,7 @@ import {
   type AllowedUser,
   type AdminDashboardData,
   type PodPortfolioEntry,
+  type PodComment,
   type PodActivationData,
 } from "@/lib/api";
 import type { KnowledgeResource, KnowledgeResourceOptions } from "@/lib/knowledgeSpace/types";
@@ -32,6 +34,7 @@ export const adminQueryKeys = {
   mentors: ["admin", "mentors"] as const,
   dashboard: ["admin", "dashboard"] as const,
   podPortfolio: ["admin", "pod-portfolio"] as const,
+  podComments: (collegeId: string) => ["admin", "pod-comments", collegeId] as const,
   challenges: ["admin", "challenges"] as const,
   podActivation: ["admin", "pod-activation"] as const,
   knowledgeResources: ["admin", "knowledge-resources"] as const,
@@ -61,6 +64,16 @@ export function podPortfolioQueryOptions() {
     queryKey: adminQueryKeys.podPortfolio,
     queryFn: listPodPortfolio,
     staleTime: TEN_MINUTES,
+    gcTime: THIRTY_MINUTES,
+  });
+}
+
+export function podCommentsQueryOptions(collegeId: string) {
+  return queryOptions<PodComment[]>({
+    queryKey: adminQueryKeys.podComments(collegeId),
+    queryFn: () => listPodComments(collegeId),
+    enabled: Boolean(collegeId),
+    staleTime: 30_000,
     gcTime: THIRTY_MINUTES,
   });
 }

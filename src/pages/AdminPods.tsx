@@ -11,6 +11,7 @@ import { Drawer } from "@/components/ui/Drawer";
 import { MobileFilterDrawer } from "@/components/ui/MobileFilterDrawer";
 import { FieldRow, Input, Select } from "@/components/ui/Field";
 import { ProgressBar } from "@/components/ui/Misc";
+import { PodCommentsPanel } from "@/components/pods/PodCommentsPanel";
 
 const healthTone = {
   Thriving: "good",
@@ -389,6 +390,7 @@ function PodDrawer({ pod, onClose }: { pod: PodPortfolioEntry | null; onClose: (
           <Stat label="Resolved" value={pod.resolvedChallenges} />
         </div>
       </Card>
+      <PodCommentsPanel collegeId={pod.id} />
     </Drawer>
   );
 }

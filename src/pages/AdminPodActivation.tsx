@@ -9,6 +9,7 @@ import { MobileFilterDrawer } from "@/components/ui/MobileFilterDrawer";
 import { FieldRow, Input } from "@/components/ui/Field";
 import { ProgressBar, EmptyState } from "@/components/ui/Misc";
 import { StatCard } from "@/components/ui/StatCard";
+import { CompactStatGrid } from "@/components/ui/CompactStatGrid";
 import { buildActivationSnapshot, POD_ACTIVATION_CATEGORIES } from "@/lib/podActivation";
 import { collegesQueryOptions, podActivationQueryOptions } from "@/lib/adminQueries";
 
@@ -90,12 +91,12 @@ export default function AdminPodActivation() {
         }
       />
 
-      <div className="-mx-4 flex shrink-0 snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4">
-        <div className="w-44 shrink-0 snap-start sm:w-auto"><StatCard className="h-24 p-3" label="Network avg." value={`${stats.avg}%`} icon={Rocket} tone="ruby" /></div>
-        <div className="w-44 shrink-0 snap-start sm:w-auto"><StatCard className="h-24 p-3" label="Activated" value={stats.complete} icon={Rocket} tone="good" /></div>
-        <div className="w-44 shrink-0 snap-start sm:w-auto"><StatCard className="h-24 p-3" label="In progress" value={stats.inProgress} icon={Rocket} tone="amber" /></div>
-        <div className="w-44 shrink-0 snap-start sm:w-auto"><StatCard className="h-24 p-3" label="Not started" value={stats.notStarted} icon={Rocket} tone="muted" /></div>
-      </div>
+      <CompactStatGrid label="Activation statistics" className="shrink-0 grid-cols-2 lg:grid-cols-4">
+        <StatCard className="h-24 p-3" label="Network avg." value={`${stats.avg}%`} icon={Rocket} tone="ruby" />
+        <StatCard className="h-24 p-3" label="Activated" value={stats.complete} icon={Rocket} tone="good" />
+        <StatCard className="h-24 p-3" label="In progress" value={stats.inProgress} icon={Rocket} tone="amber" />
+        <StatCard className="h-24 p-3" label="Not started" value={stats.notStarted} icon={Rocket} tone="muted" />
+      </CompactStatGrid>
 
       <Card className="hidden shrink-0 p-4 sm:block">
         <div className="relative">

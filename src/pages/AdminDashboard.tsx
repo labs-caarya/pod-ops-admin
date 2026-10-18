@@ -2,10 +2,15 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   Activity,
+  ArrowRight,
   BriefcaseBusiness,
   Building2,
+  CalendarClock,
+  ClipboardList,
   LayoutDashboard,
   Layers3,
+  Microscope,
+  Send,
   TriangleAlert,
   UserRound,
 } from "lucide-react";
@@ -22,8 +27,11 @@ import { dashboardQueryOptions } from "@/lib/adminQueries";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { StatCard } from "@/components/ui/StatCard";
+import { CompactStatGrid } from "@/components/ui/CompactStatGrid";
 import { Badge } from "@/components/ui/Badge";
 import { ProgressBar } from "@/components/ui/Misc";
+import { formatPodRole } from "@/lib/podRoles";
+import { formatDate } from "@/lib/utils";
 
 const healthTone = {
   Thriving: "good",
@@ -51,23 +59,23 @@ export default function AdminDashboard() {
       <PageHeader
         icon={LayoutDashboard}
         title="Pod Ops Control Room"
-        description="Live network health, leadership, applicants, and delivery blockers from the backend."
+        description="Live network health, leadership, profile submissions, and delivery blockers from the backend."
         className="mb-0 shrink-0"
       />
 
       <div className="min-h-0 flex-1 overflow-y-auto pr-1">
-        <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 xl:grid-cols-4">
-        <DashboardStatLink to="/pods" className="w-44 shrink-0 snap-start sm:w-auto">
-          <StatCard label="Active pods" value={data.metrics.activePods} icon={Building2} tone="ruby" />
+        <CompactStatGrid label="Dashboard metrics" className="grid-cols-2 xl:grid-cols-4">
+        <DashboardStatLink to="/pods">
+          <StatCard className="h-24 p-3" label="Active pods" value={data.metrics.activePods} icon={Building2} tone="ruby" />
         </DashboardStatLink>
-        <DashboardStatLink to="/access" className="w-44 shrink-0 snap-start sm:w-auto">
-          <StatCard label="Active pod leaders" value={data.metrics.activePodLeaders ?? 0} icon={UserRound} tone="info" />
+        <DashboardStatLink to="/pods-admin">
+          <StatCard className="h-24 p-3" label="Active pod leaders" value={data.metrics.activePodLeaders ?? 0} icon={UserRound} tone="info" />
         </DashboardStatLink>
-        <DashboardStatLink to="/challenges" className="w-44 shrink-0 snap-start sm:w-auto">
-          <StatCard label="Open challenges" value={data.metrics.openChallenges} icon={TriangleAlert} tone="amber" />
+        <DashboardStatLink to="/challenges">
+          <StatCard className="h-24 p-3" label="Open challenges" value={data.metrics.openChallenges} icon={TriangleAlert} tone="amber" />
         </DashboardStatLink>
-        <div className="w-44 shrink-0 snap-start sm:w-auto"><StatCard label="Applicants" value={data.metrics.applicants} icon={BriefcaseBusiness} tone="good" /></div>
-      </div>
+        <StatCard className="h-24 p-3" label="New profile submissions" value={data.metrics.applicants} icon={BriefcaseBusiness} tone="good" />
+      </CompactStatGrid>
 
       <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(340px,0.8fr)]">
         <Card className="p-5">
@@ -108,6 +116,48 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
+      <Card className="mt-4 p-4 sm:p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <ClipboardList className="h-5 w-5 text-ruby-bright" />
+              <h2 className="font-display text-lg font-bold text-ink">Tasks assigned to pod leaders</h2>
+              <Badge tone="info">{data.leaderTasks?.length || 0} active</Badge>
+            </div>
+            <p className="mt-1 text-sm text-ink-muted">A clear view of the work every pod leader currently owns.</p>
+          </div>
+          <Link to="/leader-goals" className="inline-flex items-center gap-1.5 text-sm font-semibold text-ruby-bright hover:text-amber-bright">
+            View all tasks <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+        {data.leaderTasks?.length ? (
+          <div className="mt-4 grid max-h-[24rem] gap-3 overflow-y-auto pr-1 sm:grid-cols-2 xl:grid-cols-3">
+            {data.leaderTasks.map((task) => (
+              <article key={task.id} className="rounded-xl border border-line bg-surface-2 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <p className="font-display font-bold leading-snug text-ink">{task.title}</p>
+                  <Badge tone="ruby">{formatPodRole(task.assignedPodRole)}</Badge>
+                </div>
+                {task.description ? <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-ink-muted">{task.description}</p> : null}
+                <div className="mt-3 border-t border-line pt-3 text-xs text-ink-faint">
+                  <p className="font-medium text-ink-muted">{task.assigneeName || "Role owner not named"}</p>
+                  <p className="mt-1">{task.collegeName || "Pod not named"}</p>
+                  <p className="mt-2 flex items-center gap-1.5">
+                    <CalendarClock className="h-3.5 w-3.5" />
+                    {task.dueDate ? `Due ${formatDate(task.dueDate)}` : "No due date"}
+                  </p>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-4 rounded-xl border border-dashed border-line bg-surface-2 px-4 py-6 text-center">
+            <p className="text-sm font-semibold text-ink">No active pod-leader tasks</p>
+            <p className="mt-1 text-sm text-ink-muted">New assignments will appear here as soon as they are created.</p>
+          </div>
+        )}
+      </Card>
+
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
         <Card className="flex max-h-[28rem] flex-col p-4 sm:max-h-none sm:p-5">
           <div className="mb-4 flex items-start justify-between gap-2">
@@ -142,10 +192,15 @@ export default function AdminDashboard() {
           <Card className="p-4 sm:p-5">
             <div className="mb-4 flex items-start justify-between gap-2">
               <div>
-                <h3 className="font-display text-lg font-bold text-ink">Weekly submissions</h3>
-                <p className="text-sm text-ink-muted">Challenges and applicant submissions recorded by the backend.</p>
+                <h3 className="font-display text-lg font-bold text-ink">New profile submissions</h3>
+                <p className="text-sm text-ink-muted">Weekly submissions across Observership, Apprenticeship, and Internship.</p>
               </div>
               <Activity className="h-5 w-5 text-ruby-bright" />
+            </div>
+            <div className="mb-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-ink-muted" aria-label="Submission pathways">
+              <ChartKey color="bg-info" label="Observership" />
+              <ChartKey color="bg-amber-bright" label="Apprenticeship" />
+              <ChartKey color="bg-good" label="Internship" />
             </div>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
@@ -154,9 +209,9 @@ export default function AdminDashboard() {
                   <XAxis dataKey="week" tick={{ fill: "#b9a6a4", fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: "#7c6a6c", fontSize: 11 }} axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={{ background: "#1a1113", border: "1px solid #36262b", borderRadius: 12 }} />
-                  <Area type="monotone" dataKey="challenges" stroke="#fb3a63" fill="#fb3a6333" />
-                  <Area type="monotone" dataKey="futurecraft" name="Observership" stroke="#38bdf8" fill="#38bdf833" />
-                  <Area type="monotone" dataKey="industry" stroke="#34d399" fill="#34d39922" />
+                  <Area type="monotone" dataKey="observership" name="Observership" stroke="#38bdf8" fill="#38bdf822" />
+                  <Area type="monotone" dataKey="apprenticeship" name="Apprenticeship" stroke="#f5a524" fill="#f5a52422" />
+                  <Area type="monotone" dataKey="internship" name="Internship" stroke="#34d399" fill="#34d39922" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -165,12 +220,16 @@ export default function AdminDashboard() {
           <Card className="p-4 sm:p-5">
             <div className="mb-4 flex items-center gap-2">
               <Layers3 className="h-5 w-5 text-ruby-bright" />
-              <h3 className="font-display text-lg font-bold text-ink">Live workflow records</h3>
+              <h3 className="font-display text-lg font-bold text-ink">Live activity counters</h3>
             </div>
             <div className="grid grid-cols-2 gap-3">
               {data.workflowCounts.map((item) => (
                 <div key={item.id} className="rounded-xl border border-line bg-surface-2 p-3">
-                  <p className="text-xs text-ink-muted">{item.label}</p>
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-xs text-ink-muted">{item.label}</p>
+                    {item.id === "research" ? <Microscope className="h-3.5 w-3.5 shrink-0 text-info" /> : null}
+                    {item.id === "outreach" ? <Send className="h-3.5 w-3.5 shrink-0 text-good" /> : null}
+                  </div>
                   <p className="mt-1 font-display text-2xl font-black text-gradient">{item.count}</p>
                 </div>
               ))}
@@ -180,6 +239,15 @@ export default function AdminDashboard() {
       </div>
       </div>
     </div>
+  );
+}
+
+function ChartKey({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className={`h-2 w-2 rounded-full ${color}`} aria-hidden="true" />
+      {label}
+    </span>
   );
 }
 

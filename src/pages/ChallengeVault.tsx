@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatCard } from "@/components/ui/StatCard";
+import { CompactStatGrid } from "@/components/ui/CompactStatGrid";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { MobileFilterDrawer } from "@/components/ui/MobileFilterDrawer";
@@ -141,14 +142,14 @@ function MobileVaultStats({ stats }: { stats: VaultStats }) {
   ];
 
   return (
-    <div className="-mx-1 flex shrink-0 gap-2 overflow-x-auto px-1 pb-1 sm:hidden">
+    <CompactStatGrid label="Challenge statistics" className="shrink-0 grid-cols-3 sm:hidden">
       {items.map((item) => (
-        <div key={item.label} className="min-w-[76px] rounded-lg border border-line bg-surface/80 px-3 py-2">
-          <p className={cn("font-display text-lg font-black leading-none", item.tone)}>{item.value}</p>
-          <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.12em] text-ink-faint">{item.label}</p>
+        <div key={item.label} className="rounded-xl border border-line bg-surface/80 px-4 py-3">
+          <p className={cn("font-display text-2xl font-black leading-none", item.tone)}>{item.value}</p>
+          <p className="mt-1.5 text-xs font-bold uppercase tracking-[0.12em] text-ink-faint">{item.label}</p>
         </div>
       ))}
-    </div>
+    </CompactStatGrid>
   );
 }
 

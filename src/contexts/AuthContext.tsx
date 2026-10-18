@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { loginWithCredentials, type AllowedUser } from "@/lib/api";
+import { getCurrentSession, loginWithCredentials, type AllowedUser } from "@/lib/api";
 import { TOKEN_KEY, USER_KEY } from "@/lib/constants";
 
 type StatusType = "" | "success" | "error" | "info";
@@ -71,7 +71,9 @@ function isTokenValid(token: string) {
 
 function isAdminUser(user: AllowedUser | null) {
   if (!user) return false;
-  return Boolean(user.permissions?.includes("*"));
+  return user.accountType === "super_admin"
+    || user.accountType === "pod_ops_admin"
+    || Boolean(user.permissions?.some((permission) => permission === "*" || permission === "pod_ops:admin"));
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -81,13 +83,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isSigningIn, setIsSigningIn] = useState(false);
 
   useEffect(() => {
+    let active = true;
     const token = read(TOKEN_KEY);
     if (!token || !isTokenValid(token)) {
       remove(TOKEN_KEY);
       remove(USER_KEY);
       setUser(null);
       setIsAuthenticating(false);
-      return;
+      return () => { active = false; };
     }
 
     const raw = read(USER_KEY);
@@ -103,11 +106,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       remove(USER_KEY);
       setUser(null);
       setIsAuthenticating(false);
-      return;
+      return () => { active = false; };
     }
 
-    setUser(stored);
-    setIsAuthenticating(false);
+    void getCurrentSession()
+      .then((sessionUser) => {
+        if (!active || !isAdminUser(sessionUser)) throw new Error("Session is not authorized for Pod Ops Admin.");
+        write(USER_KEY, JSON.stringify(sessionUser));
+        setUser(sessionUser);
+      })
+      .catch(() => {
+        if (!active) return;
+        remove(TOKEN_KEY);
+        remove(USER_KEY);
+        setUser(null);
+      })
+      .finally(() => {
+        if (active) setIsAuthenticating(false);
+      });
+    return () => { active = false; };
   }, []);
 
   const applySession = useCallback((data: { access_token: string; user: AllowedUser }) => {

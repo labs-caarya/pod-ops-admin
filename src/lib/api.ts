@@ -19,6 +19,7 @@ export interface AllowedUser {
   username?: string;
   name?: string;
   primary_role?: string;
+  accountType?: "super_admin" | "pod_ops_admin" | "pod_leader";
   permissions?: string[];
   collegeId?: string;
   collegeName?: string;
@@ -34,6 +35,7 @@ export interface ManagedPod {
   id: string;
   name: string;
   collegeName: string;
+  crew?: string;
   clubs: string[];
   podLeader: string;
   podTalentManager: string;
@@ -113,6 +115,27 @@ export interface PodPortfolioEntry extends ManagedPod {
   health: "Thriving" | "Watching" | "At Risk";
 }
 
+export interface PodComment {
+  id: string;
+  collegeId: string;
+  collegeName: string;
+  body: string;
+  visibility: "admin" | "pod" | "both";
+  status: "open" | "resolved";
+  createdBy: string;
+  createdByName: string;
+  createdByUsername: string;
+  resolvedBy: string | null;
+  resolvedByName: string;
+  resolvedAt: string | null;
+  resolutionNote: string;
+  createdAt: string;
+  updatedAt: string;
+  canEdit: boolean;
+  canDelete: boolean;
+  canResolve: boolean;
+}
+
 export interface PodPeriodMetrics {
   researchCreated: number;
   researchScored: number;
@@ -132,6 +155,7 @@ export interface PodInsight {
   collegeId: string;
   podName: string;
   collegeName: string;
+  crew: string;
   health: PodPortfolioEntry["health"];
   activationPercent: number;
   daily: PodPeriodMetrics;
@@ -188,11 +212,22 @@ export interface AdminDashboardData {
   }[];
   pods: PodPortfolioEntry[];
   insights: PodInsight[];
+  leaderTasks: {
+    id: string;
+    collegeId: string;
+    collegeName: string;
+    assignedPodRole: PodRoleApi;
+    assigneeName: string;
+    title: string;
+    description: string;
+    status: "active";
+    dueDate?: string | null;
+  }[];
   throughput: {
     week: string;
-    challenges: number;
-    futurecraft: number;
-    industry: number;
+    observership: number;
+    apprenticeship: number;
+    internship: number;
   }[];
   workflowCounts: {
     id: string;
@@ -310,6 +345,7 @@ export async function loginWithCredentials(
     body: JSON.stringify({
       username: String(username || "").trim(),
       password: String(password || ""),
+      application: "pod-ops-admin",
       ...(collegeId ? { collegeId } : {}),
       ...(podRole ? { podRole } : {}),
     }),
@@ -327,6 +363,13 @@ export async function loginWithCredentials(
   return data;
 }
 
+export async function getCurrentSession(): Promise<AllowedUser> {
+  const payload = await requestJson("/auth/session");
+  const data = unwrapData<AllowedUser>(payload);
+  if (!data?.id) throw new Error("Session response was incomplete.");
+  return data;
+}
+
 export async function listManagedUsers(): Promise<AllowedUser[]> {
   ensureApiBaseUrl();
   const res = await fetch(`${API_BASE_URL}/users`, {
@@ -337,55 +380,6 @@ export async function listManagedUsers(): Promise<AllowedUser[]> {
     throw new Error(apiErrorMessage(payload, `Could not load users (${res.status}).`));
   }
   return unwrapList<AllowedUser>(payload, "users");
-}
-
-export async function createManagedUser(input: {
-  username: string;
-  name: string;
-  password: string;
-  collegeId: string;
-  podRole: PodRoleApi;
-}): Promise<AllowedUser> {
-  ensureApiBaseUrl();
-  const res = await fetch(`${API_BASE_URL}/users`, {
-    method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify(input),
-  });
-  const payload = await readJson(res);
-  if (!res.ok) {
-    throw new Error(apiErrorMessage(payload, `Could not create user (${res.status}).`));
-  }
-  return unwrapEntity<AllowedUser>(payload, "user");
-}
-
-export async function updateManagedUser(
-  id: string,
-  input: Partial<{ username: string; name: string; password: string; isActive: boolean; collegeId: string; podRole: PodRoleApi }>,
-): Promise<AllowedUser> {
-  ensureApiBaseUrl();
-  const res = await fetch(`${API_BASE_URL}/users/${id}`, {
-    method: "PATCH",
-    headers: authHeaders(),
-    body: JSON.stringify(input),
-  });
-  const payload = await readJson(res);
-  if (!res.ok) {
-    throw new Error(apiErrorMessage(payload, `Could not update user (${res.status}).`));
-  }
-  return unwrapEntity<AllowedUser>(payload, "user");
-}
-
-export async function deleteManagedUser(id: string): Promise<void> {
-  ensureApiBaseUrl();
-  const res = await fetch(`${API_BASE_URL}/users/${id}`, {
-    method: "DELETE",
-    headers: authHeaders(),
-  });
-  if (!res.ok) {
-    const payload = await readJson(res);
-    throw new Error(apiErrorMessage(payload, `Delete failed (${res.status}).`));
-  }
 }
 
 export async function listManagedPods(): Promise<ManagedPod[]> {
@@ -537,6 +531,40 @@ export async function listPodPortfolio(): Promise<PodPortfolioEntry[]> {
   const payload = await requestJson("/admin/pod-portfolio");
   const data = unwrapData<PodPortfolioEntry[]>(payload);
   return Array.isArray(data) ? data : [];
+}
+
+export async function listPodComments(collegeId: string): Promise<PodComment[]> {
+  const payload = await requestJson(`/pod-comments?collegeId=${encodeURIComponent(collegeId)}&status=all`);
+  const data = unwrapData<PodComment[]>(payload);
+  return Array.isArray(data) ? data : [];
+}
+
+export async function createPodComment(input: { collegeId: string; body: string; visibility: PodComment["visibility"] }): Promise<PodComment> {
+  const payload = await requestJson("/pod-comments", { method: "POST", body: JSON.stringify(input) });
+  const data = unwrapData<PodComment>(payload);
+  if (!data?.id) throw new Error("Comment response was incomplete.");
+  return data;
+}
+
+export async function updatePodComment(id: string, input: { body: string; visibility: PodComment["visibility"] }): Promise<PodComment> {
+  const payload = await requestJson(`/pod-comments/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(input) });
+  const data = unwrapData<PodComment>(payload);
+  if (!data?.id) throw new Error("Comment response was incomplete.");
+  return data;
+}
+
+export async function deletePodComment(id: string): Promise<void> {
+  await requestJson(`/pod-comments/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
+export async function resolvePodComment(id: string, resolutionNote: string): Promise<PodComment> {
+  const payload = await requestJson(`/pod-comments/${encodeURIComponent(id)}/resolve`, {
+    method: "POST",
+    body: JSON.stringify({ resolutionNote }),
+  });
+  const data = unwrapData<PodComment>(payload);
+  if (!data?.id) throw new Error("Comment response was incomplete.");
+  return data;
 }
 
 export async function listChallenges(): Promise<Challenge[]> {

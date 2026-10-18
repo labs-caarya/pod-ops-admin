@@ -5,13 +5,18 @@ import {
   CalendarDays,
   Check,
   CheckCircle2,
+  ChevronDown,
+  ChevronLeft,
   CircleAlert,
   Clock3,
   HeartHandshake,
+  Eye,
+  ListFilter,
   RefreshCw,
   Sparkles,
   TrendingDown,
   TrendingUp,
+  UsersRound,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { dashboardQueryOptions } from "@/lib/adminQueries";
@@ -19,7 +24,7 @@ import type { PodInsight, PodPeriodMetrics, PodPortfolioEntry } from "@/lib/api"
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Select } from "@/components/ui/Field";
+import { Drawer } from "@/components/ui/Drawer";
 import { ProgressBar } from "@/components/ui/Misc";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { cn } from "@/lib/utils";
@@ -52,6 +57,7 @@ function fallbackInsight(pod: PodPortfolioEntry): PodInsight {
     collegeId: pod.id,
     podName: pod.name,
     collegeName: pod.collegeName,
+    crew: pod.crew || "Unassigned crew",
     health: pod.health,
     activationPercent: pod.activationPercent,
     daily: EMPTY_METRICS,
@@ -88,7 +94,11 @@ function fallbackInsight(pod: PodPortfolioEntry): PodInsight {
 export default function PodReports() {
   const dashboardQuery = useQuery(dashboardQueryOptions());
   const [period, setPeriod] = useState<ReportPeriod>("daily");
-  const [selectedPodId, setSelectedPodId] = useState("");
+  const [selectedPodIds, setSelectedPodIds] = useState<Set<string>>(new Set());
+  const [selectionReady, setSelectionReady] = useState(false);
+  const [selectionOpen, setSelectionOpen] = useState(false);
+  const [quickSummaryIds, setQuickSummaryIds] = useState<Set<string>>(new Set());
+  const [detailPodId, setDetailPodId] = useState<string | null>(null);
   const data = dashboardQuery.data;
   const insights = useMemo(
     () => data?.insights?.length ? data.insights : (data?.pods || []).map(fallbackInsight),
@@ -96,13 +106,46 @@ export default function PodReports() {
   );
 
   useEffect(() => {
-    if (!selectedPodId && insights.length) {
-      const needsCare = insights.find((item) => item.health !== "Thriving");
-      setSelectedPodId((needsCare || insights[0]).collegeId);
+    if (!selectionReady && insights.length) {
+      setSelectedPodIds(new Set(insights.map((item) => item.collegeId)));
+      setSelectionReady(true);
     }
-  }, [insights, selectedPodId]);
+  }, [insights, selectionReady]);
 
-  const selected = insights.find((item) => item.collegeId === selectedPodId) || insights[0];
+  const selectedInsights = useMemo(
+    () => insights
+      .filter((item) => selectedPodIds.has(item.collegeId))
+      .sort((a, b) => {
+        const gainDifference = getTotalGains(period === "daily" ? b.daily : b.weekly)
+          - getTotalGains(period === "daily" ? a.daily : a.weekly);
+        return gainDifference || a.podName.localeCompare(b.podName);
+      }),
+    [insights, period, selectedPodIds],
+  );
+  const detailedInsight = detailPodId ? insights.find((item) => item.collegeId === detailPodId) : null;
+
+  function togglePod(podId: string) {
+    setSelectedPodIds((current) => {
+      const next = new Set(current);
+      if (next.has(podId)) next.delete(podId);
+      else next.add(podId);
+      return next;
+    });
+  }
+
+  function toggleQuickSummary(podId: string) {
+    setQuickSummaryIds((current) => {
+      const next = new Set(current);
+      if (next.has(podId)) next.delete(podId);
+      else next.add(podId);
+      return next;
+    });
+  }
+
+  function openDetailedSummary(podId: string) {
+    setDetailPodId(podId);
+    window.requestAnimationFrame(() => document.querySelector("main")?.scrollTo({ top: 0, behavior: "smooth" }));
+  }
 
   return (
     <div className="space-y-4 sm:space-y-5">
@@ -128,7 +171,7 @@ export default function PodReports() {
 
       {dashboardQuery.isPending ? (
         <Card className="p-8 text-center text-sm text-ink-muted">Gathering the latest pod signals…</Card>
-      ) : !selected ? (
+      ) : !insights.length ? (
         <Card className="p-8 text-center">
           <p className="font-display text-lg font-bold text-ink">No pods to report on yet</p>
           <p className="mt-1 text-sm text-ink-muted">Once a pod is created, its daily rhythm and level progress will appear here.</p>
@@ -136,32 +179,261 @@ export default function PodReports() {
       ) : (
         <>
           <section className="report-toolbar" aria-label="Report controls">
-            <div className="min-w-0 flex-1">
-              <label htmlFor="report-pod" className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-faint">
-                Pod
-              </label>
-              <Select id="report-pod" value={selected.collegeId} onChange={(event) => setSelectedPodId(event.target.value)}>
-                {insights.map((item) => (
-                  <option key={item.collegeId} value={item.collegeId}>{item.podName} · {item.collegeName}</option>
-                ))}
-              </Select>
-            </div>
+            <button type="button" onClick={() => setSelectionOpen(true)} className="pod-selection-trigger">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-ruby/10 text-ruby-bright"><UsersRound className="h-4 w-4" /></span>
+              <span className="min-w-0 flex-1 text-left">
+                <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-faint">Pods in view</span>
+                <span className="block truncate text-sm font-semibold text-ink">{selectedPodIds.size === insights.length ? `All ${insights.length} pods` : `${selectedPodIds.size} of ${insights.length} pods`}</span>
+              </span>
+              <ListFilter className="h-4 w-4 shrink-0 text-ink-muted" />
+            </button>
             <div className="report-period-switch" aria-label="Report period">
               <button type="button" onClick={() => setPeriod("daily")} className={cn(period === "daily" && "is-active")}>Today</button>
               <button type="button" onClick={() => setPeriod("weekly")} className={cn(period === "weekly" && "is-active")}>7 days</button>
             </div>
           </section>
 
-          <PodReport insight={selected} period={period} />
+          {detailedInsight ? (
+            <div>
+              <div className="pod-watch-bar">
+                <span className="flex min-w-0 items-center gap-2">
+                  <Eye className="h-4 w-4 shrink-0 text-ruby-bright" />
+                  <span className="truncate text-sm text-ink-muted">Now watching <strong className="font-semibold text-ink">{detailedInsight.podName}</strong></span>
+                </span>
+                <button type="button" onClick={() => setDetailPodId(null)} className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-ruby-bright hover:text-amber-bright">
+                  <ChevronLeft className="h-3.5 w-3.5" /> Pod cards
+                </button>
+              </div>
+              <PodReport insight={detailedInsight} period={period} />
+            </div>
+          ) : selectedInsights.length ? (
+            <section aria-labelledby="pod-cards-heading">
+              <div className="mb-3">
+                <h2 id="pod-cards-heading" className="font-display text-lg font-bold text-ink">Pods at a glance</h2>
+                <p className="mt-1 text-sm text-ink-muted">Open a quick summary when you need context, or step into the detailed evidence for one pod.</p>
+              </div>
+              <div className="grid gap-3 lg:grid-cols-2">
+                {selectedInsights.map((insight) => (
+                  <PodReportCard
+                    key={insight.collegeId}
+                    insight={insight}
+                    period={period}
+                    quickSummaryOpen={quickSummaryIds.has(insight.collegeId)}
+                    onToggleQuickSummary={() => toggleQuickSummary(insight.collegeId)}
+                    onViewDetails={() => openDetailedSummary(insight.collegeId)}
+                  />
+                ))}
+              </div>
+            </section>
+          ) : (
+            <Card className="p-6 text-center">
+              <p className="font-display text-lg font-bold text-ink">Choose at least one pod</p>
+              <p className="mt-1 text-sm text-ink-muted">Your selection only changes this view. No pod data is edited.</p>
+              <Button className="mt-4" variant="secondary" onClick={() => setSelectionOpen(true)}>Select pods</Button>
+            </Card>
+          )}
+
+          <PodSelectionPanel
+            open={selectionOpen}
+            insights={insights}
+            selectedIds={selectedPodIds}
+            onToggle={togglePod}
+            onSelectAll={() => setSelectedPodIds(new Set(insights.map((item) => item.collegeId)))}
+            onClear={() => setSelectedPodIds(new Set())}
+            onClose={() => setSelectionOpen(false)}
+          />
         </>
       )}
     </div>
   );
 }
 
+function PodReportCard({
+  insight,
+  period,
+  quickSummaryOpen,
+  onToggleQuickSummary,
+  onViewDetails,
+}: {
+  insight: PodInsight;
+  period: ReportPeriod;
+  quickSummaryOpen: boolean;
+  onToggleQuickSummary: () => void;
+  onViewDetails: () => void;
+}) {
+  const metrics = period === "daily" ? insight.daily : insight.weekly;
+  const totalGains = getTotalGains(metrics);
+  const happening = getPodCardSummary(insight, metrics, period);
+  return (
+    <Card className="pod-report-card p-4 sm:p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="font-display text-base font-bold text-ink sm:text-lg">{insight.podName}</h3>
+            <Badge tone={healthTone[insight.health]}>{insight.health}</Badge>
+          </div>
+          <p className="mt-1 text-xs text-ink-faint">{formatCrewName(insight.crew)} · L{insight.level.current} {insight.level.name}</p>
+        </div>
+        <div className="shrink-0 text-right">
+          <p className="text-[10px] uppercase tracking-[0.12em] text-ink-faint">Gains</p>
+          <p className="font-display text-xl font-black text-ink">{totalGains}</p>
+        </div>
+      </div>
+      <div className="mt-3 min-h-12 border-t border-line pt-3">
+        <p className="line-clamp-2 text-sm leading-relaxed text-ink-muted">{happening}</p>
+      </div>
+      <div className="mt-3">
+        <button
+          type="button"
+          role="switch"
+          aria-checked={quickSummaryOpen}
+          aria-expanded={quickSummaryOpen}
+          onClick={onToggleQuickSummary}
+          className="focus-ring flex min-h-8 w-full items-center justify-between gap-3 rounded-lg text-xs font-semibold text-ink-muted hover:text-ink"
+        >
+          <span className="flex items-center gap-2">
+            <span aria-hidden="true" className={cn("flex h-5 w-9 shrink-0 items-center rounded-full border p-0.5 transition-colors", quickSummaryOpen ? "justify-end border-ruby/70 bg-ruby/45" : "justify-start border-line-strong bg-surface-2")}>
+              <span className={cn("h-3.5 w-3.5 rounded-full shadow-sm transition-colors", quickSummaryOpen ? "bg-white" : "bg-ink-muted")} />
+            </span>
+            <span>Quick summary</span>
+          </span>
+          <ChevronDown className={cn("h-4 w-4 text-ink-faint transition-transform", quickSummaryOpen && "rotate-180")} />
+        </button>
+      </div>
+      {quickSummaryOpen ? (
+        <div className="mt-3 grid grid-cols-4 divide-x divide-line border-y border-line py-2.5">
+          <QuickMetric label="Research done" value={metrics.researchScored} />
+          <QuickMetric label="Client outreach" value={metrics.outreachActivities} />
+          <QuickMetric label="Challenges" value={metrics.challengesOpened} />
+          <QuickMetric label="New profiles" value={metrics.researchCreated} />
+        </div>
+      ) : null}
+      <button type="button" onClick={onViewDetails} className="mt-4 inline-flex w-full items-center justify-between border-t border-line pt-3 text-sm font-semibold text-ruby-bright hover:text-amber-bright">
+        View detailed summary <ArrowRight className="h-4 w-4" />
+      </button>
+    </Card>
+  );
+}
+
+function QuickMetric({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="min-w-0 px-1.5 text-center first:pl-0 last:pr-0 sm:px-2">
+      <p className="font-display text-lg font-black leading-none text-ink">{value}</p>
+      <p className="mt-1 whitespace-nowrap text-[clamp(0.48rem,2vw,0.625rem)] font-medium leading-none tracking-tight text-ink-faint">{label}</p>
+    </div>
+  );
+}
+
+function PodSelectionPanel({
+  open,
+  insights,
+  selectedIds,
+  onToggle,
+  onSelectAll,
+  onClear,
+  onClose,
+}: {
+  open: boolean;
+  insights: PodInsight[];
+  selectedIds: Set<string>;
+  onToggle: (podId: string) => void;
+  onSelectAll: () => void;
+  onClear: () => void;
+  onClose: () => void;
+}) {
+  const crews = useMemo(() => {
+    const grouped = new Map<string, PodInsight[]>();
+    insights.forEach((insight) => {
+      const crew = formatCrewName(insight.crew);
+      grouped.set(crew, [...(grouped.get(crew) || []), insight]);
+    });
+    return [...grouped.entries()].sort(([a], [b]) => a.localeCompare(b));
+  }, [insights]);
+
+  return (
+    <Drawer
+      open={open}
+      onClose={onClose}
+      title="Choose pods"
+      subtitle="Group and compare the pods you want to understand right now."
+      width="max-w-md"
+      panelClassName="max-sm:h-[78dvh] max-sm:max-w-none max-sm:self-end max-sm:rounded-t-2xl max-sm:border-l-0 max-sm:border-t max-sm:animate-[slideup_0.25s_ease]"
+      bodyClassName="px-4 py-3 sm:px-5"
+      footerClassName="px-4 py-3 sm:px-5"
+      footer={
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs text-ink-muted">{selectedIds.size} of {insights.length} selected</p>
+          <Button onClick={onClose}>Show pod cards</Button>
+        </div>
+      }
+    >
+      <div className="mb-3 flex items-center justify-between border-b border-line pb-3">
+        <button type="button" onClick={onSelectAll} className="text-sm font-semibold text-ruby-bright hover:underline">Select all</button>
+        <button type="button" onClick={onClear} className="text-sm text-ink-muted hover:text-ink">Clear</button>
+      </div>
+      <div className="space-y-5">
+        {crews.map(([crew, pods]) => (
+          <fieldset key={crew}>
+            <legend className="mb-2 flex w-full items-center justify-between text-xs font-bold uppercase tracking-[0.12em] text-ink-faint">
+              <span>{crew}</span><span>{pods.filter((pod) => selectedIds.has(pod.collegeId)).length}/{pods.length}</span>
+            </legend>
+            <div className="divide-y divide-line border-y border-line">
+              {pods.map((pod) => (
+                <label key={pod.collegeId} className="flex cursor-pointer items-start gap-3 py-3">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(pod.collegeId)}
+                    onChange={() => onToggle(pod.collegeId)}
+                    className="mt-0.5 h-4 w-4 rounded border-line-strong accent-ruby"
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold text-ink">{pod.podName}</span>
+                    <span className="mt-0.5 block text-xs text-ink-faint">{pod.collegeName}</span>
+                  </span>
+                  <Badge tone={healthTone[pod.health]}>{pod.health}</Badge>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        ))}
+      </div>
+    </Drawer>
+  );
+}
+
+function getPodCardSummary(insight: PodInsight, metrics: PodPeriodMetrics, period: ReportPeriod) {
+  if (insight.snapshot.criticalChallenges > 0) {
+    return `${insight.snapshot.criticalChallenges} urgent blocker${insight.snapshot.criticalChallenges === 1 ? " is" : "s are"} slowing the team down. A clear owner and a small decision would help most.`;
+  }
+  if (metrics.placements > 0 || metrics.offersAccepted > 0) {
+    return `A talent outcome landed ${period === "daily" ? "today" : "this week"}. The pod has momentum worth recognising and repeating.`;
+  }
+  if (metrics.outreachActivities > 0) {
+    return `${metrics.outreachActivities} conversation${metrics.outreachActivities === 1 ? " is" : "s are"} moving, with ${metrics.meetings} meeting${metrics.meetings === 1 ? "" : "s"} recorded. Follow-through is the next useful focus.`;
+  }
+  if (metrics.researchCreated > 0 || metrics.researchScored > 0) {
+    return `The pod is building its research base with ${metrics.researchCreated} new and ${metrics.researchScored} scored profile${metrics.researchScored === 1 ? "" : "s"}. Outreach can begin from the strongest fits.`;
+  }
+  return `No movement is recorded ${period === "daily" ? "today" : "in the last seven days"}. A warm check-in can clarify whether the team is resting, blocked, or catching up on updates.`;
+}
+
+function formatCrewName(value?: string) {
+  const crew = value?.trim();
+  if (!crew) return "Unassigned crew";
+  return crew
+    .toLocaleLowerCase()
+    .split(/\s+/)
+    .map((word) => `${word.charAt(0).toLocaleUpperCase()}${word.slice(1)}`)
+    .join(" ");
+}
+
+function getTotalGains(metrics: PodPeriodMetrics) {
+  return Object.values(metrics).reduce((sum, value) => sum + value, 0);
+}
+
 function PodReport({ insight, period }: { insight: PodInsight; period: ReportPeriod }) {
   const metrics = period === "daily" ? insight.daily : insight.weekly;
-  const totalMoves = Object.values(metrics).reduce((sum, value) => sum + value, 0);
+  const totalGains = getTotalGains(metrics);
   const completedChecks = insight.level.checks.filter((item) => item.met).length;
   const coach = getCoachMessage(insight, metrics, period);
 
@@ -178,8 +450,8 @@ function PodReport({ insight, period }: { insight: PodInsight; period: ReportPer
               <p className="mt-1 text-sm text-ink-muted">{period === "daily" ? "Today’s pulse" : "The last seven days"} · refreshed from live pod records</p>
             </div>
             <div className="text-left sm:text-right">
-              <p className="text-xs text-ink-faint">Meaningful moves</p>
-              <p className="font-display text-2xl font-black text-ink">{totalMoves}</p>
+              <p className="text-xs text-ink-faint">Meaningful gains</p>
+              <p className="font-display text-2xl font-black text-ink">{totalGains}</p>
             </div>
           </div>
           <div className="mt-4 border-t border-line pt-4">
@@ -251,8 +523,8 @@ function PodReport({ insight, period }: { insight: PodInsight; period: ReportPer
 function LevelPath({ current }: { current: number }) {
   const levels = ["Forming", "Activated", "Operating", "Performing", "Scaling"];
   return (
-    <div className="mt-4 overflow-x-auto pb-1" aria-label={`Five-level pod journey, currently level ${current}`}>
-      <div className="flex min-w-[28rem] items-start">
+    <div className="mt-4" aria-label={`Five-level pod journey, currently level ${current}`}>
+      <div className="grid grid-cols-5 items-start">
         {levels.map((label, index) => {
           const level = index + 1;
           const reached = level <= current;

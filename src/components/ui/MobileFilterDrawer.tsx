@@ -10,6 +10,7 @@ export function MobileFilterDrawer({
   active = false,
   title = "Filters",
   triggerLabel = "Open filters",
+  triggerClassName = "sm:hidden",
   children,
   onClear,
 }: {
@@ -19,6 +20,7 @@ export function MobileFilterDrawer({
   active?: boolean;
   title?: string;
   triggerLabel?: string;
+  triggerClassName?: string;
   children: React.ReactNode;
   onClear?: () => void;
 }) {
@@ -28,7 +30,7 @@ export function MobileFilterDrawer({
         type="button"
         variant={active ? "primary" : "secondary"}
         size="icon"
-        className="sm:hidden"
+        className={triggerClassName}
         aria-label={triggerLabel}
         title={triggerLabel}
         aria-expanded={open}

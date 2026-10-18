@@ -60,6 +60,8 @@ export function Drawer({
             {subtitle && <p className="mt-0.5 text-sm text-ink-muted">{subtitle}</p>}
           </div>
           <button
+            type="button"
+            aria-label="Close panel"
             onClick={onClose}
             className="focus-ring rounded-lg p-1.5 text-ink-muted hover:bg-surface-2 hover:text-ink"
           >
@@ -71,6 +73,7 @@ export function Drawer({
       </div>
       <style>{`
         @keyframes slidein { from { transform: translateX(24px); opacity: 0 } to { transform: translateX(0); opacity: 1 } }
+        @keyframes slideup { from { transform: translateY(32px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
         @keyframes fade { from { opacity: 0 } to { opacity: 1 } }
       `}</style>
     </div>,

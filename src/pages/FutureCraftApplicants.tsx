@@ -87,6 +87,7 @@ export default function FutureCraftApplicants() {
               active={hasActiveFilters}
               title="Observership filters"
               triggerLabel="Open Observership filters"
+              triggerClassName="lg:hidden"
               onClear={clearFilters}
             >
               <FieldRow label="Year">
@@ -103,10 +104,10 @@ export default function FutureCraftApplicants() {
                 </Select>
               </FieldRow>
             </MobileFilterDrawer>
-            <Button size="icon" className="sm:hidden" variant="secondary" aria-label="Refresh Observership applicants" title="Refresh Observership applicants" onClick={() => void applicantsQuery.refetch()} disabled={loading || refreshing}>
+            <Button size="icon" className="lg:hidden" variant="secondary" aria-label="Refresh Observership applicants" title="Refresh Observership applicants" onClick={() => void applicantsQuery.refetch()} disabled={loading || refreshing}>
               {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             </Button>
-            <Button className="hidden sm:inline-flex" variant="secondary" onClick={() => void applicantsQuery.refetch()} disabled={loading || refreshing}>
+            <Button className="hidden lg:inline-flex" variant="secondary" onClick={() => void applicantsQuery.refetch()} disabled={loading || refreshing}>
               {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
               Refresh
             </Button>
@@ -124,7 +125,7 @@ export default function FutureCraftApplicants() {
                 {hasActiveFilters ? ` shown of ${applicants.length}` : ""} across matched and unmatched colleges
               </p>
             </div>
-            <div className="hidden items-center gap-1 rounded-xl border border-line bg-surface-2 p-1 sm:flex">
+            <div className="hidden items-center gap-1 rounded-xl border border-line bg-surface-2 p-1 lg:flex">
               <button
                 type="button"
                 onClick={() => setViewMode("cards")}
@@ -156,7 +157,7 @@ export default function FutureCraftApplicants() {
             </div>
           </div>
 
-          <div className="hidden gap-2 border-b border-line px-4 py-4 sm:flex sm:flex-row sm:items-center sm:px-5">
+          <div className="hidden gap-2 border-b border-line px-4 py-4 lg:flex lg:flex-row lg:items-center lg:px-5">
             <Select value={yearFilter} onChange={(e) => setYearFilter(e.target.value)} className="w-full sm:w-44">
               <option value="all">All years</option>
               {yearOptions.map((year) => (
@@ -189,7 +190,7 @@ export default function FutureCraftApplicants() {
           ) : filteredApplicants.length ? (
             viewMode === "table" ? (
               <>
-                <div className="hidden min-h-0 flex-1 overflow-auto sm:block">
+                <div className="hidden min-h-0 flex-1 overflow-auto lg:block">
                   <table className="min-w-full border-separate border-spacing-0 text-left text-sm">
                     <thead className="sticky top-0 z-10 bg-base">
                       <tr className="text-xs uppercase tracking-[0.14em] text-ink-faint">
@@ -229,7 +230,7 @@ export default function FutureCraftApplicants() {
                     </tbody>
                   </table>
                 </div>
-                <ApplicantCards applicants={filteredApplicants} className="sm:hidden" />
+                <ApplicantCards applicants={filteredApplicants} className="lg:hidden" />
               </>
             ) : (
               <ApplicantCards applicants={filteredApplicants} />

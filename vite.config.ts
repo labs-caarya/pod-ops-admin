@@ -17,6 +17,11 @@ export default defineConfig({
       "/api": {
         target: process.env.VITE_API_PROXY_TARGET || "http://localhost:5000",
         changeOrigin: true,
+        configure(proxyServer) {
+          proxyServer.on("proxyReq", (proxyRequest) => {
+            proxyRequest.removeHeader("origin");
+          });
+        },
       },
     },
   },

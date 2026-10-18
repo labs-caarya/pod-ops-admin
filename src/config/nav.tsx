@@ -2,7 +2,6 @@ import {
   LayoutDashboard,
   Network,
   Building2,
-  UserRound,
   GraduationCap,
   ClipboardList,
   BookOpen,
@@ -34,7 +33,6 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Daily & weekly", to: "/reports", icon: CalendarRange },
       { label: "Pod Portfolio", to: "/pods", icon: Network },
       { label: "Pod Registry", to: "/pods-admin", icon: Building2 },
-      { label: "Leadership", to: "/access", icon: UserRound },
     ],
   },
   {

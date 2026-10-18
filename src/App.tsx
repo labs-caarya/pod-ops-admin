@@ -9,7 +9,6 @@ import AdminDashboard from "@/pages/AdminDashboard";
 import {
   loadAdminPodRegistryPage,
   loadAdminPodsPage,
-  loadAdminUsersPage,
   loadAdminLeaderGoalsPage,
   loadAdminPodMentorsPage,
   loadChallengeVaultPage,
@@ -25,7 +24,6 @@ import {
 
 const AdminPods = lazy(loadAdminPodsPage);
 const AdminPodRegistry = lazy(loadAdminPodRegistryPage);
-const AdminUsers = lazy(loadAdminUsersPage);
 const AdminLeaderGoals = lazy(loadAdminLeaderGoalsPage);
 const AdminPodMentors = lazy(loadAdminPodMentorsPage);
 const ChallengeVault = lazy(loadChallengeVaultPage);
@@ -73,7 +71,6 @@ export default function App() {
           <Route path="/pods" element={<AdminPods />} />
           <Route path="/reports" element={<PodReports />} />
           <Route path="/pods-admin" element={<AdminPodRegistry />} />
-          <Route path="/access" element={<AdminUsers />} />
           <Route path="/challenges" element={<ChallengeVault />} />
           <Route path="/challenges/:challengeId" element={<ChallengeDetail />} />
           <Route path="/pod-activation" element={<AdminPodActivation />} />
