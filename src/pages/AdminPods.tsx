@@ -1,6 +1,6 @@
 import { useDeferredValue, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Building2, ChevronDown, Info, Network, RefreshCw, Search, ShieldAlert, Star, Users2, X } from "lucide-react";
+import { ArrowRight, Building2, ChevronDown, Info, MessageSquareText, Network, RefreshCw, Search, ShieldAlert, Star, Users2, X } from "lucide-react";
 import { podPortfolioQueryOptions } from "@/lib/adminQueries";
 import type { PodPortfolioEntry } from "@/lib/api";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -19,6 +19,8 @@ const healthTone = {
   "At Risk": "bad",
 } as const;
 
+type PodDrawerView = "details" | "comments";
+
 export default function AdminPods() {
   const portfolioQuery = useQuery(podPortfolioQueryOptions());
   const [query, setQuery] = useState("");
@@ -27,6 +29,7 @@ export default function AdminPods() {
   const [showScoreGuide, setShowScoreGuide] = useState(false);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [selectedPod, setSelectedPod] = useState<PodPortfolioEntry | null>(null);
+  const [drawerView, setDrawerView] = useState<PodDrawerView>("details");
   const deferredQuery = useDeferredValue(query);
   const pods = portfolioQuery.data || [];
   const hasActiveFilters = Boolean(query.trim() || health !== "all" || strength !== "all");
@@ -36,6 +39,16 @@ export default function AdminPods() {
     setQuery("");
     setHealth("all");
     setStrength("all");
+  }
+
+  function openPodDrawer(pod: PodPortfolioEntry, view: PodDrawerView) {
+    setDrawerView(view);
+    setSelectedPod(pod);
+  }
+
+  function closePodDrawer() {
+    setSelectedPod(null);
+    setDrawerView("details");
   }
 
   const rows = useMemo(() => {
@@ -177,52 +190,79 @@ export default function AdminPods() {
         ) : (
           <div className="grid gap-6 xl:grid-cols-2">
           {rows.map((pod) => (
-            <PodPortfolioCard key={pod.id} pod={pod} onSelect={() => setSelectedPod(pod)} />
+            <PodPortfolioCard
+              key={pod.id}
+              pod={pod}
+              onSelect={() => openPodDrawer(pod, "details")}
+              onOpenComments={() => openPodDrawer(pod, "comments")}
+            />
           ))}
           </div>
         )}
       </div>
 
-      <PodDrawer pod={selectedPod} onClose={() => setSelectedPod(null)} />
+      <PodDrawer pod={selectedPod} view={drawerView} onClose={closePodDrawer} />
     </div>
   );
 }
 
-function PodPortfolioCard({ pod, onSelect }: { pod: PodPortfolioEntry; onSelect: () => void }) {
+function PodPortfolioCard({
+  pod,
+  onSelect,
+  onOpenComments,
+}: {
+  pod: PodPortfolioEntry;
+  onSelect: () => void;
+  onOpenComments: () => void;
+}) {
   return (
     <Card hover className="flex h-full flex-col p-5 shadow-none sm:p-6">
-      <button type="button" onClick={onSelect} className="flex w-full flex-1 flex-col text-left">
+      <div className="flex flex-1 flex-col">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
+          <button type="button" onClick={onSelect} className="min-w-0 text-left focus-ring rounded-lg">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="font-display text-lg font-bold text-ink">{pod.name}</h2>
               <Badge tone={healthTone[pod.health]}>{pod.health}</Badge>
             </div>
             <p className="mt-1 text-sm text-ink-muted">{pod.collegeName} · Lead {pod.podLeader || "Unassigned"}</p>
+          </button>
+          <div className="flex items-center gap-1.5">
+            <Button
+              type="button"
+              variant="secondary"
+              size="icon"
+              aria-label={`Open comments for ${pod.name}`}
+              title="Pod comments"
+              onClick={onOpenComments}
+            >
+              <MessageSquareText className="h-4 w-4" />
+            </Button>
+            <Button type="button" variant="ghost" size="sm" onClick={onSelect}>
+              View pod
+              <ArrowRight className="h-4 w-4" />
+            </Button>
           </div>
-          <span className="inline-flex items-center gap-1 text-sm font-semibold text-ruby-bright">
-            View pod
-            <ArrowRight className="h-4 w-4" />
-          </span>
         </div>
 
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border-y border-line py-3">
+        <button type="button" onClick={onSelect} className="mt-5 flex w-full flex-1 flex-col text-left focus-ring rounded-lg">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-y border-line py-3">
           <PodStrengthStars memberCount={pod.memberCount} />
           <div className="text-right">
             <p className="text-[11px] uppercase tracking-[0.14em] text-ink-faint">Activation</p>
             <p className="font-display text-2xl font-black text-gradient">{pod.activationPercent}%</p>
           </div>
-        </div>
+          </div>
 
-        <ProgressBar value={pod.activationPercent} tone={pod.activationPercent >= 80 ? "good" : pod.activationPercent >= 40 ? "amber" : "ruby"} className="mt-4" />
+          <ProgressBar value={pod.activationPercent} tone={pod.activationPercent >= 80 ? "good" : pod.activationPercent >= 40 ? "amber" : "ruby"} className="mt-4" />
 
-        <div className="mt-auto hidden grid-cols-4 divide-x divide-line border-t border-line pt-4 sm:grid">
-          <InlineStat label="Active users" value={pod.memberCount} />
-          <InlineStat label="Clubs" value={pod.clubs.length} />
-          <InlineStat label="Open challenges" value={pod.openChallenges} />
-          <InlineStat label="Resolved" value={pod.resolvedChallenges} />
-        </div>
-      </button>
+          <div className="mt-auto hidden grid-cols-4 divide-x divide-line border-t border-line pt-4 sm:grid">
+            <InlineStat label="Active users" value={pod.memberCount} />
+            <InlineStat label="Clubs" value={pod.clubs.length} />
+            <InlineStat label="Open challenges" value={pod.openChallenges} />
+            <InlineStat label="Resolved" value={pod.resolvedChallenges} />
+          </div>
+        </button>
+      </div>
 
       <details className="group mt-4 border-t border-line pt-3 sm:hidden">
         <summary className="flex cursor-pointer list-none items-center justify-between py-1 text-sm font-semibold text-ink [&::-webkit-details-marker]:hidden">
@@ -349,8 +389,23 @@ function Stat({ label, value }: { label: string; value: number }) {
   );
 }
 
-function PodDrawer({ pod, onClose }: { pod: PodPortfolioEntry | null; onClose: () => void }) {
+function PodDrawer({
+  pod,
+  view,
+  onClose,
+}: {
+  pod: PodPortfolioEntry | null;
+  view: PodDrawerView;
+  onClose: () => void;
+}) {
   if (!pod) return null;
+  if (view === "comments") {
+    return (
+      <Drawer open={Boolean(pod)} onClose={onClose} title={`${pod.name} comments`} subtitle={pod.collegeName} width="max-w-3xl">
+        <PodCommentsPanel collegeId={pod.id} />
+      </Drawer>
+    );
+  }
   const leadership = [
     ["Exec Lead", pod.podLeader],
     ["Talent Development Lead", pod.podTalentManager],
@@ -390,7 +445,6 @@ function PodDrawer({ pod, onClose }: { pod: PodPortfolioEntry | null; onClose: (
           <Stat label="Resolved" value={pod.resolvedChallenges} />
         </div>
       </Card>
-      <PodCommentsPanel collegeId={pod.id} />
     </Drawer>
   );
 }
