@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, MessageSquareText, Pencil, Trash2 } from "lucide-react";
+import { CheckCircle2, MessageSquareText, Pencil, Plus, Trash2, X } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -45,6 +45,7 @@ export function PodCommentsPanel({ collegeId }: { collegeId: string }) {
   const [status, setStatus] = useState<PodComment["status"]>("open");
   const [body, setBody] = useState("");
   const [audience, setAudience] = useState<AudienceState>(DEFAULT_AUDIENCE);
+  const [composerOpen, setComposerOpen] = useState(false);
   const [editing, setEditing] = useState<PodComment | null>(null);
   const [resolving, setResolving] = useState<PodComment | null>(null);
   const [resolutionNote, setResolutionNote] = useState("");
@@ -68,6 +69,7 @@ export function PodCommentsPanel({ collegeId }: { collegeId: string }) {
       setFeedback(action.type === "resolve" ? "Comment resolved." : action.type === "delete" ? "Comment deleted." : "Comment saved.");
       setBody("");
       setAudience(DEFAULT_AUDIENCE);
+      setComposerOpen(false);
       setEditing(null);
       setResolving(null);
       setResolutionNote("");
@@ -76,6 +78,7 @@ export function PodCommentsPanel({ collegeId }: { collegeId: string }) {
   });
 
   function beginEdit(comment: PodComment) {
+    setComposerOpen(true);
     setEditing(comment);
     setResolving(null);
     setBody(comment.body);
@@ -84,9 +87,19 @@ export function PodCommentsPanel({ collegeId }: { collegeId: string }) {
   }
 
   function cancelComposer() {
+    setComposerOpen(false);
     setEditing(null);
     setBody("");
     setAudience(DEFAULT_AUDIENCE);
+  }
+
+  function openComposer() {
+    setComposerOpen(true);
+    setEditing(null);
+    setResolving(null);
+    setBody("");
+    setAudience(DEFAULT_AUDIENCE);
+    setFeedback("");
   }
 
   return (
@@ -96,28 +109,44 @@ export function PodCommentsPanel({ collegeId }: { collegeId: string }) {
           <div className="flex items-center gap-2"><MessageSquareText className="h-4 w-4 text-ruby-bright" /><h3 className="font-display font-bold text-ink">Pod comments</h3></div>
           <p className="mt-1 text-sm text-ink-muted">Leave a clear note and choose who should see it.</p>
         </div>
-        <div className="flex rounded-lg border border-line bg-surface-2 p-1" aria-label="Comment status filter">
-          {(["open", "resolved"] as const).map((value) => (
-            <button key={value} type="button" onClick={() => setStatus(value)} className={`rounded-md px-3 py-1.5 text-xs font-semibold capitalize ${status === value ? "bg-surface text-ink shadow-sm" : "text-ink-muted"}`}>{value}</button>
-          ))}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" size="sm" onClick={openComposer}>
+            <Plus className="h-3.5 w-3.5" />
+            Add comment
+          </Button>
+          <div className="flex rounded-lg border border-line bg-surface-2 p-1" aria-label="Comment status filter">
+            {(["open", "resolved"] as const).map((value) => (
+              <button key={value} type="button" onClick={() => setStatus(value)} className={`rounded-md px-3 py-1.5 text-xs font-semibold capitalize ${status === value ? "bg-surface text-ink shadow-sm" : "text-ink-muted"}`}>{value}</button>
+            ))}
+          </div>
         </div>
       </div>
 
-      <form className="mt-4 rounded-xl border border-line bg-surface-2 p-3" onSubmit={(event) => { event.preventDefault(); mutation.mutate({ type: editing ? "edit" : "create", id: editing?.id }); }}>
-        <div className="flex items-center justify-between gap-2"><p className="text-sm font-semibold text-ink">{editing ? "Edit your comment" : "Add a comment"}</p><span className="text-xs text-ink-faint">{body.length}/2000</span></div>
-        <Textarea className="mt-2" maxLength={2000} value={body} onChange={(event) => setBody(event.target.value)} placeholder="What should the team know about this pod?" />
-        <fieldset className="mt-3">
-          <legend className="text-xs font-medium text-ink-muted">Visible to</legend>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2 text-xs font-medium text-ink"><input type="checkbox" checked={audience.admin} onChange={(event) => setAudience((current) => ({ ...current, admin: event.target.checked }))} />Pod Ops Admin</label>
-            <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2 text-xs font-medium text-ink"><input type="checkbox" checked={audience.pod} onChange={(event) => setAudience((current) => ({ ...current, pod: event.target.checked }))} />This pod</label>
+      {composerOpen ? (
+        <form className="mt-4 rounded-xl border border-line bg-surface-2 p-3" onSubmit={(event) => { event.preventDefault(); mutation.mutate({ type: editing ? "edit" : "create", id: editing?.id }); }}>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-semibold text-ink">{editing ? "Edit your comment" : "Add a comment"}</p>
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-ink-faint">{body.length}/2000</span>
+              <Button type="button" variant="ghost" size="icon" className="h-7 w-7 rounded-md" aria-label="Close comment composer" title="Close composer" onClick={cancelComposer}>
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            </div>
           </div>
-        </fieldset>
-        <div className="mt-3 flex flex-wrap justify-end gap-2">
-          {editing ? <Button type="button" variant="ghost" size="sm" onClick={cancelComposer}>Cancel edit</Button> : null}
-          <Button type="submit" size="sm" disabled={mutation.isPending || !body.trim() || !visibilityFor(audience)}>{mutation.isPending ? "Saving…" : editing ? "Save changes" : "Add comment"}</Button>
-        </div>
-      </form>
+          <Textarea className="mt-2" maxLength={2000} value={body} onChange={(event) => setBody(event.target.value)} placeholder="What should the team know about this pod?" />
+          <fieldset className="mt-3">
+            <legend className="text-xs font-medium text-ink-muted">Visible to</legend>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2 text-xs font-medium text-ink"><input type="checkbox" checked={audience.admin} onChange={(event) => setAudience((current) => ({ ...current, admin: event.target.checked }))} />Pod Ops Admin</label>
+              <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2 text-xs font-medium text-ink"><input type="checkbox" checked={audience.pod} onChange={(event) => setAudience((current) => ({ ...current, pod: event.target.checked }))} />This pod</label>
+            </div>
+          </fieldset>
+          <div className="mt-3 flex flex-wrap justify-end gap-2">
+            <Button type="button" variant="ghost" size="sm" onClick={cancelComposer}>{editing ? "Cancel edit" : "Cancel"}</Button>
+            <Button type="submit" size="sm" disabled={mutation.isPending || !body.trim() || !visibilityFor(audience)}>{mutation.isPending ? "Saving…" : editing ? "Save changes" : "Add comment"}</Button>
+          </div>
+        </form>
+      ) : null}
 
       {feedback ? <p className="mt-3 text-xs text-ink-muted" role="status">{feedback}</p> : null}
       {commentsQuery.isLoading ? <p className="mt-4 text-sm text-ink-muted">Loading comments…</p> : null}

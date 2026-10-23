@@ -216,9 +216,9 @@ function PodPortfolioCard({
   onOpenComments: () => void;
 }) {
   return (
-    <Card hover className="flex h-full flex-col p-5 shadow-none sm:p-6">
+    <Card hover className="relative flex h-full flex-col p-5 shadow-none sm:p-6">
       <div className="flex flex-1 flex-col">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="pr-11">
           <button type="button" onClick={onSelect} className="min-w-0 text-left focus-ring rounded-lg">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="font-display text-lg font-bold text-ink">{pod.name}</h2>
@@ -226,23 +226,24 @@ function PodPortfolioCard({
             </div>
             <p className="mt-1 text-sm text-ink-muted">{pod.collegeName} · Lead {pod.podLeader || "Unassigned"}</p>
           </button>
-          <div className="flex items-center gap-1.5">
-            <Button
-              type="button"
-              variant="secondary"
-              size="icon"
-              aria-label={`Open comments for ${pod.name}`}
-              title="Pod comments"
-              onClick={onOpenComments}
-            >
-              <MessageSquareText className="h-4 w-4" />
-            </Button>
+          <div className="mt-2">
             <Button type="button" variant="ghost" size="sm" onClick={onSelect}>
               View pod
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
+        <Button
+          type="button"
+          variant="primary"
+          size="icon"
+          className="absolute right-5 top-5 sm:right-6 sm:top-6"
+          aria-label={`Open comments for ${pod.name}`}
+          title="Pod comments"
+          onClick={onOpenComments}
+        >
+          <MessageSquareText className="h-4 w-4" />
+        </Button>
 
         <button type="button" onClick={onSelect} className="mt-5 flex w-full flex-1 flex-col text-left focus-ring rounded-lg">
           <div className="flex flex-wrap items-center justify-between gap-4 border-y border-line py-3">
@@ -284,7 +285,6 @@ function ScoreGuide({ onClose }: { onClose: () => void }) {
   const guideItems = [
     ["Strength", "Active users linked to the pod. 1 user equals 1 star, capped at 5 stars."],
     ["Activation", "Progress through the pod activation journey and its required tasks."],
-    ["Health", "Overall pod status: Thriving, Watching, or At Risk."],
     ["Open Challenges", "Live blockers or requests that still need movement."],
     ["Resolved", "Challenges already closed by the pod team."],
   ];
@@ -310,7 +310,7 @@ function ScoreGuide({ onClose }: { onClose: () => void }) {
           </Button>
         </div>
       </div>
-      <div className="mt-4 grid gap-3 md:grid-cols-5">
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {guideItems.map(([label, description]) => (
           <div key={label} className="rounded-xl border border-line bg-surface-2 p-3">
             <p className="text-[11px] uppercase tracking-[0.12em] text-ink-faint">{label}</p>
@@ -318,7 +318,30 @@ function ScoreGuide({ onClose }: { onClose: () => void }) {
           </div>
         ))}
       </div>
+      <div className="mt-3 rounded-xl border border-line bg-surface-2 p-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.12em] text-ink-faint">Health status</p>
+            <p className="mt-1 text-sm text-ink-muted">Health is driven by unresolved challenges, not activation or member count.</p>
+          </div>
+          <span className="text-xs text-ink-faint">Open challenges only</span>
+        </div>
+        <div className="mt-3 grid gap-2 md:grid-cols-3">
+          <HealthGuideStatus tone="good" label="Thriving" description="No open challenges." />
+          <HealthGuideStatus tone="amber" label="Watching" description="1–4 open challenges need attention." />
+          <HealthGuideStatus tone="bad" label="At Risk" description="5+ open challenges, or one unresolved High/Critical challenge." />
+        </div>
+      </div>
     </Card>
+  );
+}
+
+function HealthGuideStatus({ tone, label, description }: { tone: "good" | "amber" | "bad"; label: string; description: string }) {
+  return (
+    <div className="rounded-lg border border-line bg-surface p-3">
+      <Badge tone={tone}>{label}</Badge>
+      <p className="mt-2 text-sm leading-5 text-ink-muted">{description}</p>
+    </div>
   );
 }
 
