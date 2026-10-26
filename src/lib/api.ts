@@ -9,6 +9,7 @@ import type {
   KnowledgeResourceOptions,
   KnowledgeResourceWriteInput,
 } from "@/lib/knowledgeSpace/types";
+import type { ContentItem, ContentWriteInput } from "@/lib/content";
 
 const API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || "")
   .trim()
@@ -756,4 +757,27 @@ export async function updateKnowledgeResource(
 
 export async function deleteKnowledgeResource(id: string): Promise<void> {
   await requestJson(`/knowledge-resources/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
+export async function listAdminContent(): Promise<ContentItem[]> {
+  const payload = await requestJson("/admin/content");
+  return unwrapList<ContentItem>(payload, "content");
+}
+
+export async function createAdminContent(input: ContentWriteInput): Promise<ContentItem> {
+  const payload = await requestJson("/admin/content", { method: "POST", body: JSON.stringify(input) });
+  const data = unwrapData<ContentItem>(payload);
+  if (!data?.id) throw new Error("Content response was incomplete.");
+  return data;
+}
+
+export async function updateAdminContent(id: string, input: ContentWriteInput): Promise<ContentItem> {
+  const payload = await requestJson(`/admin/content/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(input) });
+  const data = unwrapData<ContentItem>(payload);
+  if (!data?.id) throw new Error("Content response was incomplete.");
+  return data;
+}
+
+export async function deleteAdminContent(id: string): Promise<void> {
+  await requestJson(`/admin/content/${encodeURIComponent(id)}`, { method: "DELETE" });
 }

@@ -11,6 +11,7 @@ export const loadAdminPodActivationPage = () => import("@/pages/AdminPodActivati
 export const loadAdminPodActivationDetailPage = () => import("@/pages/AdminPodActivationDetail");
 export const loadAdminKnowledgeSpacePage = () => import("@/pages/AdminKnowledgeSpace");
 export const loadPodReportsPage = () => import("@/pages/PodReports");
+export const loadContentStudioPage = () => import("@/pages/ContentStudio");
 
 const routePreloaders: Record<string, () => Promise<unknown>> = {
   "/pods": loadAdminPodsPage,
@@ -19,6 +20,7 @@ const routePreloaders: Record<string, () => Promise<unknown>> = {
   "/challenges": loadChallengeVaultPage,
   "/pod-activation": loadAdminPodActivationPage,
   "/knowledge-space": loadAdminKnowledgeSpacePage,
+  "/content": loadContentStudioPage,
   "/leader-goals": loadAdminLeaderGoalsPage,
   "/mentors": loadAdminPodMentorsPage,
   "/applicants/futurecraft": loadFutureCraftApplicantsPage,

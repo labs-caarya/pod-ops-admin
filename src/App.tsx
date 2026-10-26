@@ -20,6 +20,7 @@ import {
   loadAdminPodActivationDetailPage,
   loadAdminKnowledgeSpacePage,
   loadPodReportsPage,
+  loadContentStudioPage,
 } from "@/lib/adminRouteModules";
 
 const AdminPods = lazy(loadAdminPodsPage);
@@ -35,6 +36,7 @@ const AdminPodActivation = lazy(loadAdminPodActivationPage);
 const AdminPodActivationDetail = lazy(loadAdminPodActivationDetailPage);
 const AdminKnowledgeSpace = lazy(loadAdminKnowledgeSpacePage);
 const PodReports = lazy(loadPodReportsPage);
+const ContentStudio = lazy(loadContentStudioPage);
 
 function ProtectedRoutes() {
   const { isAuthenticated, isAuthenticating } = useAuth();
@@ -76,6 +78,7 @@ export default function App() {
           <Route path="/pod-activation" element={<AdminPodActivation />} />
           <Route path="/pod-activation/:collegeId" element={<AdminPodActivationDetail />} />
           <Route path="/knowledge-space" element={<AdminKnowledgeSpace />} />
+          <Route path="/content" element={<ContentStudio />} />
           <Route path="/leader-goals" element={<AdminLeaderGoals />} />
           <Route path="/mentors" element={<AdminPodMentors />} />
           <Route path="/applicants/futurecraft" element={<FutureCraftApplicants />} />
