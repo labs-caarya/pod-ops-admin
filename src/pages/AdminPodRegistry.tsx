@@ -1,22 +1,28 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, Landmark, Loader2, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { Archive, ArchiveRestore, Building2, Check, Landmark, Loader2, Pencil, Plus, RefreshCw, Trash2, X } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Drawer } from "@/components/ui/Drawer";
 import { MobileFilterDrawer } from "@/components/ui/MobileFilterDrawer";
-import { FieldRow, Input, Select } from "@/components/ui/Field";
+import { FieldRow, Input, Label, Select } from "@/components/ui/Field";
 import { adminQueryKeys, collegesQueryOptions, managedUsersQueryOptions } from "@/lib/adminQueries";
 import {
+  addCollegeClub,
+  CLUB_STAGES,
   createCollege,
   deleteCollege,
   updateCollege,
+  updateCollegeClub,
+  type ClubStage,
   type College,
+  type CollegeClub,
   type AllowedUser,
 } from "@/lib/api";
 import { normalizePodRole, POD_ROLES } from "@/lib/podRoles";
+import { clubStageTone } from "@/lib/clubStage";
 import { cn } from "@/lib/utils";
 
 type CollegeDraft = {
@@ -52,6 +58,24 @@ function formatCollegeSummary(total: number, filtered: number, hasFilters: boole
 
 type ViewDrawerMode = "leadership" | "clubs" | null;
 
+type Message = { text: string; tone: "good" | "bad" | "info" };
+
+type ClubDraft = {
+  name: string;
+  stage: ClubStage;
+  contribution: string;
+};
+
+const EMPTY_CLUB_DRAFT: ClubDraft = {
+  name: "",
+  stage: "Prospect",
+  contribution: "",
+};
+
+function activeClubCount(college: College) {
+  return college.clubs.filter((club) => !club.archivedAt).length;
+}
+
 function findCollegeLead(college: College, users: AllowedUser[]) {
   return users.find(
     (user) => user.collegeId === college.id && normalizePodRole(user.podRole) === "exec" && user.isActive !== false,
@@ -66,7 +90,7 @@ export default function AdminPodRegistry() {
   const [draft, setDraft] = useState<CollegeDraft>(EMPTY_DRAFT);
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
-  const [message, setMessage] = useState<{ text: string; tone: "good" | "bad" | "info" } | null>(null);
+  const [message, setMessage] = useState<Message | null>(null);
   const queryClient = useQueryClient();
   const collegesQuery = useQuery(collegesQueryOptions());
   const usersQuery = useQuery(managedUsersQueryOptions());
@@ -129,6 +153,17 @@ export default function AdminPodRegistry() {
   function openClubsDrawer(row: College) {
     setViewCollege(row);
     setViewDrawer("clubs");
+  }
+
+  // Club edits replace the college in the query cache, so read the live copy rather than the snapshot.
+  const liveViewCollege = rows.find((row) => row.id === viewCollege?.id) || viewCollege;
+
+  function replaceCollege(updated: College) {
+    queryClient.setQueryData<College[]>(
+      adminQueryKeys.colleges,
+      (current = []) => current.map((item) => (item.id === updated.id ? updated : item)),
+    );
+    void queryClient.invalidateQueries({ queryKey: adminQueryKeys.podPortfolio });
   }
 
   function closeViewDrawer() {
@@ -379,7 +414,7 @@ export default function AdminPodRegistry() {
                         <div className="flex flex-wrap justify-end gap-2">
                           <Button size="sm" variant="secondary" onClick={() => openClubsDrawer(row)}>
                             <Landmark className="h-4 w-4" />
-                            View Clubs
+                            Clubs ({activeClubCount(row)})
                           </Button>
                           <Button size="sm" variant="secondary" onClick={() => openEditDrawer(row)}>
                             <Pencil className="h-4 w-4" />
@@ -504,7 +539,7 @@ export default function AdminPodRegistry() {
       <Drawer
         open={viewDrawer === "clubs"}
         onClose={closeViewDrawer}
-        title="Linked clubs"
+        title="Clubs"
         subtitle={viewCollege ? `${viewCollege.name} · ${viewCollege.crew}` : undefined}
         width="max-w-lg"
         footer={
@@ -513,17 +548,9 @@ export default function AdminPodRegistry() {
           </div>
         }
       >
-        <p className="mb-4 rounded-xl border border-line bg-surface-2 px-3 py-2 text-sm text-ink-muted">
-          Club assignments are not yet stored on college records.
-        </p>
-        <div className="rounded-xl border border-dashed border-line px-4 py-8 text-center">
-          <p className="font-display font-bold text-ink">No clubs linked yet</p>
-          <p className="mt-1 text-sm text-ink-muted">
-            {viewCollege?.isPod
-              ? "Club assignments will appear here after they are added to the college model."
-              : "Non-pod entries typically do not have linked clubs."}
-          </p>
-        </div>
+        {liveViewCollege ? (
+          <ClubManager college={liveViewCollege} onUpdated={replaceCollege} />
+        ) : null}
       </Drawer>
     </div>
   );
@@ -581,7 +608,7 @@ function PodRegistryCards({
             <div className="mt-4 grid grid-cols-1 gap-2 min-[420px]:grid-cols-3">
               <Button size="sm" variant="secondary" className="w-full" onClick={() => onViewClubs(row)}>
                 <Landmark className="h-4 w-4" />
-                Clubs
+                Clubs ({activeClubCount(row)})
               </Button>
               <Button size="sm" variant="secondary" className="w-full" onClick={() => onEdit(row)}>
                 <Pencil className="h-4 w-4" />
@@ -595,6 +622,225 @@ function PodRegistryCards({
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function ClubManager({
+  college,
+  onUpdated,
+}: {
+  college: College;
+  onUpdated: (college: College) => void;
+}) {
+  const [message, setMessage] = useState<Message | null>(null);
+  const [newClub, setNewClub] = useState<ClubDraft>(EMPTY_CLUB_DRAFT);
+  const [editingClubId, setEditingClubId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<ClubDraft>(EMPTY_CLUB_DRAFT);
+  const [busy, setBusy] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
+  const activeClubs = college.clubs.filter((club) => !club.archivedAt);
+  const archivedClubs = college.clubs.filter((club) => club.archivedAt);
+
+  async function run(action: () => Promise<College>, success: string) {
+    setBusy(true);
+    try {
+      onUpdated(await action());
+      setMessage({ text: success, tone: "good" });
+      return true;
+    } catch (error) {
+      setMessage({ text: error instanceof Error ? error.message : "Could not update club.", tone: "bad" });
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleAdd() {
+    const name = newClub.name.trim();
+    if (!name) return;
+    const added = await run(
+      () => addCollegeClub(college.id, { ...newClub, name, contribution: newClub.contribution.trim() }),
+      `Added ${name}.`,
+    );
+    if (added) setNewClub(EMPTY_CLUB_DRAFT);
+  }
+
+  function startEdit(club: CollegeClub) {
+    setEditingClubId(club.id);
+    setEditDraft({ name: club.name, stage: club.stage, contribution: club.contribution });
+  }
+
+  async function handleSaveEdit(club: CollegeClub) {
+    const name = editDraft.name.trim();
+    if (!name) return;
+    const saved = await run(
+      () => updateCollegeClub(college.id, club.id, { ...editDraft, name, contribution: editDraft.contribution.trim() }),
+      `Updated ${name}.`,
+    );
+    if (saved) setEditingClubId(null);
+  }
+
+  async function handleArchive(club: CollegeClub) {
+    if (!window.confirm(`Archive ${club.name}? Students won't be able to pick it any more.`)) return;
+    await run(() => updateCollegeClub(college.id, club.id, { archived: true }), `Archived ${club.name}.`);
+  }
+
+  async function handleRestore(club: CollegeClub) {
+    await run(() => updateCollegeClub(college.id, club.id, { archived: false }), `Restored ${club.name}.`);
+  }
+
+  return (
+    <div className="w-full">
+      <div className="flex items-center justify-between gap-2 rounded-xl border border-line bg-surface-2 px-3 py-2">
+        <p className="text-sm text-ink-muted">Students of {college.name} pick from these clubs in the profile builder.</p>
+        {busy && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-ruby-bright" />}
+      </div>
+
+      {message && (
+        <p
+          className={cn(
+            "mt-3 rounded-xl border px-3 py-2 text-sm",
+            message.tone === "good" && "border-good/30 bg-good/10 text-good",
+            message.tone === "bad" && "border-bad/30 bg-bad/10 text-bad",
+            message.tone === "info" && "border-line bg-surface-2 text-ink-muted",
+          )}
+        >
+          {message.text}
+        </p>
+      )}
+
+      <div className="mt-4 space-y-2 rounded-xl border border-line bg-surface-2 p-3">
+        <Label>Add a club</Label>
+        <Input
+          value={newClub.name}
+          onChange={(e) => setNewClub((current) => ({ ...current, name: e.target.value }))}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              void handleAdd();
+            }
+          }}
+          placeholder="Club name, e.g. E-Cell"
+          maxLength={80}
+        />
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-[140px_minmax(0,1fr)]">
+          <Select
+            value={newClub.stage}
+            onChange={(e) => setNewClub((current) => ({ ...current, stage: e.target.value as ClubStage }))}
+            aria-label="Stage"
+          >
+            {CLUB_STAGES.map((stage) => (
+              <option key={stage} value={stage}>{stage}</option>
+            ))}
+          </Select>
+          <Input
+            value={newClub.contribution}
+            onChange={(e) => setNewClub((current) => ({ ...current, contribution: e.target.value }))}
+            placeholder="Contribution (optional)"
+            maxLength={200}
+            aria-label="Contribution"
+          />
+        </div>
+        <Button size="sm" onClick={() => void handleAdd()} disabled={busy || !newClub.name.trim()}>
+          <Plus className="h-4 w-4" />
+          Add club
+        </Button>
+      </div>
+
+      <div className="mt-4 space-y-2">
+        {activeClubs.length === 0 && (
+          <p className="text-sm text-ink-faint">
+            No clubs yet. Students of this college will see a "no clubs associated with Caarya yet" message.
+          </p>
+        )}
+        {activeClubs.map((club) =>
+          editingClubId === club.id ? (
+            <div key={club.id} className="space-y-2 rounded-xl border border-ruby/40 bg-surface-2 p-3">
+              <Input
+                value={editDraft.name}
+                onChange={(e) => setEditDraft((current) => ({ ...current, name: e.target.value }))}
+                maxLength={80}
+                aria-label="Club name"
+              />
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-[140px_minmax(0,1fr)]">
+                <Select
+                  value={editDraft.stage}
+                  onChange={(e) => setEditDraft((current) => ({ ...current, stage: e.target.value as ClubStage }))}
+                  aria-label="Stage"
+                >
+                  {CLUB_STAGES.map((stage) => (
+                    <option key={stage} value={stage}>{stage}</option>
+                  ))}
+                </Select>
+                <Input
+                  value={editDraft.contribution}
+                  onChange={(e) => setEditDraft((current) => ({ ...current, contribution: e.target.value }))}
+                  placeholder="Contribution (optional)"
+                  maxLength={200}
+                  aria-label="Contribution"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" onClick={() => void handleSaveEdit(club)} disabled={busy || !editDraft.name.trim()}>
+                  <Check className="h-4 w-4" />
+                  Save
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setEditingClubId(null)} disabled={busy}>
+                  <X className="h-4 w-4" />
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div key={club.id} className="rounded-xl border border-line bg-surface-2 p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-semibold text-ink">{club.name}</p>
+                    <Badge tone={clubStageTone(club.stage)}>{club.stage}</Badge>
+                  </div>
+                  {club.contribution && <p className="mt-1 text-xs text-ink-faint">{club.contribution}</p>}
+                </div>
+                <div className="flex shrink-0 gap-1">
+                  <Button size="sm" variant="secondary" onClick={() => startEdit(club)} disabled={busy} aria-label={`Edit ${club.name}`}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button size="sm" variant="danger" onClick={() => void handleArchive(club)} disabled={busy} aria-label={`Archive ${club.name}`}>
+                    <Archive className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ),
+        )}
+      </div>
+
+      {archivedClubs.length > 0 && (
+        <div className="mt-4">
+          <button
+            type="button"
+            onClick={() => setShowArchived((current) => !current)}
+            className="text-sm text-ink-muted hover:text-ink"
+            aria-expanded={showArchived}
+          >
+            {showArchived ? "Hide" : "Show"} archived ({archivedClubs.length})
+          </button>
+          {showArchived && (
+            <div className="mt-2 space-y-2">
+              {archivedClubs.map((club) => (
+                <div key={club.id} className="flex items-center justify-between gap-2 rounded-xl border border-line bg-surface-2/60 p-3">
+                  <p className="text-sm text-ink-faint line-through">{club.name}</p>
+                  <Button size="sm" variant="ghost" onClick={() => void handleRestore(club)} disabled={busy}>
+                    <ArchiveRestore className="h-4 w-4" />
+                    Restore
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

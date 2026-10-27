@@ -50,11 +50,26 @@ export interface ManagedPod {
   updatedAt?: string | null;
 }
 
+export type ClubStage = "Prospect" | "Engaged" | "Active" | "Strategic";
+
+export const CLUB_STAGES: ClubStage[] = ["Prospect", "Engaged", "Active", "Strategic"];
+
+export interface CollegeClub {
+  id: string;
+  name: string;
+  stage: ClubStage;
+  contribution: string;
+  archivedAt: string | null;
+}
+
+export type PodClub = Omit<CollegeClub, "archivedAt">;
+
 export interface College {
   id: string;
   name: string;
   crew: string;
   isPod: boolean;
+  clubs: CollegeClub[];
   createdAt?: string | null;
   updatedAt?: string | null;
 }
@@ -109,7 +124,8 @@ export interface Profile {
   submittedAt: string;
 }
 
-export interface PodPortfolioEntry extends ManagedPod {
+export interface PodPortfolioEntry extends Omit<ManagedPod, "clubs"> {
+  clubs: PodClub[];
   memberCount: number;
   openChallenges: number;
   criticalChallenges: number;
@@ -297,6 +313,7 @@ function normalizeCollege(college: Partial<College> & { _id?: string }): College
     name: college.name || "",
     crew: college.crew || "",
     isPod: Boolean(college.isPod),
+    clubs: Array.isArray(college.clubs) ? college.clubs : [],
     createdAt: college.createdAt,
     updatedAt: college.updatedAt,
   };
@@ -527,6 +544,32 @@ export async function deleteCollege(id: string): Promise<void> {
   await requestJson(`/colleges/${encodeURIComponent(id)}`, {
     method: "DELETE",
   });
+}
+
+export async function addCollegeClub(
+  collegeId: string,
+  input: { name: string; stage?: ClubStage; contribution?: string },
+): Promise<College> {
+  const payload = await requestJson(`/colleges/${encodeURIComponent(collegeId)}/clubs`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  return normalizeCollege(unwrapEntity<Partial<College> & { _id?: string }>(payload, "college"));
+}
+
+export async function updateCollegeClub(
+  collegeId: string,
+  clubId: string,
+  input: Partial<{ name: string; stage: ClubStage; contribution: string; archived: boolean }>,
+): Promise<College> {
+  const payload = await requestJson(
+    `/colleges/${encodeURIComponent(collegeId)}/clubs/${encodeURIComponent(clubId)}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    },
+  );
+  return normalizeCollege(unwrapEntity<Partial<College> & { _id?: string }>(payload, "college"));
 }
 
 export async function getAdminDashboard(): Promise<AdminDashboardData> {
