@@ -14,6 +14,7 @@ import {
   listKnowledgeResources,
   getKnowledgeResourceOptions,
   listAdminContent,
+  listAdminAudiences,
   listAdminEvents,
   type College,
   type FutureCraftApplicant,
@@ -26,6 +27,7 @@ import {
 } from "@/lib/api";
 import type { KnowledgeResource, KnowledgeResourceOptions } from "@/lib/knowledgeSpace/types";
 import type { ContentItem } from "@/lib/content";
+import type { Audience } from "@/lib/audiences";
 import type { AdminEvent } from "@/lib/events";
 import type { Challenge, PodLeaderGoal, PodMentor } from "@/lib/types";
 
@@ -47,6 +49,7 @@ export const adminQueryKeys = {
   knowledgeResources: ["admin", "knowledge-resources"] as const,
   knowledgeResourceOptions: ["admin", "knowledge-resource-options"] as const,
   content: ["admin", "content"] as const,
+  audiences: ["admin", "audiences"] as const,
   events: ["admin", "events"] as const,
 };
 
@@ -139,6 +142,10 @@ export function adminContentQueryOptions() {
     staleTime: 30_000,
     gcTime: THIRTY_MINUTES,
   });
+}
+
+export function adminAudiencesQueryOptions() {
+  return queryOptions<Audience[]>({ queryKey: adminQueryKeys.audiences, queryFn: listAdminAudiences, staleTime: 30_000, gcTime: THIRTY_MINUTES });
 }
 
 export function adminEventsQueryOptions() { return queryOptions<AdminEvent[]>({ queryKey: adminQueryKeys.events, queryFn: listAdminEvents, staleTime: 30_000, gcTime: THIRTY_MINUTES }); }

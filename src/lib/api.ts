@@ -10,6 +10,7 @@ import type {
   KnowledgeResourceWriteInput,
 } from "@/lib/knowledgeSpace/types";
 import type { ContentItem, ContentWriteInput } from "@/lib/content";
+import type { Audience, AudienceWriteInput } from "@/lib/audiences";
 import type { AdminEvent, AdminEventWriteInput } from "@/lib/events";
 
 const API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || "")
@@ -801,6 +802,11 @@ export async function updateAdminContent(id: string, input: ContentWriteInput): 
 export async function deleteAdminContent(id: string): Promise<void> {
   await requestJson(`/admin/content/${encodeURIComponent(id)}`, { method: "DELETE" });
 }
+
+export async function listAdminAudiences(): Promise<Audience[]> { return unwrapList<Audience>(await requestJson("/admin/audiences"), "audiences"); }
+export async function createAdminAudience(input: AudienceWriteInput): Promise<Audience> { const data = unwrapData<Audience>(await requestJson("/admin/audiences", { method: "POST", body: JSON.stringify(input) })); if (!data?.id) throw new Error("Audience response was incomplete."); return data; }
+export async function updateAdminAudience(id: string, input: AudienceWriteInput): Promise<Audience> { const data = unwrapData<Audience>(await requestJson(`/admin/audiences/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(input) })); if (!data?.id) throw new Error("Audience response was incomplete."); return data; }
+export async function deleteAdminAudience(id: string): Promise<void> { await requestJson(`/admin/audiences/${encodeURIComponent(id)}`, { method: "DELETE" }); }
 
 export async function listAdminEvents(): Promise<AdminEvent[]> { return unwrapList<AdminEvent>(await requestJson("/admin/events"), "events"); }
 export async function createAdminEvent(input: AdminEventWriteInput): Promise<AdminEvent> { const data = unwrapData<AdminEvent>(await requestJson("/admin/events", { method: "POST", body: JSON.stringify(input) })); if (!data?.id) throw new Error("Event response was incomplete."); return data; }
