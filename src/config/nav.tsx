@@ -11,6 +11,7 @@ import {
   Briefcase,
   CalendarRange,
   FileText,
+  CalendarDays,
   type LucideIcon,
 } from "lucide-react";
 
@@ -45,6 +46,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Pod mentors", to: "/mentors", icon: BookOpen },
       { label: "Knowledge Space", to: "/knowledge-space", icon: BookOpen },
       { label: "Content Studio", to: "/content", icon: FileText },
+      { label: "Event Management", to: "/events", icon: CalendarDays },
     ],
   },
   {

@@ -13,6 +13,7 @@ import {
   listKnowledgeResources,
   getKnowledgeResourceOptions,
   listAdminContent,
+  listAdminEvents,
   type College,
   type FutureCraftApplicant,
   type AllowedUser,
@@ -23,6 +24,7 @@ import {
 } from "@/lib/api";
 import type { KnowledgeResource, KnowledgeResourceOptions } from "@/lib/knowledgeSpace/types";
 import type { ContentItem } from "@/lib/content";
+import type { AdminEvent } from "@/lib/events";
 import type { Challenge, PodLeaderGoal, PodMentor } from "@/lib/types";
 
 const TEN_MINUTES = 10 * 60 * 1000;
@@ -42,6 +44,7 @@ export const adminQueryKeys = {
   knowledgeResources: ["admin", "knowledge-resources"] as const,
   knowledgeResourceOptions: ["admin", "knowledge-resource-options"] as const,
   content: ["admin", "content"] as const,
+  events: ["admin", "events"] as const,
 };
 
 export function collegesQueryOptions() {
@@ -126,6 +129,8 @@ export function adminContentQueryOptions() {
   });
 }
 
+export function adminEventsQueryOptions() { return queryOptions<AdminEvent[]>({ queryKey: adminQueryKeys.events, queryFn: listAdminEvents, staleTime: 30_000, gcTime: THIRTY_MINUTES }); }
+
 export function managedUsersQueryOptions() {
   return queryOptions<AllowedUser[]>({
     queryKey: adminQueryKeys.managedUsers,
@@ -176,5 +181,6 @@ export function warmAdminWorkspaceCache(queryClient: QueryClient) {
     queryClient.prefetchQuery(knowledgeResourcesQueryOptions()),
     queryClient.prefetchQuery(knowledgeResourceOptionsQueryOptions()),
     queryClient.prefetchQuery(adminContentQueryOptions()),
+    queryClient.prefetchQuery(adminEventsQueryOptions()),
   ]);
 }
