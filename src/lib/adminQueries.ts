@@ -8,6 +8,7 @@ import {
   getAdminDashboard,
   listPodPortfolio,
   listPodComments,
+  listPodCommentUnreadCounts,
   listChallenges,
   listPodActivationData,
   listKnowledgeResources,
@@ -20,6 +21,7 @@ import {
   type AdminDashboardData,
   type PodPortfolioEntry,
   type PodComment,
+  type PodCommentUnreadCount,
   type PodActivationData,
 } from "@/lib/api";
 import type { KnowledgeResource, KnowledgeResourceOptions } from "@/lib/knowledgeSpace/types";
@@ -39,6 +41,7 @@ export const adminQueryKeys = {
   dashboard: ["admin", "dashboard"] as const,
   podPortfolio: ["admin", "pod-portfolio"] as const,
   podComments: (collegeId: string) => ["admin", "pod-comments", collegeId] as const,
+  podCommentUnreadCounts: ["admin", "pod-comment-unread-counts"] as const,
   challenges: ["admin", "challenges"] as const,
   podActivation: ["admin", "pod-activation"] as const,
   knowledgeResources: ["admin", "knowledge-resources"] as const,
@@ -79,6 +82,15 @@ export function podCommentsQueryOptions(collegeId: string) {
     queryKey: adminQueryKeys.podComments(collegeId),
     queryFn: () => listPodComments(collegeId),
     enabled: Boolean(collegeId),
+    staleTime: 30_000,
+    gcTime: THIRTY_MINUTES,
+  });
+}
+
+export function podCommentUnreadCountsQueryOptions() {
+  return queryOptions<PodCommentUnreadCount[]>({
+    queryKey: adminQueryKeys.podCommentUnreadCounts,
+    queryFn: listPodCommentUnreadCounts,
     staleTime: 30_000,
     gcTime: THIRTY_MINUTES,
   });

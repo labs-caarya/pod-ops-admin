@@ -133,9 +133,15 @@ export interface PodComment {
   resolutionNote: string;
   createdAt: string;
   updatedAt: string;
+  isUnread: boolean;
   canEdit: boolean;
   canDelete: boolean;
   canResolve: boolean;
+}
+
+export interface PodCommentUnreadCount {
+  collegeId: string;
+  unreadCount: number;
 }
 
 export interface PodPeriodMetrics {
@@ -539,6 +545,19 @@ export async function listPodComments(collegeId: string): Promise<PodComment[]> 
   const payload = await requestJson(`/pod-comments?collegeId=${encodeURIComponent(collegeId)}&status=all`);
   const data = unwrapData<PodComment[]>(payload);
   return Array.isArray(data) ? data : [];
+}
+
+export async function listPodCommentUnreadCounts(): Promise<PodCommentUnreadCount[]> {
+  const payload = await requestJson('/pod-comments/unread-counts');
+  const data = unwrapData<PodCommentUnreadCount[]>(payload);
+  return Array.isArray(data) ? data : [];
+}
+
+export async function markPodCommentsRead(collegeId: string): Promise<void> {
+  await requestJson('/pod-comments/read', {
+    method: 'POST',
+    body: JSON.stringify({ collegeId }),
+  });
 }
 
 export async function createPodComment(input: { collegeId: string; body: string; visibility: PodComment["visibility"] }): Promise<PodComment> {

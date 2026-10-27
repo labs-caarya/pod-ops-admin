@@ -1,7 +1,7 @@
 import { useDeferredValue, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Building2, ChevronDown, Info, MessageSquareText, Network, RefreshCw, Search, ShieldAlert, Star, Users2, X } from "lucide-react";
-import { podPortfolioQueryOptions } from "@/lib/adminQueries";
+import { ArrowRight, Building2, Check, ChevronDown, Info, MessageSquareText, Network, RefreshCw, Search, ShieldAlert, Star, Users2, X } from "lucide-react";
+import { podCommentUnreadCountsQueryOptions, podPortfolioQueryOptions } from "@/lib/adminQueries";
 import type { PodPortfolioEntry } from "@/lib/api";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
@@ -20,9 +20,11 @@ const healthTone = {
 } as const;
 
 type PodDrawerView = "details" | "comments";
+type RefreshState = "idle" | "loading" | "success" | "error";
 
 export default function AdminPods() {
   const portfolioQuery = useQuery(podPortfolioQueryOptions());
+  const unreadCountsQuery = useQuery(podCommentUnreadCountsQueryOptions());
   const [query, setQuery] = useState("");
   const [health, setHealth] = useState("all");
   const [strength, setStrength] = useState("all");
@@ -30,8 +32,13 @@ export default function AdminPods() {
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [selectedPod, setSelectedPod] = useState<PodPortfolioEntry | null>(null);
   const [drawerView, setDrawerView] = useState<PodDrawerView>("details");
+  const [refreshState, setRefreshState] = useState<RefreshState>("idle");
   const deferredQuery = useDeferredValue(query);
   const pods = portfolioQuery.data || [];
+  const unreadCounts = useMemo(
+    () => new Map((unreadCountsQuery.data ?? []).map((count) => [count.collegeId, count.unreadCount])),
+    [unreadCountsQuery.data],
+  );
   const hasActiveFilters = Boolean(query.trim() || health !== "all" || strength !== "all");
   const strengthLabel = strengthFilterLabel(strength);
 
@@ -49,6 +56,16 @@ export default function AdminPods() {
   function closePodDrawer() {
     setSelectedPod(null);
     setDrawerView("details");
+  }
+
+  async function refreshPortfolio() {
+    if (refreshState === "loading") return;
+    setRefreshState("loading");
+    const result = await portfolioQuery.refetch();
+    void unreadCountsQuery.refetch();
+    const nextState: RefreshState = result.isError ? "error" : "success";
+    setRefreshState(nextState);
+    window.setTimeout(() => setRefreshState("idle"), nextState === "success" ? 1_800 : 3_000);
   }
 
   const rows = useMemo(() => {
@@ -81,9 +98,10 @@ export default function AdminPods() {
               className="sm:hidden"
               aria-label="Refresh pod portfolio"
               title="Refresh pod portfolio"
-              onClick={() => void portfolioQuery.refetch()}
+              onClick={() => void refreshPortfolio()}
+              disabled={refreshState === "loading"}
             >
-              <RefreshCw className="h-4 w-4" />
+              {refreshState === "loading" ? <RefreshCw className="h-4 w-4 animate-spin" /> : refreshState === "success" ? <Check className="h-4 w-4 text-good animate-[ping_0.55s_ease-out_1]" /> : <RefreshCw className="h-4 w-4" />}
             </Button>
             <MobileFilterDrawer
               open={filterDrawerOpen}
@@ -118,12 +136,17 @@ export default function AdminPods() {
                 {rows.length} of {pods.length} pod{pods.length === 1 ? "" : "s"} match these filters. Results update immediately.
               </p>
             </MobileFilterDrawer>
-            <Button className="hidden sm:inline-flex" variant="secondary" onClick={() => void portfolioQuery.refetch()}>
-              Refresh
+            <Button className="hidden sm:inline-flex" variant="secondary" onClick={() => void refreshPortfolio()} disabled={refreshState === "loading"}>
+              {refreshState === "loading" ? <RefreshCw className="h-4 w-4 animate-spin" /> : refreshState === "success" ? <Check className="h-4 w-4 text-good animate-[ping_0.55s_ease-out_1]" /> : <RefreshCw className="h-4 w-4" />}
+              {refreshState === "loading" ? "Refreshing…" : refreshState === "success" ? "Updated" : refreshState === "error" ? "Try again" : "Refresh"}
             </Button>
           </>
         }
       />
+
+      <p className="sr-only" aria-live="polite">
+        {refreshState === "loading" ? "Refreshing pod portfolio" : refreshState === "success" ? "Pod portfolio updated" : refreshState === "error" ? "Could not refresh pod portfolio" : ""}
+      </p>
 
       <Card className="hidden shrink-0 p-4 sm:block sm:p-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
@@ -193,6 +216,7 @@ export default function AdminPods() {
             <PodPortfolioCard
               key={pod.id}
               pod={pod}
+              unreadComments={unreadCounts.get(pod.id) ?? 0}
               onSelect={() => openPodDrawer(pod, "details")}
               onOpenComments={() => openPodDrawer(pod, "comments")}
             />
@@ -208,10 +232,12 @@ export default function AdminPods() {
 
 function PodPortfolioCard({
   pod,
+  unreadComments,
   onSelect,
   onOpenComments,
 }: {
   pod: PodPortfolioEntry;
+  unreadComments: number;
   onSelect: () => void;
   onOpenComments: () => void;
 }) {
@@ -224,7 +250,7 @@ function PodPortfolioCard({
               <h2 className="font-display text-lg font-bold text-ink">{pod.name}</h2>
               <Badge tone={healthTone[pod.health]}>{pod.health}</Badge>
             </div>
-            <p className="mt-1 text-sm text-ink-muted">{pod.collegeName} · Lead {pod.podLeader || "Unassigned"}</p>
+            <p className="mt-1 text-sm text-ink-muted">Lead {pod.podLeader || "Unassigned"}</p>
           </button>
           <div className="mt-2">
             <Button type="button" variant="ghost" size="sm" onClick={onSelect}>
@@ -233,17 +259,23 @@ function PodPortfolioCard({
             </Button>
           </div>
         </div>
-        <Button
-          type="button"
-          variant="primary"
-          size="icon"
-          className="absolute right-5 top-5 sm:right-6 sm:top-6"
-          aria-label={`Open comments for ${pod.name}`}
-          title="Pod comments"
-          onClick={onOpenComments}
-        >
-          <MessageSquareText className="h-4 w-4" />
-        </Button>
+        <div className="absolute right-5 top-5 sm:right-6 sm:top-6">
+          <Button
+            type="button"
+            variant="primary"
+            size="icon"
+            aria-label={`Open comments for ${pod.name}${unreadComments ? ` (${unreadComments} unread)` : ""}`}
+            title="Pod comments"
+            onClick={onOpenComments}
+          >
+            <MessageSquareText className="h-4 w-4" />
+          </Button>
+          {unreadComments > 0 ? (
+            <span className="pointer-events-none absolute -right-1.5 -top-1.5 flex min-w-5 items-center justify-center rounded-full border-2 border-surface bg-ruby-bright px-1 text-[10px] font-bold leading-5 text-white" aria-label={`${unreadComments} unread comments`}>
+              {unreadComments > 99 ? "99+" : unreadComments}
+            </span>
+          ) : null}
+        </div>
 
         <button type="button" onClick={onSelect} className="mt-5 flex w-full flex-1 flex-col text-left focus-ring rounded-lg">
           <div className="flex flex-wrap items-center justify-between gap-4 border-y border-line py-3">

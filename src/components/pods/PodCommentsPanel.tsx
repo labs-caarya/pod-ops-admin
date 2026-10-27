@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, MessageSquareText, Pencil, Plus, Trash2, X } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/Field";
 import {
   createPodComment,
   deletePodComment,
+  markPodCommentsRead,
   resolvePodComment,
   updatePodComment,
   type PodComment,
@@ -54,6 +55,17 @@ export function PodCommentsPanel({ collegeId }: { collegeId: string }) {
   const visibleComments = useMemo(() => comments.filter((comment) => comment.status === status), [comments, status]);
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.podComments(collegeId) });
+  const markReadMutation = useMutation({
+    mutationFn: () => markPodCommentsRead(collegeId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.podCommentUnreadCounts }),
+  });
+
+  useEffect(() => {
+    if (commentsQuery.data?.some((comment) => comment.isUnread) && !markReadMutation.isPending) {
+      markReadMutation.mutate();
+    }
+  }, [commentsQuery.dataUpdatedAt, collegeId]);
+
   const mutation = useMutation({
     mutationFn: async (action: { type: "create" | "edit" | "delete" | "resolve"; id?: string }) => {
       if (action.type === "delete" && action.id) return deletePodComment(action.id);
