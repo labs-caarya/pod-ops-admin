@@ -1,8 +1,10 @@
 import { useDeferredValue, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { ArrowRight, Building2, Check, ChevronDown, Info, MessageSquareText, Network, RefreshCw, Search, ShieldAlert, Star, Users2, X } from "lucide-react";
 import { podCommentUnreadCountsQueryOptions, podPortfolioQueryOptions } from "@/lib/adminQueries";
 import type { PodPortfolioEntry } from "@/lib/api";
+import { clubStageTone } from "@/lib/clubStage";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -487,8 +489,19 @@ function PodDrawer({
           <div className="mb-3 flex items-center gap-2"><Building2 className="h-4 w-4 text-amber-bright" /><h3 className="font-display font-bold text-ink">Clubs</h3></div>
           <div className="space-y-2">
             {pod.clubs.length ? pod.clubs.map((club) => (
-              <div key={club} className="rounded-xl border border-line bg-surface-2 p-3 text-sm font-semibold text-ink">{club}</div>
-            )) : <p className="text-sm text-ink-muted">No clubs linked.</p>}
+              <div key={club.id} className="rounded-xl border border-line bg-surface-2 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-ink">{club.name}</p>
+                  <Badge tone={clubStageTone(club.stage)}>{club.stage}</Badge>
+                </div>
+                {club.contribution ? <p className="mt-1 text-xs text-ink-faint">{club.contribution}</p> : null}
+              </div>
+            )) : (
+              <p className="text-sm text-ink-muted">
+                No clubs linked.{" "}
+                <Link to="/pods-admin" className="text-ruby-bright hover:underline">Add them in Pod Registry</Link>.
+              </p>
+            )}
           </div>
         </Card>
       </div>
