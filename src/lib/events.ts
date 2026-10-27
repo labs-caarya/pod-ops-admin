@@ -6,7 +6,6 @@ export interface AdminEvent {
   description: string;
   eventType: typeof EVENT_TYPES[number];
   tags: string[];
-  guidelines: string;
   guidelinesUrl: string;
   createdAt?: string;
   updatedAt?: string;
