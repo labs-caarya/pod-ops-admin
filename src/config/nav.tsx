@@ -5,6 +5,7 @@ import {
   Vault,
   FileText,
   CalendarDays,
+  HardDrive,
   type LucideIcon,
 } from "lucide-react";
 
@@ -13,6 +14,8 @@ export interface NavItem {
   to: string;
   icon: LucideIcon;
   end?: boolean;
+  /** Opens in a new tab; `to` is treated as an absolute URL. */
+  external?: boolean;
 }
 
 export interface NavSection {
@@ -35,6 +38,12 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Content Studio", to: "/content", icon: FileText },
       { label: "Event Management", to: "/events", icon: CalendarDays },
       { label: "Knowledge Space", to: "/knowledge-space", icon: BookOpen },
+      {
+        label: "cdrive",
+        to: "https://c-drive-employee.web.app/",
+        icon: HardDrive,
+        external: true,
+      },
     ],
   },
 ];

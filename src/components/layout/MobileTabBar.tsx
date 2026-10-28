@@ -96,13 +96,24 @@ export function MobileTabBar() {
       >
         <div className="space-y-2">
           {OPERATIONS_ITEMS.map((item) => {
-            const selected = location.pathname === item.to || location.pathname.startsWith(`${item.to}/`);
+            const selected =
+              !item.external &&
+              (location.pathname === item.to || location.pathname.startsWith(`${item.to}/`));
             return (
               <button
                 key={item.to}
                 type="button"
-                onClick={() => goOperations(item.to)}
-                onMouseEnter={() => void preloadAdminRoute(item.to)}
+                onClick={() => {
+                  if (item.external) {
+                    setOperationsOpen(false);
+                    window.open(item.to, "_blank", "noopener,noreferrer");
+                    return;
+                  }
+                  goOperations(item.to);
+                }}
+                onMouseEnter={() => {
+                  if (!item.external) void preloadAdminRoute(item.to);
+                }}
                 className={cn(
                   "flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors",
                   selected ? "border-ruby/40 bg-ruby/10" : "border-line bg-surface-2 hover:border-line-strong",
@@ -110,6 +121,9 @@ export function MobileTabBar() {
               >
                 <item.icon className={cn("h-5 w-5 shrink-0", selected ? "text-ruby-bright" : "text-ink-muted")} />
                 <span className="text-sm font-semibold text-ink">{item.label}</span>
+                {item.external ? (
+                  <span className="ml-auto text-[10px] font-medium uppercase tracking-wide text-ink-faint">New tab</span>
+                ) : null}
               </button>
             );
           })}

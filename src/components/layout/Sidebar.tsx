@@ -1,8 +1,55 @@
 import { NavLink } from "react-router-dom";
-import { NAV_SECTIONS } from "@/config/nav";
+import { ExternalLink } from "lucide-react";
+import { NAV_SECTIONS, type NavItem } from "@/config/nav";
 import { preloadAdminRoute } from "@/lib/adminRouteModules";
 import { cn } from "@/lib/utils";
 import { AdminLogo } from "./CaaryaLogo";
+
+function SidebarNavItem({ item, onNavigate }: { item: NavItem; onNavigate?: () => void }) {
+  const iconClass = (active: boolean) =>
+    cn("h-4 w-4 shrink-0", active ? "text-ruby-bright" : "text-ink-faint group-hover:text-ink-muted");
+
+  if (item.external) {
+    return (
+      <a
+        href={item.to}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={onNavigate}
+        className="group flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-ink-muted transition-all hover:bg-surface-2 hover:text-ink"
+      >
+        <item.icon className={iconClass(false)} />
+        <span className="truncate">{item.label}</span>
+        <ExternalLink className="ml-auto h-3.5 w-3.5 shrink-0 text-ink-faint opacity-0 transition-opacity group-hover:opacity-100" />
+      </a>
+    );
+  }
+
+  return (
+    <NavLink
+      to={item.to}
+      end={item.end}
+      onClick={onNavigate}
+      onMouseEnter={() => void preloadAdminRoute(item.to)}
+      onFocus={() => void preloadAdminRoute(item.to)}
+      className={({ isActive }) =>
+        cn(
+          "group flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-all",
+          isActive
+            ? "bg-gradient-to-r from-ruby/20 to-amber/10 font-semibold text-ink shadow-inner"
+            : "text-ink-muted hover:bg-surface-2 hover:text-ink",
+        )
+      }
+    >
+      {({ isActive }) => (
+        <>
+          <item.icon className={iconClass(isActive)} />
+          <span className="truncate">{item.label}</span>
+        </>
+      )}
+    </NavLink>
+  );
+}
 
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   return (
@@ -30,34 +77,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             </p>
             <div className="space-y-0.5">
               {section.items.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={item.end}
-                  onClick={onNavigate}
-                  onMouseEnter={() => void preloadAdminRoute(item.to)}
-                  onFocus={() => void preloadAdminRoute(item.to)}
-                  className={({ isActive }) =>
-                    cn(
-                      "group flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-all",
-                      isActive
-                        ? "bg-gradient-to-r from-ruby/20 to-amber/10 font-semibold text-ink shadow-inner"
-                        : "text-ink-muted hover:bg-surface-2 hover:text-ink",
-                    )
-                  }
-                >
-                  {({ isActive }) => (
-                    <>
-                      <item.icon
-                        className={cn(
-                          "h-4 w-4 shrink-0",
-                          isActive ? "text-ruby-bright" : "text-ink-faint group-hover:text-ink-muted",
-                        )}
-                      />
-                      <span className="truncate">{item.label}</span>
-                    </>
-                  )}
-                </NavLink>
+                <SidebarNavItem key={item.to} item={item} onNavigate={onNavigate} />
               ))}
             </div>
           </div>
