@@ -8,17 +8,20 @@ import { makeId } from "@/lib/utils";
 import type { ChatMessage } from "@/lib/types";
 
 const SUGGESTIONS = [
-  "What is Caarya and how do pods work?",
-  "How does HIVE research scoring work?",
-  "Explain the Rolodex outreach pipeline",
-  "What is sponsorship leverage?",
+  "Give me insights",
+  "Show me what happened this week",
+  "Show me what happened today",
+  "What challenges are pods facing?",
+  "Did we get any new partners?",
+  "How many pods haven't submitted research today?",
+  "Tell me what I should do next",
 ];
 
 const WELCOME: ChatMessage = {
   id: "m0",
   role: "assistant",
   content:
-    "Hi! I'm Moksha. Ask me anything about Caarya, your pods, or this admin workspace — research, outreach, talent, opportunities, and partners.",
+    "I'm Moksha — your Pod Admin business intelligence copilot. I pull from live dashboard, challenge, and partner data to summarize what's happening across the network and what deserves your attention next.",
   ts: new Date().toISOString(),
 };
 
@@ -27,6 +30,7 @@ export function MokshaChatPanel({ className }: { className?: string }) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [lastSource, setLastSource] = useState<"ai" | "local" | null>(null);
+  const [usedLiveData, setUsedLiveData] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -42,8 +46,9 @@ export function MokshaChatPanel({ className }: { className?: string }) {
     setInput("");
     setLoading(true);
     try {
-      const { answer, source } = await askMoksha(q, history);
+      const { answer, source, usedLiveData: live } = await askMoksha(q, history);
       setLastSource(source);
+      setUsedLiveData(live);
       setMessages((current) => [
         ...current,
         { id: makeId("m"), role: "assistant", content: answer, ts: new Date().toISOString() },
@@ -57,8 +62,12 @@ export function MokshaChatPanel({ className }: { className?: string }) {
     <div className={`flex min-h-0 flex-1 flex-col ${className ?? ""}`}>
       {lastSource ? (
         <div className="mb-3 shrink-0">
-          <Badge tone={lastSource === "ai" ? "good" : "amber"}>
-            {lastSource === "ai" ? "Live · chirag-ai" : "Demo · offline"}
+          <Badge tone={lastSource === "ai" || usedLiveData ? "good" : "amber"}>
+            {lastSource === "ai"
+              ? "Live · AI + admin data"
+              : usedLiveData
+                ? "BI · live admin data"
+                : "Offline"}
           </Badge>
         </div>
       ) : null}
@@ -81,7 +90,7 @@ export function MokshaChatPanel({ className }: { className?: string }) {
                 message.role === "user" ? "bg-surface-3 text-ink" : "border border-line bg-surface-2 text-ink-muted"
               }`}
             >
-              {message.content}
+              <span className="whitespace-pre-wrap">{message.content}</span>
             </div>
           </div>
         ))}
@@ -118,12 +127,12 @@ export function MokshaChatPanel({ className }: { className?: string }) {
           event.preventDefault();
           void send(input);
         }}
-        className="mt-3 flex shrink-0 items-center gap-2 border-t border-line pt-3"
+        className="mt-3 flex shrink-0 items-center gap-2"
       >
         <Input
           value={input}
           onChange={(event) => setInput(event.target.value)}
-          placeholder="Ask Moksha…"
+          placeholder="Ask for insights, today's activity, challenges…"
           className="flex-1"
         />
         <Button type="submit" size="icon" disabled={loading || !input.trim()} aria-label="Send message">

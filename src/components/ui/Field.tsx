@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -14,9 +15,11 @@ export function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return <input {...props} className={cn(fieldBase, props.className)} />;
 }
 
-export function Textarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea {...props} className={cn(fieldBase, "min-h-[84px] resize-y", props.className)} />;
-}
+export const Textarea = forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>(
+  function Textarea(props, ref) {
+    return <textarea ref={ref} {...props} className={cn(fieldBase, "min-h-[84px] resize-y", props.className)} />;
+  },
+);
 
 export function Select({ className, ...props }: React.SelectHTMLAttributes<HTMLSelectElement>) {
   return (

@@ -1,28 +1,37 @@
 import { TOKEN_KEY } from "@/lib/constants";
 import type { ChatMessage } from "./types";
+import {
+  answerAdminBiQuestion,
+  buildBiContextBlock,
+  getAdminBiSnapshot,
+  OFFLINE_BI_FALLBACK,
+} from "@/lib/mokshaBi";
 
 /**
- * "Ask Moksha" agent. Calls chirag-ai's `/sphinx/chat` (or `/llm/raw`) when an
- * AI base URL + token are configured; otherwise falls back to a helpful local
- * knowledge responder so the feature always works in demo mode.
+ * Moksha BI for Pod Admin. Calls chirag-ai when configured; otherwise answers
+ * from live admin dashboard / portfolio / challenge / partner APIs.
  */
 
 const AI_URL = (import.meta.env.VITE_AI_URL as string) || "";
 
-const SYSTEM_PROMPT = `You are "Ask Moksha", the in-app assistant for Caarya pods.
-Caarya runs student-led "pods" inside colleges. Pods research startups & brands,
-run outreach via a Rolodex, maintain a talent map to place students, post job
-opportunities, and build academic (clubs/councils) and industry partnerships.
-Answer questions about Caarya, pods, and how to use this portal concisely and warmly.`;
+const SYSTEM_PROMPT = `You are Moksha, the business intelligence copilot for Caarya Pod Admin.
+Your job is to help operators understand network health, pod activity, challenges, partners, research throughput, and what to do next.
+Use only the ADMIN DATA JSON provided in the conversation context. Be concise, use bullet points, cite numbers, and name pods when relevant.
+If data is missing, say what you cannot see and suggest which admin screen to open (Dashboard, Pods, Challenge Vault, Partnerships).
+Do not give generic tutorials about Caarya unless asked; default to operational insights and recommendations.`;
 
 export async function askMoksha(
   question: string,
   history: ChatMessage[] = [],
-): Promise<{ answer: string; source: "ai" | "local" }> {
+): Promise<{ answer: string; source: "ai" | "local"; usedLiveData: boolean }> {
+  const snapshot = await getAdminBiSnapshot();
   const token = localStorage.getItem(TOKEN_KEY);
 
   if (AI_URL && token) {
     try {
+      const contextBlock = snapshot
+        ? `\n\nADMIN DATA (JSON, treat as source of truth):\n${buildBiContextBlock(snapshot)}`
+        : "\n\nADMIN DATA: unavailable — say so briefly.";
       const res = await fetch(`${AI_URL}/sphinx/chat`, {
         method: "POST",
         headers: {
@@ -30,7 +39,7 @@ export async function askMoksha(
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          system: SYSTEM_PROMPT,
+          system: SYSTEM_PROMPT + contextBlock,
           messages: [
             ...history.map((m) => ({ role: m.role, content: m.content })),
             { role: "user", content: question },
@@ -41,69 +50,28 @@ export async function askMoksha(
         const data = await res.json();
         const answer =
           data.answer || data.output || data.content || data.choices?.[0]?.message?.content;
-        if (answer) return { answer: String(answer), source: "ai" };
+        if (answer) return { answer: String(answer), source: "ai", usedLiveData: Boolean(snapshot) };
       }
     } catch {
-      /* fall through to local */
+      /* fall through to local BI */
     }
   }
 
-  return { answer: localAnswer(question), source: "local" };
-}
-
-function localAnswer(q: string): string {
-  const text = q.toLowerCase();
-  for (const entry of KNOWLEDGE) {
-    if (entry.match.some((m) => text.includes(m))) return entry.answer;
+  if (snapshot) {
+    const biAnswer = answerAdminBiQuestion(question, snapshot);
+    if (biAnswer) return { answer: biAnswer, source: "local", usedLiveData: true };
+    return {
+      answer:
+        formatGenericBi(snapshot) +
+        "\n\nAsk a sharper question — e.g. what happened today, open challenges, new partners, or what to do next.",
+      source: "local",
+      usedLiveData: true,
+    };
   }
-  return (
-    "I'm running in offline demo mode right now, so I can answer from a small " +
-    "built-in knowledge base about Caarya pods. Try asking about: research & HIVE " +
-    "scoring, the Rolodex outreach pipeline, the talent map, job opportunities, " +
-    "academic vs industry partners, or sponsorship leverage. Connect the chirag-ai " +
-    "service (set VITE_AI_URL) to enable full answers."
-  );
+
+  return { answer: OFFLINE_BI_FALLBACK, source: "local", usedLiveData: false };
 }
 
-const KNOWLEDGE: { match: string[]; answer: string }[] = [
-  {
-    match: ["what is caarya", "about caarya", "who is caarya"],
-    answer:
-      "Caarya builds student-led 'pods' inside colleges. Each pod operates like a tiny venture studio: it researches startups & brands, runs outreach, maps and places talent, shares opportunities, and grows academic + industry partnerships.",
-  },
-  {
-    match: ["pod", "what is a pod"],
-    answer:
-      "A pod is a college-based team of students that runs real operations: HIVE research on startups/brands, a Rolodex outreach CRM, a talent map to place people, a job opportunity canvas, and a partner network of clubs, councils and companies.",
-  },
-  {
-    match: ["hive", "research", "score", "scoring"],
-    answer:
-      "HIVE is the research module. You profile a startup or brand across founder, social, product, culture and funding, then score it on 5 weighted criteria (max 100). Bands: 80+ Priority, 60–79 Strong, 40–59 Watchlist, <40 Skip. Strong leads get pushed into the Rolodex.",
-  },
-  {
-    match: ["rolodex", "outreach", "pipeline", "follow"],
-    answer:
-      "The Rolodex is a 7-stage outreach pipeline: To Contact → Outreach Sent → In Conversation → Meeting Booked → Proposal Sent → Partner Won (or Passed). Each contact tracks a hypothesis, next action + date, channel and an activity log.",
-  },
-  {
-    match: ["talent", "place", "placement"],
-    answer:
-      "The Talent Map tracks pod members and partner students by skill, level and availability (Available / Engaged / Placed / Bench). Use it to staff opportunities and to show academic partners a live map of their own talent.",
-  },
-  {
-    match: ["job", "opportunit", "canvas"],
-    answer:
-      "The Job Opportunity Canvas is where a pod posts internships, freelance gigs and projects, then shares them to channels for fellow students. Each card tracks seats, applicants and where it's been shared.",
-  },
-  {
-    match: ["partner", "club", "council", "academic", "industry"],
-    answer:
-      "Partners are split into Academic (clubs, councils, colleges, communities) and Industry (companies, incubators). Academic partners can be given a Sponsorship Leverage dashboard and their own talent map.",
-  },
-  {
-    match: ["sponsorship", "leverage"],
-    answer:
-      "Sponsorship Leverage shows an academic partner the total value of assets a pod can mobilise for them — reach, events, content, talent — with each asset's audience, format and status (Available / Committed / Delivered).",
-  },
-];
+function formatGenericBi(snapshot: NonNullable<Awaited<ReturnType<typeof getAdminBiSnapshot>>>): string {
+  return answerAdminBiQuestion("give me insights", snapshot) ?? OFFLINE_BI_FALLBACK;
+}
