@@ -39,6 +39,8 @@ import { Button } from "@/components/ui/Button";
 import { ExpertiseTags } from "@/components/ui/ExpertiseTags";
 import { ProgressBar } from "@/components/ui/Misc";
 import { cn } from "@/lib/utils";
+import { PodQuarterlyGoalsCard } from "@/components/pods/PodQuarterlyGoalsCard";
+import { buildQuarterlySnapshot, emptyQuarterlyCounts } from "@/lib/quarterlyGoals";
 
 const TABS = [
   { id: "summary", label: "Summary" },
@@ -126,6 +128,17 @@ export default function AdminPodDetail() {
   const artifacts = activationQuery.data?.artifacts || [];
   const snapshot = buildActivationSnapshot(pod.id, progress, artifacts);
   const insight = (dashboardQuery.data?.insights || []).find((item) => item.collegeId === pod.id);
+  const quarterlySnapshot = buildQuarterlySnapshot({
+    ...emptyQuarterlyCounts(),
+    observership: applicants.filter((row) => row.track === "experience-studio").length,
+    castle: applicants.filter((row) => row.track === "castle").length,
+    placements: Math.max(applicants.filter((row) => row.track === "fws").length, insight?.weekly.placements ?? 0),
+    industryPartners: insight?.snapshot.activePartners ?? 0,
+    outreach: insight?.snapshot.contactsInConversation ?? 0,
+    research: (insight?.weekly.researchCreated ?? 0) + (insight?.weekly.researchScored ?? 0),
+    academicPartners: pod.clubs.length,
+    brandEngagementSpecialists: insight?.snapshot.talentMapped ?? 0,
+  });
 
   return (
     <div className="flex h-[calc(100dvh-6rem)] min-h-0 flex-col gap-4 overflow-hidden lg:h-[calc(100dvh-8rem)]">
@@ -161,7 +174,7 @@ export default function AdminPodDetail() {
 
       <div className="min-h-0 flex-1 overflow-y-auto pr-1">
         {tab === "summary" ? (
-          <SummaryTab pod={pod} activeGoals={activeGoals} goalsLoading={goalsQuery.isPending} snapshot={snapshot} />
+          <SummaryTab pod={pod} activeGoals={activeGoals} goalsLoading={goalsQuery.isPending} snapshot={snapshot} quarterlySnapshot={quarterlySnapshot} />
         ) : null}
         {tab === "talent" ? (
           <TalentTab
@@ -195,11 +208,13 @@ function SummaryTab({
   activeGoals,
   goalsLoading,
   snapshot,
+  quarterlySnapshot,
 }: {
   pod: PodPortfolioEntry;
   activeGoals: PodLeaderGoal[];
   goalsLoading: boolean;
   snapshot: ReturnType<typeof buildActivationSnapshot>;
+  quarterlySnapshot: ReturnType<typeof buildQuarterlySnapshot>;
 }) {
   const nextActivation = snapshot.items.filter((item) => item.status === "available").slice(0, 3);
 
@@ -215,6 +230,8 @@ function SummaryTab({
         <Stat label="Critical" value={pod.criticalChallenges} />
         <Stat label="Clubs" value={pod.clubs.length} />
       </div>
+
+      <PodQuarterlyGoalsCard snapshot={quarterlySnapshot} />
 
       <Card className="p-4 sm:p-5">
         <h2 className="font-display text-lg font-bold text-ink">Next steps</h2>

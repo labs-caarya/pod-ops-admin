@@ -113,6 +113,13 @@ export interface Profile {
   };
   roles: string[];
   status: string;
+  lookingFor?: string[];
+  engagementGigs?: string[];
+  nanoInfluencer?: {
+    interested?: boolean | null;
+    instagramHandle?: string;
+    followers?: string;
+  };
   technicalSkills?: TechnicalSkill[];
   transferableSkills?: Record<string, unknown>;
   tools?: Tool[];

@@ -21,6 +21,7 @@ import {
   type KnowledgeResourceCategory,
 } from "@/lib/knowledgeSpace/types";
 import { POD_ACTIVATION_CATEGORIES } from "@/lib/podActivation/categories";
+import { quarterlyGoalKnowledgeResources } from "@/lib/quarterlyGoals";
 import { cn } from "@/lib/utils";
 
 type AdminKnowledgeTab = KnowledgeResourceCategory | "pod";
@@ -73,7 +74,10 @@ export default function AdminKnowledgeSpace() {
     }) ?? []
   ), [activationQuery.data?.artifacts]);
 
-  const allResources = useMemo(() => [...(resourcesQuery.data ?? []), ...podResources], [podResources, resourcesQuery.data]);
+  const allResources = useMemo(
+    () => [...quarterlyGoalKnowledgeResources(), ...(resourcesQuery.data ?? []), ...podResources],
+    [podResources, resourcesQuery.data],
+  );
   const counts = useMemo(() => {
     const result: Record<AdminKnowledgeTab, number> = { "caarya-curated": 0, community: 0, pod: 0 };
     for (const resource of allResources) result[resource.category] += 1;

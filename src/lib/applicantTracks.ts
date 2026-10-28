@@ -28,6 +28,10 @@ function appliedTime(value?: string | null) {
   return Number.isNaN(time) ? 0 : time;
 }
 
+function looksFor(profile: Profile, optionId: string) {
+  return (profile.lookingFor ?? []).includes(optionId);
+}
+
 export function buildTrackerApplicants(
   studio: FutureCraftApplicant[],
   industry: Profile[],
@@ -42,15 +46,23 @@ export function buildTrackerApplicants(
       track: "experience-studio" as const,
       appliedAt: applicant.createdAt ?? null,
     })),
-    ...industry.map((profile) => ({
-      id: `fws-${profile.id}`,
-      name: profile.personal?.fullName || "Unnamed applicant",
-      detail: profile.personal?.headline || profile.personal?.email || "Industry profile",
-      college: profile.personal?.collegeName || "College not listed",
-      podName: "",
-      track: "fws" as const,
-      appliedAt: profile.submittedAt || profile.createdAt || null,
-    })),
+    ...industry.flatMap((profile) => {
+      const base = {
+        name: profile.personal?.fullName || "Unnamed applicant",
+        detail: profile.personal?.headline || profile.personal?.email || "Industry profile",
+        college: profile.personal?.collegeName || "College not listed",
+        podName: "",
+        appliedAt: profile.submittedAt || profile.createdAt || null,
+      };
+      const tracks: TrackerApplicant[] = [];
+      if (looksFor(profile, "first-experience")) {
+        tracks.push({ ...base, id: `castle-${profile.id}`, track: "castle" });
+      }
+      if (looksFor(profile, "industrial-work") || !looksFor(profile, "first-experience")) {
+        tracks.push({ ...base, id: `fws-${profile.id}`, track: "fws" });
+      }
+      return tracks;
+    }),
   ];
 
   return rows.sort((left, right) => appliedTime(right.appliedAt) - appliedTime(left.appliedAt));

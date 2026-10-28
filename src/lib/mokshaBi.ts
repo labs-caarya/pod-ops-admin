@@ -8,6 +8,7 @@ import {
   type PodPeriodMetrics,
 } from "@/lib/api";
 import type { Challenge } from "@/lib/types";
+import { quarterlyPlaybookForMoksha } from "@/lib/quarterlyGoals";
 
 export type AdminBiSnapshot = {
   dashboard: AdminDashboardData;
@@ -129,6 +130,7 @@ export function buildBiContextBlock(snapshot: AdminBiSnapshot): string {
       })),
       priorities: dashboard.priorities?.slice(0, 8),
       leaderTasks: dashboard.leaderTasks?.slice(0, 8),
+      quarterlyGoalsPlaybook: quarterlyPlaybookForMoksha(),
     },
     null,
     0,
@@ -147,6 +149,15 @@ export function answerAdminBiQuestion(question: string, snapshot: AdminBiSnapsho
   const wantsPartners = /partner|club|industry|spa|sponsor/.test(text);
   const wantsResearch = /research|hive|submitted|submission/.test(text);
   const wantsNext = /what should|do next|priorit|recommend|focus|action/.test(text);
+  const wantsQuarterly = /quarterly goal|financial stability|experience studio|castle|fusion work|fws/.test(text);
+
+  if (wantsQuarterly) {
+    return [
+      "Quarterly Goals playbook — what any pod should achieve this quarter.",
+      quarterlyPlaybookForMoksha(),
+      "Open Operations → Quarterly Goals for the full playbook, or a pod’s Summary tab for that pod’s live progress.",
+    ].join("\n\n");
+  }
 
   if (wantsResearch && /today|submit|submission|how many|haven't|have not|missing|logged/.test(text)) {
     return formatResearchToday(insights);

@@ -14,6 +14,7 @@ export const loadAdminKnowledgeSpacePage = () => import("@/pages/AdminKnowledgeS
 export const loadPodReportsPage = () => import("@/pages/PodReports");
 export const loadContentStudioPage = () => import("@/pages/ContentStudio");
 export const loadEventManagementPage = () => import("@/pages/EventManagement");
+export const loadAdminQuarterlyGoalsPage = () => import("@/pages/AdminQuarterlyGoals");
 export const loadAskMokshaPage = () => import("@/pages/AskMoksha");
 
 const routePreloaders: Record<string, () => Promise<unknown>> = {
@@ -23,6 +24,7 @@ const routePreloaders: Record<string, () => Promise<unknown>> = {
   "/knowledge-space": loadAdminKnowledgeSpacePage,
   "/content": loadContentStudioPage,
   "/events": loadEventManagementPage,
+  "/quarterly-goals": loadAdminQuarterlyGoalsPage,
 };
 
 export function preloadAdminRoute(pathname: string) {

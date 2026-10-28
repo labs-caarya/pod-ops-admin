@@ -9,6 +9,7 @@ import type { ChatMessage } from "@/lib/types";
 
 const SUGGESTIONS = [
   "Give me insights",
+  "How are pods doing on quarterly goals?",
   "Show me what happened this week",
   "Show me what happened today",
   "What challenges are pods facing?",

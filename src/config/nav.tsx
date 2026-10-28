@@ -6,6 +6,7 @@ import {
   FileText,
   CalendarDays,
   HardDrive,
+  Flag,
   type LucideIcon,
 } from "lucide-react";
 
@@ -35,6 +36,7 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     heading: "Operations",
     items: [
+      { label: "Quarterly Goals", to: "/quarterly-goals", icon: Flag },
       { label: "Content Studio", to: "/content", icon: FileText },
       { label: "Event Management", to: "/events", icon: CalendarDays },
       { label: "Knowledge Space", to: "/knowledge-space", icon: BookOpen },

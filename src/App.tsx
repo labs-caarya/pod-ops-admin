@@ -22,6 +22,7 @@ import {
   loadPodReportsPage,
   loadContentStudioPage,
   loadEventManagementPage,
+  loadAdminQuarterlyGoalsPage,
 } from "@/lib/adminRouteModules";
 
 const AdminPods = lazy(loadAdminPodsPage);
@@ -38,6 +39,7 @@ const AdminKnowledgeSpace = lazy(loadAdminKnowledgeSpacePage);
 const PodReports = lazy(loadPodReportsPage);
 const ContentStudio = lazy(loadContentStudioPage);
 const EventManagement = lazy(loadEventManagementPage);
+const AdminQuarterlyGoals = lazy(loadAdminQuarterlyGoalsPage);
 
 function PodOpsRedirect() {
   const { collegeId = "" } = useParams();
@@ -88,6 +90,7 @@ export default function App() {
           <Route path="/knowledge-space" element={<AdminKnowledgeSpace />} />
           <Route path="/content" element={<ContentStudio />} />
           <Route path="/events" element={<EventManagement />} />
+          <Route path="/quarterly-goals" element={<AdminQuarterlyGoals />} />
           <Route path="/leader-goals" element={<AdminLeaderGoals />} />
           <Route path="/mentors" element={<AdminPodMentors />} />
           <Route path="/applicants/futurecraft" element={<FutureCraftApplicants />} />
