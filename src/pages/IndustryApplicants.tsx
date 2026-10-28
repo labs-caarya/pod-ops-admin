@@ -8,21 +8,14 @@ import { Button } from "@/components/ui/Button";
 import { MobileFilterDrawer } from "@/components/ui/MobileFilterDrawer";
 import { FieldRow, Input, Select } from "@/components/ui/Field";
 import { EmptyState } from "@/components/ui/Misc";
-import { listIndustryApplicants, type Profile } from "@/lib/api";
-import { queryOptions } from "@tanstack/react-query";
+import type { Profile } from "@/lib/api";
+import { industryApplicantsQueryOptions } from "@/lib/adminQueries";
 import { formatDate } from "@/lib/utils";
 
 function profileRoles(profile: Profile): string[] {
   return (profile.roles ?? [])
     .map((role) => (typeof role === "string" ? role : String(role)))
     .filter(Boolean);
-}
-
-function industryApplicantsQueryOptions() {
-  return queryOptions<Profile[]>({
-    queryKey: ["admin", "industry-applicants"],
-    queryFn: listIndustryApplicants,
-  });
 }
 
 export default function IndustryApplicants() {

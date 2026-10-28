@@ -57,7 +57,7 @@ export default function AdminKnowledgeSpace() {
         id: `pod-${artifact.id}`,
         title: artifact.title,
         description: artifact.summary || body.slice(0, 160) || "Pod activation contribution",
-        url: `/pod-activation/${artifact.collegeId}`,
+        url: `/pods/${artifact.collegeId}?tab=ops`,
         type: "in-app",
         category: "pod",
         domain: categoryTitle,

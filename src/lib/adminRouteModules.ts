@@ -1,4 +1,5 @@
 export const loadAdminPodsPage = () => import("@/pages/AdminPods");
+export const loadAdminPodDetailPage = () => import("@/pages/AdminPodDetail");
 export const loadAdminPodRegistryPage = () => import("@/pages/AdminPodRegistry");
 export const loadAdminLeaderGoalsPage = () => import("@/pages/AdminLeaderGoals");
 export const loadAdminPodMentorsPage = () => import("@/pages/AdminPodMentors");
@@ -13,22 +14,15 @@ export const loadAdminKnowledgeSpacePage = () => import("@/pages/AdminKnowledgeS
 export const loadPodReportsPage = () => import("@/pages/PodReports");
 export const loadContentStudioPage = () => import("@/pages/ContentStudio");
 export const loadEventManagementPage = () => import("@/pages/EventManagement");
+export const loadAskMokshaPage = () => import("@/pages/AskMoksha");
 
 const routePreloaders: Record<string, () => Promise<unknown>> = {
+  "/moksha": loadAskMokshaPage,
   "/pods": loadAdminPodsPage,
-  "/reports": loadPodReportsPage,
-  "/pods-admin": loadAdminPodRegistryPage,
   "/challenges": loadChallengeVaultPage,
-  "/pod-activation": loadAdminPodActivationPage,
   "/knowledge-space": loadAdminKnowledgeSpacePage,
   "/content": loadContentStudioPage,
   "/events": loadEventManagementPage,
-  "/leader-goals": loadAdminLeaderGoalsPage,
-  "/mentors": loadAdminPodMentorsPage,
-  "/applicants/futurecraft": loadFutureCraftApplicantsPage,
-  "/applicants/castle": loadCastleApplicantsPage,
-  "/applicants/industry": loadIndustryApplicantsPage,
-  "/future-craft-applicants": loadFutureCraftApplicantsPage,
 };
 
 export function preloadAdminRoute(pathname: string) {

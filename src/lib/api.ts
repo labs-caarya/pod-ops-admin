@@ -585,6 +585,119 @@ export async function listPodPortfolio(): Promise<PodPortfolioEntry[]> {
   return Array.isArray(data) ? data : [];
 }
 
+export interface NetworkPartner {
+  id: string;
+  name: string;
+  institution: string;
+  category: string;
+  spaType: string;
+  domain: string;
+  podId: string;
+  podName: string;
+  createdAt: string;
+}
+
+interface StrategicPartnerRecord {
+  _id?: string;
+  id?: string;
+  startupName?: string;
+  institution?: string;
+  category?: string;
+  spaType?: string;
+  domain?: string;
+  pod?: { _id?: string; id?: string; name?: string } | string | null;
+  createdAt?: string;
+}
+
+function normalizeNetworkPartner(partner: StrategicPartnerRecord): NetworkPartner | null {
+  const id = partner._id || partner.id || "";
+  if (!id) return null;
+  const pod = partner.pod;
+  const podId = typeof pod === "string" ? pod : pod?._id || pod?.id || "";
+  const podName = typeof pod === "string" ? "" : pod?.name || "";
+  return {
+    id,
+    name: partner.startupName || "Untitled partner",
+    institution: partner.institution || "",
+    category: partner.category || "",
+    spaType: partner.spaType || "",
+    domain: partner.domain || "",
+    podId,
+    podName,
+    createdAt: partner.createdAt || "",
+  };
+}
+
+export interface MarketingCalendarCampaign {
+  id: string;
+  title: string;
+  status: string;
+  ownerName: string;
+  startDate: string | null;
+  endDate: string | null;
+}
+
+export interface ContentCalendarItem {
+  id: string;
+  title: string;
+  status: string;
+  channel: string;
+  format: string;
+  ownerName: string;
+  targetDate: string | null;
+}
+
+function recordId(record: { id?: string; _id?: string }) {
+  return record.id || record._id || "";
+}
+
+export async function listMarketingCampaigns(): Promise<MarketingCalendarCampaign[]> {
+  const payload = await requestJson("/marketing/campaigns");
+  const data = unwrapData<Array<Partial<MarketingCalendarCampaign> & { _id?: string }>>(payload);
+  if (!Array.isArray(data)) return [];
+  return data.flatMap((campaign) => {
+    const id = recordId(campaign);
+    if (!id) return [];
+    return [{
+      id,
+      title: campaign.title || "Untitled campaign",
+      status: campaign.status || "",
+      ownerName: campaign.ownerName || "",
+      startDate: campaign.startDate || null,
+      endDate: campaign.endDate || null,
+    }];
+  });
+}
+
+export async function listContentCalendar(): Promise<ContentCalendarItem[]> {
+  const payload = await requestJson("/marketing/content");
+  const data = unwrapData<Array<Partial<ContentCalendarItem> & { _id?: string }>>(payload);
+  if (!Array.isArray(data)) return [];
+  return data.flatMap((item) => {
+    const id = recordId(item);
+    if (!id) return [];
+    return [{
+      id,
+      title: item.title || "Untitled content",
+      status: item.status || "",
+      channel: item.channel || "",
+      format: item.format || "",
+      ownerName: item.ownerName || "",
+      targetDate: item.targetDate || null,
+    }];
+  });
+}
+
+export async function listNetworkPartners(): Promise<NetworkPartner[]> {
+  const payload = await requestJson("/admin/strategic-partners");
+  const data = unwrapData<StrategicPartnerRecord[]>(payload);
+  if (!Array.isArray(data)) return [];
+  return data
+    .map(normalizeNetworkPartner)
+    .filter((partner): partner is NetworkPartner => Boolean(partner))
+    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime());
+}
+
 export async function listPodComments(collegeId: string): Promise<PodComment[]> {
   const payload = await requestJson(`/pod-comments?collegeId=${encodeURIComponent(collegeId)}&status=all`);
   const data = unwrapData<PodComment[]>(payload);

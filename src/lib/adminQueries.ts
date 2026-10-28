@@ -2,11 +2,15 @@ import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import {
   listColleges,
   listFutureCraftApplicants,
+  listIndustryApplicants,
   listLeaderGoals,
   listMentors,
   listManagedUsers,
   getAdminDashboard,
   listPodPortfolio,
+  listNetworkPartners,
+  listMarketingCampaigns,
+  listContentCalendar,
   listPodComments,
   listPodCommentUnreadCounts,
   listChallenges,
@@ -18,9 +22,13 @@ import {
   listAdminEvents,
   type College,
   type FutureCraftApplicant,
+  type Profile,
   type AllowedUser,
   type AdminDashboardData,
   type PodPortfolioEntry,
+  type NetworkPartner,
+  type MarketingCalendarCampaign,
+  type ContentCalendarItem,
   type PodComment,
   type PodCommentUnreadCount,
   type PodActivationData,
@@ -38,10 +46,14 @@ export const adminQueryKeys = {
   colleges: ["admin", "colleges"] as const,
   managedUsers: ["admin", "managed-users"] as const,
   futureCraftApplicants: ["admin", "future-craft-applicants"] as const,
+  industryApplicants: ["admin", "industry-applicants"] as const,
   leaderGoals: ["admin", "leader-goals"] as const,
   mentors: ["admin", "mentors"] as const,
   dashboard: ["admin", "dashboard"] as const,
   podPortfolio: ["admin", "pod-portfolio"] as const,
+  networkPartners: ["admin", "network-partners"] as const,
+  marketingCampaigns: ["admin", "marketing-campaigns"] as const,
+  contentCalendar: ["admin", "content-calendar"] as const,
   podComments: (collegeId: string) => ["admin", "pod-comments", collegeId] as const,
   podCommentUnreadCounts: ["admin", "pod-comment-unread-counts"] as const,
   challenges: ["admin", "challenges"] as const,
@@ -75,6 +87,33 @@ export function podPortfolioQueryOptions() {
   return queryOptions<PodPortfolioEntry[]>({
     queryKey: adminQueryKeys.podPortfolio,
     queryFn: listPodPortfolio,
+    staleTime: TEN_MINUTES,
+    gcTime: THIRTY_MINUTES,
+  });
+}
+
+export function networkPartnersQueryOptions() {
+  return queryOptions<NetworkPartner[]>({
+    queryKey: adminQueryKeys.networkPartners,
+    queryFn: listNetworkPartners,
+    staleTime: TEN_MINUTES,
+    gcTime: THIRTY_MINUTES,
+  });
+}
+
+export function marketingCampaignsQueryOptions() {
+  return queryOptions<MarketingCalendarCampaign[]>({
+    queryKey: adminQueryKeys.marketingCampaigns,
+    queryFn: listMarketingCampaigns,
+    staleTime: TEN_MINUTES,
+    gcTime: THIRTY_MINUTES,
+  });
+}
+
+export function contentCalendarQueryOptions() {
+  return queryOptions<ContentCalendarItem[]>({
+    queryKey: adminQueryKeys.contentCalendar,
+    queryFn: listContentCalendar,
     staleTime: TEN_MINUTES,
     gcTime: THIRTY_MINUTES,
   });
@@ -168,6 +207,15 @@ export function futureCraftApplicantsQueryOptions() {
   });
 }
 
+export function industryApplicantsQueryOptions() {
+  return queryOptions<Profile[]>({
+    queryKey: adminQueryKeys.industryApplicants,
+    queryFn: listIndustryApplicants,
+    staleTime: TEN_MINUTES,
+    gcTime: THIRTY_MINUTES,
+  });
+}
+
 export function leaderGoalsQueryOptions() {
   return queryOptions<PodLeaderGoal[]>({
     queryKey: adminQueryKeys.leaderGoals,
@@ -191,10 +239,14 @@ export function warmAdminWorkspaceCache(queryClient: QueryClient) {
     queryClient.prefetchQuery(collegesQueryOptions()),
     queryClient.prefetchQuery(managedUsersQueryOptions()),
     queryClient.prefetchQuery(futureCraftApplicantsQueryOptions()),
+    queryClient.prefetchQuery(industryApplicantsQueryOptions()),
     queryClient.prefetchQuery(leaderGoalsQueryOptions()),
     queryClient.prefetchQuery(mentorsQueryOptions()),
     queryClient.prefetchQuery(dashboardQueryOptions()),
     queryClient.prefetchQuery(podPortfolioQueryOptions()),
+    queryClient.prefetchQuery(networkPartnersQueryOptions()),
+    queryClient.prefetchQuery(marketingCampaignsQueryOptions()),
+    queryClient.prefetchQuery(contentCalendarQueryOptions()),
     queryClient.prefetchQuery(challengesQueryOptions()),
     queryClient.prefetchQuery(podActivationQueryOptions()),
     queryClient.prefetchQuery(knowledgeResourcesQueryOptions()),

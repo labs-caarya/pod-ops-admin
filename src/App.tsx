@@ -1,13 +1,15 @@
 import { lazy } from "react";
-import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import IndiaBackdrop from "@/components/layout/IndiaBackdrop";
 import { AppShell } from "@/components/layout/AppShell";
 import Login from "@/pages/Login";
 import AdminDashboard from "@/pages/AdminDashboard";
+import AskMoksha from "@/pages/AskMoksha";
 import {
   loadAdminPodRegistryPage,
+  loadAdminPodDetailPage,
   loadAdminPodsPage,
   loadAdminLeaderGoalsPage,
   loadAdminPodMentorsPage,
@@ -16,8 +18,6 @@ import {
   loadFutureCraftApplicantsPage,
   loadCastleApplicantsPage,
   loadIndustryApplicantsPage,
-  loadAdminPodActivationPage,
-  loadAdminPodActivationDetailPage,
   loadAdminKnowledgeSpacePage,
   loadPodReportsPage,
   loadContentStudioPage,
@@ -25,6 +25,7 @@ import {
 } from "@/lib/adminRouteModules";
 
 const AdminPods = lazy(loadAdminPodsPage);
+const AdminPodDetail = lazy(loadAdminPodDetailPage);
 const AdminPodRegistry = lazy(loadAdminPodRegistryPage);
 const AdminLeaderGoals = lazy(loadAdminLeaderGoalsPage);
 const AdminPodMentors = lazy(loadAdminPodMentorsPage);
@@ -33,12 +34,15 @@ const ChallengeDetail = lazy(loadChallengeDetailPage);
 const FutureCraftApplicants = lazy(loadFutureCraftApplicantsPage);
 const CastleApplicants = lazy(loadCastleApplicantsPage);
 const IndustryApplicants = lazy(loadIndustryApplicantsPage);
-const AdminPodActivation = lazy(loadAdminPodActivationPage);
-const AdminPodActivationDetail = lazy(loadAdminPodActivationDetailPage);
 const AdminKnowledgeSpace = lazy(loadAdminKnowledgeSpacePage);
 const PodReports = lazy(loadPodReportsPage);
 const ContentStudio = lazy(loadContentStudioPage);
 const EventManagement = lazy(loadEventManagementPage);
+
+function PodOpsRedirect() {
+  const { collegeId = "" } = useParams();
+  return <Navigate to={`/pods/${collegeId}?tab=ops`} replace />;
+}
 
 function ProtectedRoutes() {
   const { isAuthenticated, isAuthenticating } = useAuth();
@@ -72,13 +76,15 @@ export default function App() {
         />
         <Route element={<ProtectedRoutes />}>
           <Route path="/" element={<AdminDashboard />} />
+          <Route path="/moksha" element={<AskMoksha />} />
           <Route path="/pods" element={<AdminPods />} />
+          <Route path="/pods/:podId" element={<AdminPodDetail />} />
           <Route path="/reports" element={<PodReports />} />
           <Route path="/pods-admin" element={<AdminPodRegistry />} />
           <Route path="/challenges" element={<ChallengeVault />} />
           <Route path="/challenges/:challengeId" element={<ChallengeDetail />} />
-          <Route path="/pod-activation" element={<AdminPodActivation />} />
-          <Route path="/pod-activation/:collegeId" element={<AdminPodActivationDetail />} />
+          <Route path="/pod-activation" element={<Navigate to="/" replace />} />
+          <Route path="/pod-activation/:collegeId" element={<PodOpsRedirect />} />
           <Route path="/knowledge-space" element={<AdminKnowledgeSpace />} />
           <Route path="/content" element={<ContentStudio />} />
           <Route path="/events" element={<EventManagement />} />

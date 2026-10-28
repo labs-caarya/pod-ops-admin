@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Vault,
   Search,
-  Info,
   GitBranch,
   ListChecks,
   AlertTriangle,
@@ -12,37 +11,42 @@ import {
   ChevronRight,
   LayoutGrid,
   Table2,
-  Plus,
+  ArrowRight,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatCard } from "@/components/ui/StatCard";
 import { CompactStatGrid } from "@/components/ui/CompactStatGrid";
 import { Card } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
 import { MobileFilterDrawer } from "@/components/ui/MobileFilterDrawer";
-import { Drawer } from "@/components/ui/Drawer";
+import { ResponsiveSheet } from "@/components/ui/ResponsiveSheet";
 import { Badge } from "@/components/ui/Badge";
 import { Input, Select } from "@/components/ui/Field";
 import { ProgressBar, EmptyState } from "@/components/ui/Misc";
-import { actionProgress, rcaProgress, vaultStats } from "@/lib/data/challenges";
+import { actionProgress, rcaProgress, statusIndex, vaultStats } from "@/lib/data/challenges";
 import { challengesQueryOptions, collegesQueryOptions } from "@/lib/adminQueries";
 import {
   CHALLENGE_SEVERITY_TONE,
   CHALLENGE_STATUSES,
   CHALLENGE_STATUS_TONE,
 } from "@/lib/constants";
-import type { Challenge, ChallengeStatus } from "@/lib/types";
+import type { Challenge, ChallengeSeverity, ChallengeStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type StatusFilter = "all" | ChallengeStatus;
 type ViewMode = "cards" | "table";
+type VaultTab = "stats" | "open";
 type VaultStats = ReturnType<typeof vaultStats>;
 
-const CHALLENGE_GUIDE_STEPS = [
-  { step: "1", label: "Map", desc: "Capture symptoms, impact, and severity", tone: "text-ruby-bright" },
-  { step: "2", label: "RCA", desc: "5 Whys to find the real root cause", tone: "text-amber-bright" },
-  { step: "3", label: "Solve", desc: "Owned actions until the challenge closes", tone: "text-good" },
+const VAULT_TABS: { id: VaultTab; label: string }[] = [
+  { id: "stats", label: "Stats" },
+  { id: "open", label: "Open challenges" },
 ];
+
+const OPEN_CHALLENGE_STATUSES = CHALLENGE_STATUSES.filter((status) => status !== "Resolved");
+const PREVIEW_COUNT = 5;
+const SEVERITY_ORDER: ChallengeSeverity[] = ["Critical", "High", "Medium", "Low"];
+
+type SeveritySheet = ChallengeSeverity | null;
 
 function collegeLabel(challenge: Challenge) {
   return challenge.collegeName || challenge.collegeId || "All colleges";
@@ -150,24 +154,6 @@ function MobileVaultStats({ stats }: { stats: VaultStats }) {
         </div>
       ))}
     </CompactStatGrid>
-  );
-}
-
-function MobileVaultGuideDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
-  return (
-    <Drawer open={open} onClose={onClose} title="How the vault works" width="max-w-md">
-      <div className="grid gap-3">
-        {CHALLENGE_GUIDE_STEPS.map((step) => (
-          <div key={step.step} className="rounded-xl border border-line bg-surface-2 px-4 py-3">
-            <div className="flex items-center gap-3">
-              <span className={cn("font-display text-lg font-black", step.tone)}>{step.step}</span>
-              <p className="font-semibold text-ink">{step.label}</p>
-            </div>
-            <p className="mt-1 text-sm text-ink-muted">{step.desc}</p>
-          </div>
-        ))}
-      </div>
-    </Drawer>
   );
 }
 
@@ -334,10 +320,30 @@ export default function ChallengeVault() {
   const [pillarFilter, setPillarFilter] = useState("all");
   const [collegeFilter, setCollegeFilter] = useState("all");
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
-  const [guideDrawerOpen, setGuideDrawerOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("table");
+  const [vaultTab, setVaultTab] = useState<VaultTab>("stats");
+  const [severitySheet, setSeveritySheet] = useState<SeveritySheet>(null);
 
   const stats = useMemo(() => vaultStats(challenges), [challenges]);
+  const openChallenges = useMemo(
+    () => challenges.filter((challenge) => challenge.status !== "Resolved"),
+    [challenges],
+  );
+  const severityGroups = useMemo(() => {
+    const groups = Object.fromEntries(SEVERITY_ORDER.map((severity) => [severity, [] as Challenge[]])) as Record<
+      ChallengeSeverity,
+      Challenge[]
+    >;
+    for (const challenge of openChallenges) {
+      groups[challenge.severity]?.push(challenge);
+    }
+    for (const severity of SEVERITY_ORDER) {
+      groups[severity].sort(
+        (left, right) => statusIndex(right.status) - statusIndex(left.status) || left.title.localeCompare(right.title),
+      );
+    }
+    return groups;
+  }, [openChallenges]);
 
   const collegeOptions = useMemo(() => {
     const fromChallenges = new Map<string, string>();
@@ -359,8 +365,8 @@ export default function ChallengeVault() {
     setCollegeFilter("all");
   }
 
-  const filtered = useMemo(() => {
-    return challenges.filter((c) => {
+  const filteredOpen = useMemo(() => {
+    return openChallenges.filter((c) => {
       if (statusFilter !== "all" && c.status !== statusFilter) return false;
       if (pillarFilter !== "all" && c.pillar !== pillarFilter) return false;
       if (collegeFilter !== "all" && c.collegeId !== collegeFilter) return false;
@@ -374,7 +380,7 @@ export default function ChallengeVault() {
         collegeLabel(c).toLowerCase().includes(q)
       );
     });
-  }, [challenges, search, statusFilter, pillarFilter, collegeFilter]);
+  }, [openChallenges, search, statusFilter, pillarFilter, collegeFilter]);
 
   return (
     <div className="flex h-[calc(100dvh-6rem)] min-h-0 flex-col gap-4 overflow-hidden lg:h-[calc(100dvh-8rem)]">
@@ -386,6 +392,7 @@ export default function ChallengeVault() {
         actionsClassName="w-auto justify-end"
         actions={
           <>
+            {vaultTab === "open" ? (
             <MobileFilterDrawer
               open={filterDrawerOpen}
               onOpen={() => setFilterDrawerOpen(true)}
@@ -414,7 +421,7 @@ export default function ChallengeVault() {
               </Select>
               <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}>
                 <option value="all">All statuses</option>
-                {CHALLENGE_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                {OPEN_CHALLENGE_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
               </Select>
               <Select value={pillarFilter} onChange={(e) => setPillarFilter(e.target.value)}>
                 <option value="all">All pillars</option>
@@ -423,52 +430,67 @@ export default function ChallengeVault() {
                 ))}
               </Select>
             </MobileFilterDrawer>
-            <Button
-              type="button"
-              variant="secondary"
-              size="icon"
-              className="sm:hidden"
-              aria-label="How the vault works"
-              title="How the vault works"
-              onClick={() => setGuideDrawerOpen(true)}
-            >
-              <Info className="h-4 w-4" />
-            </Button>
-            <Link to="/challenges/new" className="sm:hidden">
-              <Button size="icon" aria-label="Map challenge" title="Map challenge">
-                <Plus className="h-4 w-4" />
-              </Button>
-            </Link>
-            <Link to="/challenges/new" className="hidden sm:block">
-              <Button>Map challenge</Button>
-            </Link>
+            ) : null}
           </>
         }
       />
 
-      <MobileVaultStats stats={stats} />
-
-      <div className="hidden shrink-0 grid-cols-2 gap-3 sm:grid lg:grid-cols-5">
-        <StatCard label="Open challenges" value={stats.open} icon={AlertTriangle} tone="amber" />
-        <StatCard label="In RCA" value={stats.investigating} icon={GitBranch} tone="info" />
-        <StatCard label="Action plans" value={stats.actionPlan} icon={ListChecks} tone="ruby" />
-        <StatCard label="Resolved" value={stats.resolved} icon={CheckCircle2} tone="good" />
-        <StatCard label="High priority" value={stats.critical} icon={AlertTriangle} tone="bad" />
+      <div className="flex shrink-0 gap-1 overflow-x-auto rounded-2xl border border-line bg-surface-2 p-1" role="tablist" aria-label="Challenge vault sections">
+        {VAULT_TABS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            role="tab"
+            aria-selected={vaultTab === item.id}
+            onClick={() => setVaultTab(item.id)}
+            className={cn(
+              "shrink-0 rounded-xl px-4 py-2 text-sm font-semibold transition-colors",
+              vaultTab === item.id ? "bg-ruby/15 text-ruby-bright" : "text-ink-muted hover:text-ink",
+            )}
+          >
+            {item.label}
+          </button>
+        ))}
       </div>
 
-      <Card className="hidden shrink-0 p-4 sm:block">
-        <p className="mb-3 font-display text-sm font-bold text-ink">How the vault works</p>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {CHALLENGE_GUIDE_STEPS.map((s) => (
-            <div key={s.step} className="rounded-xl border border-line bg-surface-2 px-4 py-3">
-              <span className={cn("font-display text-lg font-black", s.tone)}>{s.step}</span>
-              <p className="font-semibold text-ink">{s.label}</p>
-              <p className="text-xs text-ink-muted">{s.desc}</p>
+      {vaultTab === "stats" ? (
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
+          <MobileVaultStats stats={stats} />
+          <CompactStatGrid label="Challenge statistics" className="hidden grid-cols-2 sm:grid lg:grid-cols-5">
+            <StatCard label="Open challenges" value={stats.open} icon={AlertTriangle} tone="amber" />
+            <StatCard label="In RCA" value={stats.investigating} icon={GitBranch} tone="info" />
+            <StatCard label="Action plans" value={stats.actionPlan} icon={ListChecks} tone="ruby" />
+            <StatCard label="Resolved" value={stats.resolved} icon={CheckCircle2} tone="good" />
+            <StatCard label="High priority" value={stats.critical} icon={AlertTriangle} tone="bad" />
+          </CompactStatGrid>
+          <Card className="p-4 sm:p-5">
+            <div className="mb-1">
+              <h2 className="font-display text-lg font-bold text-ink">Open by severity</h2>
+              <p className="mt-1 text-sm text-ink-muted">Unresolved challenges grouped by severity across the network.</p>
             </div>
-          ))}
+            {challengesQuery.isPending ? (
+              <p className="mt-4 text-sm text-ink-muted">Loading challenges…</p>
+            ) : challengesQuery.isError ? (
+              <p className="mt-4 text-sm text-bad">Could not load challenges.</p>
+            ) : (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                {SEVERITY_ORDER.map((severity) => (
+                  <SeverityColumn
+                    key={severity}
+                    severity={severity}
+                    challenges={severityGroups[severity]}
+                    highlighted={severity === "Critical"}
+                    onViewAll={() => setSeveritySheet(severity)}
+                  />
+                ))}
+              </div>
+            )}
+          </Card>
         </div>
-      </Card>
+      ) : null}
 
+      {vaultTab === "open" ? (
+        <>
       <div className="hidden shrink-0 flex-col gap-2 sm:flex sm:flex-row sm:flex-wrap sm:items-center">
         <div className="relative min-w-[220px] flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
@@ -489,7 +511,7 @@ export default function ChallengeVault() {
         </Select>
         <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as StatusFilter)} className="w-44">
           <option value="all">All statuses</option>
-          {CHALLENGE_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+          {OPEN_CHALLENGE_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
         </Select>
         <Select value={pillarFilter} onChange={(e) => setPillarFilter(e.target.value)} className="w-36">
           <option value="all">All pillars</option>
@@ -534,25 +556,126 @@ export default function ChallengeVault() {
           <Card className="p-8 text-center text-sm text-bad">
             {challengesQuery.error instanceof Error ? challengesQuery.error.message : "Could not load challenges."}
           </Card>
-        ) : filtered.length === 0 ? (
+        ) : filteredOpen.length === 0 ? (
           <EmptyState
             icon={Vault}
-            title="No challenges mapped"
-            description="When colleges map blockers in their Challenge Vault, they will appear here for Caarya oversight."
+            title={openChallenges.length ? "No matching open challenges" : "No open challenges"}
+            description={
+              openChallenges.length
+                ? "Try another search or filter."
+                : "When colleges map blockers in their Challenge Vault, open items will appear here for Caarya oversight."
+            }
           />
         ) : (
           <>
             <div className="sm:hidden">
-              <MobileChallengeCards items={filtered} />
+              <MobileChallengeCards items={filteredOpen} />
             </div>
             <div className="hidden sm:block">
-              {viewMode === "cards" ? <ChallengeCards items={filtered} /> : <ChallengeTable items={filtered} />}
+              {viewMode === "cards" ? <ChallengeCards items={filteredOpen} /> : <ChallengeTable items={filteredOpen} />}
             </div>
           </>
         )}
       </div>
+        </>
+      ) : null}
 
-      <MobileVaultGuideDrawer open={guideDrawerOpen} onClose={() => setGuideDrawerOpen(false)} />
+      <ResponsiveSheet
+        open={Boolean(severitySheet)}
+        onClose={() => setSeveritySheet(null)}
+        title={severitySheet ? `${severitySheet} severity` : "Challenges"}
+        subtitle={
+          severitySheet
+            ? `${severityGroups[severitySheet].length} open challenge${severityGroups[severitySheet].length === 1 ? "" : "s"}`
+            : undefined
+        }
+      >
+        {severitySheet ? (
+          <div className="space-y-2">
+            {severityGroups[severitySheet].map((challenge) => (
+              <SeverityChallengeRow key={challenge.id} challenge={challenge} />
+            ))}
+          </div>
+        ) : null}
+      </ResponsiveSheet>
     </div>
+  );
+}
+
+function ViewAllButton({ count, onClick }: { count: number; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className="inline-flex items-center gap-1.5 text-sm font-semibold text-ruby-bright hover:text-amber-bright">
+      View all ({count})
+      <ArrowRight className="h-4 w-4" />
+    </button>
+  );
+}
+
+function severityColumnTone(severity: ChallengeSeverity): "bad" | "amber" | "info" | "muted" {
+  return CHALLENGE_SEVERITY_TONE[severity] ?? "muted";
+}
+
+function SeverityColumn({
+  severity,
+  challenges,
+  highlighted = false,
+  onViewAll,
+}: {
+  severity: ChallengeSeverity;
+  challenges: Challenge[];
+  highlighted?: boolean;
+  onViewAll: () => void;
+}) {
+  const tone = severityColumnTone(severity);
+  const borderClass =
+    highlighted
+      ? "border-bad/50 bg-bad/10"
+      : tone === "amber"
+        ? "border-amber/30 bg-amber/5"
+        : tone === "info"
+          ? "border-info/30 bg-info/5"
+          : "border-line bg-surface-2/50";
+
+  return (
+    <div className={cn("rounded-2xl border p-3", borderClass)}>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <AlertTriangle
+            className={cn(
+              "h-4 w-4",
+              tone === "bad" ? "text-bad" : tone === "amber" ? "text-amber-bright" : tone === "info" ? "text-info" : "text-ink-muted",
+            )}
+          />
+          <h3 className="font-display text-sm font-bold text-ink">{severity}</h3>
+          <Badge tone={tone}>{challenges.length}</Badge>
+        </div>
+        {challenges.length > PREVIEW_COUNT ? <ViewAllButton count={challenges.length} onClick={onViewAll} /> : null}
+      </div>
+      {challenges.length ? (
+        <div className="mt-3 space-y-2">
+          {challenges.slice(0, PREVIEW_COUNT).map((challenge) => (
+            <SeverityChallengeRow key={challenge.id} challenge={challenge} />
+          ))}
+        </div>
+      ) : (
+        <p className="mt-3 text-sm text-ink-muted">None right now.</p>
+      )}
+    </div>
+  );
+}
+
+function SeverityChallengeRow({ challenge }: { challenge: Challenge }) {
+  return (
+    <Link to={`/challenges/${challenge.id}`} className="block rounded-xl border border-line bg-surface px-3 py-2 hover:border-line-strong">
+      <div className="flex items-center justify-between gap-2">
+        <p className="truncate text-sm font-semibold text-ink">{challenge.title}</p>
+        <Badge tone={CHALLENGE_SEVERITY_TONE[challenge.severity] ?? "muted"}>{challenge.severity}</Badge>
+      </div>
+      <p className="mt-0.5 text-xs text-ink-muted">
+        {collegeLabel(challenge)}
+        {challenge.status ? ` · ${challenge.status}` : ""}
+        {challenge.owner ? ` · ${challenge.owner}` : ""}
+      </p>
+    </Link>
   );
 }

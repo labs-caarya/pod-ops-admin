@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from "react";
-import { Menu, LogOut, ChevronDown } from "lucide-react";
+import { LogOut, ChevronDown } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { initials } from "@/lib/utils";
 
-export function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
+export function Topbar() {
   const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -20,17 +20,15 @@ export function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-line bg-base/70 px-4 backdrop-blur-xl lg:px-6">
-      <div className="flex items-center gap-3">
-        <button
-          onClick={onMenuClick}
-          className="focus-ring rounded-lg p-2 text-ink-muted hover:bg-surface-2 hover:text-ink lg:hidden"
-        >
-          <Menu className="h-5 w-5" />
-        </button>
-        <div>
-          <p className="font-display text-sm font-bold text-ink">Pod Ops Control Room</p>
-          <p className="hidden text-xs text-ink-faint sm:block">Partner pipeline · Team ops · Sponsor risk · Delivery readiness</p>
+      <div className="flex min-w-0 items-center gap-2.5 lg:hidden">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-line bg-surface">
+          <img src="/admin-logo.png" alt="" className="h-full w-full object-cover" />
         </div>
+        <p className="font-display text-sm font-bold text-ink">Pod Admin</p>
+      </div>
+      <div className="hidden min-w-0 lg:block">
+        <p className="font-display text-sm font-bold text-ink">Pod Ops Control Room</p>
+        <p className="text-xs text-ink-faint">Network overview, pod portfolio, and operations.</p>
       </div>
 
       <div ref={ref} className="relative">

@@ -1,14 +1,15 @@
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { Outlet } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
-import { Loader2, X } from "lucide-react";
+import { MobileTabBar } from "./MobileTabBar";
+import { MokshaAssistant } from "@/components/moksha/MokshaAssistant";
+import { Loader2 } from "lucide-react";
 import { preloadAdminRouteModules } from "@/lib/adminRouteModules";
 import { warmAdminWorkspaceCache } from "@/lib/adminQueries";
 
 export function AppShell() {
-  const [mobileOpen, setMobileOpen] = useState(false);
   const queryClient = useQueryClient();
   const hasWarmedWorkspace = useRef(false);
 
@@ -29,31 +30,17 @@ export function AppShell() {
         <Sidebar />
       </aside>
 
-      {/* Mobile sidebar */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <div className="absolute left-0 top-0 h-full">
-            <Sidebar onNavigate={() => setMobileOpen(false)} />
-            <button
-              onClick={() => setMobileOpen(false)}
-              className="absolute right-3 top-4 rounded-lg p-1.5 text-ink-muted hover:text-ink"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-        </div>
-      )}
-
       <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar onMenuClick={() => setMobileOpen(true)} />
-        <main className="flex-1 overflow-y-auto">
+        <Topbar />
+        <main className="flex-1 overflow-y-auto pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:pb-0">
           <div className="mx-auto w-full max-w-[90rem] px-3 py-3 sm:px-5 sm:py-5 lg:px-6 lg:py-6">
             <Suspense fallback={<RouteLoadFallback />}>
               <Outlet />
             </Suspense>
           </div>
         </main>
+        <MobileTabBar />
+        <MokshaAssistant />
       </div>
     </div>
   );
