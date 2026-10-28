@@ -20,6 +20,7 @@ import {
   loadIndustryApplicantsPage,
   loadAdminKnowledgeSpacePage,
   loadPodReportsPage,
+  loadProgressReportPage,
   loadContentStudioPage,
   loadEventManagementPage,
   loadAdminQuarterlyGoalsPage,
@@ -37,6 +38,7 @@ const CastleApplicants = lazy(loadCastleApplicantsPage);
 const IndustryApplicants = lazy(loadIndustryApplicantsPage);
 const AdminKnowledgeSpace = lazy(loadAdminKnowledgeSpacePage);
 const PodReports = lazy(loadPodReportsPage);
+const ProgressReport = lazy(loadProgressReportPage);
 const ContentStudio = lazy(loadContentStudioPage);
 const EventManagement = lazy(loadEventManagementPage);
 const AdminQuarterlyGoals = lazy(loadAdminQuarterlyGoalsPage);
@@ -78,6 +80,7 @@ export default function App() {
         />
         <Route element={<ProtectedRoutes />}>
           <Route path="/" element={<AdminDashboard />} />
+          <Route path="/progress-report" element={<ProgressReport />} />
           <Route path="/moksha" element={<AskMoksha />} />
           <Route path="/pods" element={<AdminPods />} />
           <Route path="/pods/:podId" element={<AdminPodDetail />} />

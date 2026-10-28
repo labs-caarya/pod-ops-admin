@@ -12,12 +12,14 @@ export const loadAdminPodActivationPage = () => import("@/pages/AdminPodActivati
 export const loadAdminPodActivationDetailPage = () => import("@/pages/AdminPodActivationDetail");
 export const loadAdminKnowledgeSpacePage = () => import("@/pages/AdminKnowledgeSpace");
 export const loadPodReportsPage = () => import("@/pages/PodReports");
+export const loadProgressReportPage = () => import("@/pages/ProgressReport");
 export const loadContentStudioPage = () => import("@/pages/ContentStudio");
 export const loadEventManagementPage = () => import("@/pages/EventManagement");
 export const loadAdminQuarterlyGoalsPage = () => import("@/pages/AdminQuarterlyGoals");
 export const loadAskMokshaPage = () => import("@/pages/AskMoksha");
 
 const routePreloaders: Record<string, () => Promise<unknown>> = {
+  "/progress-report": loadProgressReportPage,
   "/moksha": loadAskMokshaPage,
   "/pods": loadAdminPodsPage,
   "/challenges": loadChallengeVaultPage,

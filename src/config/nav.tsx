@@ -1,5 +1,6 @@
 import {
   LayoutDashboard,
+  ClipboardList,
   Network,
   BookOpen,
   Vault,
@@ -29,6 +30,7 @@ export const NAV_SECTIONS: NavSection[] = [
     heading: "Overview",
     items: [
       { label: "Dashboard", to: "/", icon: LayoutDashboard, end: true },
+      { label: "Progress Report", to: "/progress-report", icon: ClipboardList },
       { label: "Pod Portfolio", to: "/pods", icon: Network },
       { label: "Challenge Vault", to: "/challenges", icon: Vault },
     ],
