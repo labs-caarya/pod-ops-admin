@@ -973,6 +973,13 @@ export async function listAdminContent(): Promise<ContentItem[]> {
   return unwrapList<ContentItem>(payload, "content");
 }
 
+export async function getAdminContentOptions(): Promise<import("@/lib/content").ContentDirectoryOptions> {
+  const payload = await requestJson("/admin/content/options");
+  const data = unwrapData<import("@/lib/content").ContentDirectoryOptions>(payload);
+  if (!data?.contentTypes || !data.platforms || !data.taxonomy) throw new Error("Content directory response was incomplete.");
+  return data;
+}
+
 export async function createAdminContent(input: ContentWriteInput): Promise<ContentItem> {
   const payload = await requestJson("/admin/content", { method: "POST", body: JSON.stringify(input) });
   const data = unwrapData<ContentItem>(payload);

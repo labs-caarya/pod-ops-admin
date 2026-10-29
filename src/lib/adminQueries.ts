@@ -18,6 +18,7 @@ import {
   listKnowledgeResources,
   getKnowledgeResourceOptions,
   listAdminContent,
+  getAdminContentOptions,
   listAdminAudiences,
   listAdminEvents,
   listCrewLeadReports,
@@ -37,6 +38,7 @@ import {
 } from "@/lib/api";
 import type { KnowledgeResource, KnowledgeResourceOptions } from "@/lib/knowledgeSpace/types";
 import type { ContentItem } from "@/lib/content";
+import type { ContentDirectoryOptions } from "@/lib/content";
 import type { Audience } from "@/lib/audiences";
 import type { AdminEvent } from "@/lib/events";
 import type { Challenge, PodLeaderGoal, PodMentor } from "@/lib/types";
@@ -63,6 +65,7 @@ export const adminQueryKeys = {
   knowledgeResources: ["admin", "knowledge-resources"] as const,
   knowledgeResourceOptions: ["admin", "knowledge-resource-options"] as const,
   content: ["admin", "content"] as const,
+  contentOptions: ["admin", "content-options"] as const,
   audiences: ["admin", "audiences"] as const,
   events: ["admin", "events"] as const,
   crewLeadReports: ["admin", "crew-lead-reports"] as const,
@@ -191,6 +194,15 @@ export function adminContentQueryOptions() {
     queryKey: adminQueryKeys.content,
     queryFn: listAdminContent,
     staleTime: 30_000,
+    gcTime: THIRTY_MINUTES,
+  });
+}
+
+export function adminContentOptionsQueryOptions() {
+  return queryOptions<ContentDirectoryOptions>({
+    queryKey: adminQueryKeys.contentOptions,
+    queryFn: getAdminContentOptions,
+    staleTime: THIRTY_MINUTES,
     gcTime: THIRTY_MINUTES,
   });
 }
