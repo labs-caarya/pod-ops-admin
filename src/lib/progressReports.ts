@@ -1,45 +1,9 @@
 import type { AllowedUser } from "@/lib/api";
 
-const STORAGE_KEY = "pod-ops-admin.crew-lead-reports";
-
-export interface CrewLeadReport {
-  collegeId: string;
-  body: string;
-  updatedAt: string;
-  updatedBy: string;
-}
-
 const MAX_LENGTH = 240;
 
 export function crewLeadReportLimit() {
   return MAX_LENGTH;
-}
-
-function readAll(): CrewLeadReport[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as CrewLeadReport[];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-export function listCrewLeadReports(): CrewLeadReport[] {
-  return readAll();
-}
-
-export function saveCrewLeadReport(report: CrewLeadReport): CrewLeadReport {
-  const next = {
-    ...report,
-    body: report.body.trim().slice(0, MAX_LENGTH),
-    updatedAt: new Date().toISOString(),
-  };
-  const all = readAll().filter((item) => item.collegeId !== next.collegeId);
-  all.push(next);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
-  return next;
 }
 
 export function canEditCrewLeadReport(

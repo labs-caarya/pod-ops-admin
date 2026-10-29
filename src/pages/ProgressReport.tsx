@@ -1,15 +1,12 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ClipboardList, Sparkles } from "lucide-react";
-import { dashboardQueryOptions } from "@/lib/adminQueries";
-import type { PodInsight, PodPeriodMetrics, PodPortfolioEntry } from "@/lib/api";
+import { adminQueryKeys, crewLeadReportsQueryOptions, dashboardQueryOptions } from "@/lib/adminQueries";
+import { saveCrewLeadReport, type CrewLeadReport, type PodInsight, type PodPeriodMetrics, type PodPortfolioEntry } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   canEditCrewLeadReport,
   crewLeadReportLimit,
-  listCrewLeadReports,
-  saveCrewLeadReport,
-  type CrewLeadReport,
 } from "@/lib/progressReports";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -89,9 +86,11 @@ function formatWhen(value: string) {
 
 export default function ProgressReport() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const dashboardQuery = useQuery(dashboardQueryOptions());
+  const reportsQuery = useQuery(crewLeadReportsQueryOptions());
   const [period, setPeriod] = useState<ReportPeriod>("weekly");
-  const [reports, setReports] = useState<CrewLeadReport[]>(() => listCrewLeadReports());
+  const reports = reportsQuery.data || [];
   const data = dashboardQuery.data;
   const insights = useMemo(
     () => (data?.insights?.length ? data.insights : (data?.pods || []).map(fallbackInsight))
@@ -104,14 +103,18 @@ export default function ProgressReport() {
     [reports],
   );
 
+  const saveReportMutation = useMutation({
+    mutationFn: ({ collegeId, body }: { collegeId: string; body: string }) => saveCrewLeadReport(collegeId, body),
+    onSuccess: (saved) => {
+      queryClient.setQueryData<CrewLeadReport[]>(adminQueryKeys.crewLeadReports, (current = []) => [
+        ...current.filter((item) => item.collegeId !== saved.collegeId),
+        saved,
+      ]);
+    },
+  });
+
   function persist(collegeId: string, body: string) {
-    const saved = saveCrewLeadReport({
-      collegeId,
-      body,
-      updatedAt: new Date().toISOString(),
-      updatedBy: user?.name || user?.username || "Pod admin",
-    });
-    setReports((current) => [...current.filter((item) => item.collegeId !== collegeId), saved]);
+    saveReportMutation.mutate({ collegeId, body });
   }
 
   return (
@@ -164,6 +167,7 @@ export default function ProgressReport() {
                         report={reportByPod.get(insight.collegeId)}
                         canEdit={canEditCrewLeadReport(user, insight)}
                         onSave={(body) => persist(insight.collegeId, body)}
+                        isSaving={saveReportMutation.isPending}
                       />
                     </td>
                   </tr>
@@ -191,6 +195,7 @@ export default function ProgressReport() {
                   report={reportByPod.get(insight.collegeId)}
                   canEdit={canEditCrewLeadReport(user, insight)}
                   onSave={(body) => persist(insight.collegeId, body)}
+                  isSaving={saveReportMutation.isPending}
                 />
               </Card>
             ))}
@@ -226,10 +231,12 @@ function CrewLeadEditor({
   report,
   canEdit,
   onSave,
+  isSaving,
 }: {
   report?: CrewLeadReport;
   canEdit: boolean;
   onSave: (body: string) => void;
+  isSaving: boolean;
 }) {
   const [draft, setDraft] = useState(report?.body ?? "");
   const [saved, setSaved] = useState(report?.body ?? "");
@@ -271,7 +278,7 @@ function CrewLeadEditor({
         <p className="text-xs text-ink-faint">
           {report?.updatedBy ? `${report.updatedBy}${report.updatedAt ? ` · ${formatWhen(report.updatedAt)}` : ""}` : "CREW lead or authorized pod admin"}
         </p>
-        <Button type="submit" size="sm" disabled={!dirty}>{dirty ? "Save" : "Saved"}</Button>
+        <Button type="submit" size="sm" disabled={!dirty || isSaving}>{isSaving ? "Saving" : dirty ? "Save" : "Saved"}</Button>
       </div>
     </form>
   );

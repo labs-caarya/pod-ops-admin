@@ -20,6 +20,7 @@ import {
   listAdminContent,
   listAdminAudiences,
   listAdminEvents,
+  listCrewLeadReports,
   type College,
   type FutureCraftApplicant,
   type Profile,
@@ -32,6 +33,7 @@ import {
   type PodComment,
   type PodCommentUnreadCount,
   type PodActivationData,
+  type CrewLeadReport,
 } from "@/lib/api";
 import type { KnowledgeResource, KnowledgeResourceOptions } from "@/lib/knowledgeSpace/types";
 import type { ContentItem } from "@/lib/content";
@@ -63,6 +65,7 @@ export const adminQueryKeys = {
   content: ["admin", "content"] as const,
   audiences: ["admin", "audiences"] as const,
   events: ["admin", "events"] as const,
+  crewLeadReports: ["admin", "crew-lead-reports"] as const,
 };
 
 export function collegesQueryOptions() {
@@ -79,6 +82,15 @@ export function dashboardQueryOptions() {
     queryKey: adminQueryKeys.dashboard,
     queryFn: getAdminDashboard,
     staleTime: TEN_MINUTES,
+    gcTime: THIRTY_MINUTES,
+  });
+}
+
+export function crewLeadReportsQueryOptions() {
+  return queryOptions<CrewLeadReport[]>({
+    queryKey: adminQueryKeys.crewLeadReports,
+    queryFn: listCrewLeadReports,
+    staleTime: 30_000,
     gcTime: THIRTY_MINUTES,
   });
 }

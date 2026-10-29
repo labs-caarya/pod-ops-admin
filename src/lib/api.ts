@@ -34,6 +34,15 @@ export interface AllowedUser {
   phoneNumber?: string;
 }
 
+export interface CrewLeadReport {
+  collegeId: string;
+  collegeName: string;
+  crew: string;
+  body: string;
+  updatedAt: string;
+  updatedBy: string;
+}
+
 export interface ManagedPod {
   id: string;
   name: string;
@@ -583,6 +592,22 @@ export async function getAdminDashboard(): Promise<AdminDashboardData> {
   const payload = await requestJson("/admin/dashboard");
   const data = unwrapData<AdminDashboardData>(payload);
   if (!data) throw new Error("Dashboard response was incomplete.");
+  return data;
+}
+
+export async function listCrewLeadReports(): Promise<CrewLeadReport[]> {
+  const payload = await requestJson("/admin/progress-reports");
+  const data = unwrapData<CrewLeadReport[]>(payload);
+  return Array.isArray(data) ? data : [];
+}
+
+export async function saveCrewLeadReport(collegeId: string, body: string): Promise<CrewLeadReport> {
+  const payload = await requestJson(`/admin/progress-reports/${encodeURIComponent(collegeId)}`, {
+    method: "PUT",
+    body: JSON.stringify({ body }),
+  });
+  const data = unwrapData<CrewLeadReport>(payload);
+  if (!data?.collegeId) throw new Error("Progress report response was incomplete.");
   return data;
 }
 
