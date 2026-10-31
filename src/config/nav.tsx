@@ -11,6 +11,7 @@ import {
   Flag,
   Microscope,
   Contact2,
+  Building2,
   Users,
   BriefcaseBusiness,
   UserCheck,
@@ -44,6 +45,7 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     heading: "Operations",
     items: [
+      { label: "Pod Registry", to: "/pods-admin", icon: Building2 },
       { label: "Quarterly Goals", to: "/quarterly-goals", icon: Flag },
       { label: "Content Studio", to: "/content", icon: FileText },
       { label: "Event Management", to: "/events", icon: CalendarDays },

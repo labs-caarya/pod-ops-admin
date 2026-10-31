@@ -260,7 +260,7 @@ export default function AdminDashboard() {
               <PartnerListCard
                 icon={Landmark}
                 title="Latest club partners"
-                description="Clubs added across pods, newest first."
+                description="Clubs added across the network, newest first."
                 partners={clubPartners}
                 loading={partnersQuery.isPending}
                 error={partnersQuery.isError}

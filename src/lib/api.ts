@@ -663,8 +663,26 @@ export async function listNetworkPartners(): Promise<NetworkPartner[]> {
       .filter((college) => college.isPod)
       .map((college) => [college.id, college]),
   );
+  const clubPartners = colleges
+    .flatMap((college) =>
+      college.clubs
+        .filter((club) => !club.archivedAt)
+        .map((club) => ({
+          id: `club:${college.id}:${club.id}`,
+          name: club.name || "Untitled club",
+          institution: college.isPod ? college.name : "",
+          category: "academic",
+          spaType: "Clubs",
+          domain: club.stage || "",
+          podId: college.isPod ? college.id : "",
+          podName: college.isPod ? `${college.name} Pod` : college.name,
+          // Club timestamps are not exposed by the college API yet; the pod
+          // timestamp still keeps newly added or edited clubs near the top.
+          createdAt: college.updatedAt || college.createdAt || "",
+        })),
+    );
 
-  return partnerships
+  const formalPartners = partnerships
     .map((partner) => {
       const pod = partner.collegeId ? podsById.get(partner.collegeId) : undefined;
       return {
@@ -678,7 +696,9 @@ export async function listNetworkPartners(): Promise<NetworkPartner[]> {
         podName: pod?.name || "",
         createdAt: partner.createdAt || "",
       };
-    })
+    });
+
+  return [...clubPartners, ...formalPartners]
     .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime());
 }
 
