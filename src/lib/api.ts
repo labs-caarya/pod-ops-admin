@@ -3,7 +3,7 @@ import { normalizeLeaderGoal } from "@/lib/leaderGoals";
 import { normalizeMentor } from "@/lib/mentors";
 import type { PodActivationArtifact, PodActivationProgress } from "@/lib/podActivation/types";
 import type { PodRoleApi } from "@/lib/podRoles";
-import type { Challenge, Partner, PodLeaderGoal, PodMentor } from "@/lib/types";
+import type { Challenge, Contact, JobOpportunity, Partner, PlacementOffer, PodLeaderGoal, PodMentor, ResearchProfile, TalentMember } from "@/lib/types";
 import type {
   KnowledgeResource,
   KnowledgeResourceOptions,
@@ -811,6 +811,178 @@ export async function updatePartnership(id: string, input: Partial<PartnerWriteI
 
 export async function archivePartnership(id: string): Promise<void> {
   await requestJson(`/partnerships/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
+export async function listTalentMembers(): Promise<TalentMember[]> {
+  const payload = await requestJson("/talent-members");
+  return unwrapList<TalentMember>(payload, "talentMembers").map(normalizeTalentMember);
+}
+
+export async function createTalentMember(input: TalentMember): Promise<TalentMember> {
+  const payload = await requestJson("/talent-members", { method: "POST", body: JSON.stringify(talentMemberWrite(input)) });
+  const talent = unwrapData<TalentMember>(payload);
+  if (!talent?.id) throw new Error("Talent response was incomplete.");
+  return normalizeTalentMember(talent);
+}
+
+export async function updateTalentMember(id: string, input: Partial<TalentMember>): Promise<TalentMember> {
+  const payload = await requestJson(`/talent-members/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(talentMemberWrite(input)) });
+  const talent = unwrapData<TalentMember>(payload);
+  if (!talent?.id) throw new Error("Talent response was incomplete.");
+  return normalizeTalentMember(talent);
+}
+
+export async function archiveTalentMember(id: string): Promise<void> {
+  await requestJson(`/talent-members/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
+export async function listResearchProfiles(): Promise<ResearchProfile[]> {
+  const payload = await requestJson("/research-profiles");
+  return unwrapList<ResearchProfile>(payload, "researchProfiles");
+}
+
+export async function createResearchProfile(input: ResearchProfile): Promise<ResearchProfile> {
+  const payload = await requestJson("/research-profiles", { method: "POST", body: JSON.stringify(researchProfileWrite(input)) });
+  const profile = unwrapData<ResearchProfile>(payload);
+  if (!profile?.id) throw new Error("Research response was incomplete.");
+  return profile;
+}
+
+export async function updateResearchProfile(id: string, input: ResearchProfile): Promise<ResearchProfile> {
+  const payload = await requestJson(`/research-profiles/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(researchProfileWrite(input)) });
+  const profile = unwrapData<ResearchProfile>(payload);
+  if (!profile?.id) throw new Error("Research response was incomplete.");
+  return profile;
+}
+
+export async function archiveResearchProfile(id: string): Promise<void> {
+  await requestJson(`/research-profiles/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
+export async function promoteResearchToRolodex(id: string): Promise<void> {
+  await requestJson(`/research-profiles/${encodeURIComponent(id)}/promote-to-rolodex`, { method: "POST", body: JSON.stringify({}) });
+}
+
+export interface RelationshipCompany {
+  id: string;
+  name: string;
+  industry?: string;
+  organizationType?: string;
+  website?: string;
+  city?: string;
+}
+
+export async function listRelationshipCompanies(): Promise<RelationshipCompany[]> {
+  return unwrapList<RelationshipCompany>(await requestJson("/companies"), "companies");
+}
+
+export async function createRelationshipCompany(input: Omit<RelationshipCompany, "id">): Promise<RelationshipCompany> {
+  const company = unwrapData<RelationshipCompany>(await requestJson("/companies", { method: "POST", body: JSON.stringify(input) }));
+  if (!company?.id) throw new Error("Company response was incomplete.");
+  return company;
+}
+
+export async function updateRelationshipCompany(id: string, input: Partial<Omit<RelationshipCompany, "id">>): Promise<RelationshipCompany> {
+  const company = unwrapData<RelationshipCompany>(await requestJson(`/companies/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify(input) }));
+  if (!company?.id) throw new Error("Company response was incomplete.");
+  return company;
+}
+
+export async function listRolodexContacts(): Promise<Contact[]> {
+  return unwrapList<Contact>(await requestJson("/contacts"), "contacts").map(normalizeContact);
+}
+
+export async function createRolodexContact(input: Contact): Promise<Contact> {
+  const contact = unwrapData<Contact>(await requestJson("/contacts", { method: "POST", body: JSON.stringify(contactWrite(input)) }));
+  if (!contact?.id) throw new Error("Contact response was incomplete.");
+  return normalizeContact(contact);
+}
+
+export async function updateRolodexContact(id: string, input: Partial<Contact>): Promise<Contact> {
+  const contact = unwrapData<Contact>(await requestJson(`/contacts/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(contactWrite(input)) }));
+  if (!contact?.id) throw new Error("Contact response was incomplete.");
+  return normalizeContact(contact);
+}
+
+export async function archiveRolodexContact(id: string): Promise<void> {
+  await requestJson(`/contacts/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
+export async function addRolodexActivity(contactId: string, text: string): Promise<void> {
+  await requestJson(`/contacts/${encodeURIComponent(contactId)}/activities`, { method: "POST", body: JSON.stringify({ type: "note", text }) });
+}
+
+export async function listOpportunities(): Promise<JobOpportunity[]> {
+  return unwrapList<JobOpportunity>(await requestJson("/opportunities"), "opportunities").map(normalizeOpportunity);
+}
+
+export async function createOpportunity(input: JobOpportunity): Promise<JobOpportunity> {
+  if (!input.companyId) throw new Error("Choose a linked company before creating this opportunity.");
+  const opportunity = unwrapData<JobOpportunity>(await requestJson(`/companies/${encodeURIComponent(input.companyId)}/opportunities`, { method: "POST", body: JSON.stringify(opportunityWrite(input)) }));
+  if (!opportunity?.id) throw new Error("Opportunity response was incomplete.");
+  return normalizeOpportunity(opportunity);
+}
+
+export async function updateOpportunity(id: string, input: Partial<JobOpportunity>): Promise<JobOpportunity> {
+  const opportunity = unwrapData<JobOpportunity>(await requestJson(`/opportunities/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify(opportunityWrite(input)) }));
+  if (!opportunity?.id) throw new Error("Opportunity response was incomplete.");
+  return normalizeOpportunity(opportunity);
+}
+
+export async function archiveOpportunity(id: string): Promise<void> {
+  await requestJson(`/opportunities/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
+export async function listPlacementOffers(): Promise<PlacementOffer[]> {
+  return unwrapList<PlacementOffer>(await requestJson("/placement-offers"), "offers").map((offer) => ({ ...offer, jobId: offer.jobId || offer.opportunityId || "" }));
+}
+
+export async function createPlacementOffer(input: PlacementOffer): Promise<PlacementOffer> {
+  const payload = { opportunityId: input.opportunityId || input.jobId, talentSource: input.talentSource || "manual", talentId: input.talentId, status: input.status, matchScore: input.matchScore, matchReason: input.matchReason, sentAt: input.sentAt };
+  const offer = unwrapData<PlacementOffer>(await requestJson("/placement-offers", { method: "POST", body: JSON.stringify(payload) }));
+  if (!offer?.id) throw new Error("Placement offer response was incomplete.");
+  return { ...offer, jobId: offer.jobId || offer.opportunityId || "" };
+}
+
+export async function updatePlacementOffer(id: string, input: Partial<PlacementOffer>): Promise<PlacementOffer> {
+  const offer = unwrapData<PlacementOffer>(await requestJson(`/placement-offers/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(input) }));
+  if (!offer?.id) throw new Error("Placement offer response was incomplete.");
+  return { ...offer, jobId: offer.jobId || offer.opportunityId || "" };
+}
+
+function normalizeOpportunity(opportunity: JobOpportunity): JobOpportunity {
+  const statuses: Record<string, JobOpportunity["status"]> = { draft: "Draft", open: "Open", shared: "Shared", filled: "Filled", closed: "Closed" };
+  const source = opportunity.source === "partner" ? "partner" : "researched";
+  return { ...opportunity, source, status: statuses[opportunity.status] || opportunity.status, researchId: opportunity.researchId || opportunity.researchProfileId, partnerId: opportunity.partnerId || opportunity.partnershipId, company: opportunity.company || "", seats: Number.isFinite(Number(opportunity.seats)) ? Number(opportunity.seats) : 0, applicants: Number.isFinite(Number(opportunity.applicants)) ? Number(opportunity.applicants) : 0, sharedChannels: opportunity.sharedChannels || [], skills: opportunity.skills || [] };
+}
+
+function opportunityWrite(opportunity: Partial<JobOpportunity>) {
+  const statuses: Record<string, string> = { Draft: "draft", Open: "open", Shared: "shared", Filled: "filled", Closed: "closed" };
+  const { id: _id, companyId: _companyId, company: _company, applicants: _applicants, partnerId, researchId, postedAt: _postedAt, ...rest } = opportunity;
+  return { ...rest, status: opportunity.status ? statuses[opportunity.status] || opportunity.status : undefined, partnershipId: opportunity.partnershipId || partnerId || "", researchProfileId: opportunity.researchProfileId || researchId || "" };
+}
+
+function normalizeContact(contact: Contact): Contact {
+  return { ...contact, researchId: contact.researchId || contact.researchProfileId || "" };
+}
+
+function contactWrite(contact: Partial<Contact>) {
+  const { id: _id, notes: _notes, company: _company, sector: _sector, researchId, ...rest } = contact;
+  return { ...rest, researchProfileId: contact.researchProfileId || researchId || "" };
+}
+
+function researchProfileWrite(profile: ResearchProfile) {
+  return { ...profile, organisation: { name: profile.name, industry: profile.sector, sector: profile.sector, city: profile.city, website: profile.website, organizationType: profile.searchTarget } };
+}
+
+function normalizeTalentMember(member: TalentMember): TalentMember {
+  const levels: Record<string, TalentMember["level"]> = { exploring: "Explorer", activating: "Builder", advancing: "Lead" };
+  return { ...member, partnerId: member.partnerId || (member as TalentMember & { partnershipId?: string }).partnershipId, level: levels[member.level] || member.level };
+}
+
+function talentMemberWrite(member: Partial<TalentMember>) {
+  const levels: Record<string, string> = { Explorer: "exploring", Builder: "activating", Specialist: "advancing", Lead: "advancing" };
+  return { ...member, partnershipId: member.partnerId, level: member.level ? levels[member.level] || member.level : undefined };
 }
 
 export async function listPodComments(collegeId: string): Promise<PodComment[]> {

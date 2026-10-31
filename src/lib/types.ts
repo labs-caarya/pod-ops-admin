@@ -42,6 +42,7 @@ export interface ResearchScores {
 
 export interface ResearchProfile {
   id: string;
+  companyId?: string;
   name: string;
   /** @deprecated Use searchTarget + industryStage; kept for legacy profiles. */
   kind: EntityKind;
@@ -99,6 +100,10 @@ export interface ContactNote {
 
 export interface Contact {
   id: string;
+  /** Backend relationship identifier for the organisation. */
+  companyId?: string;
+  /** Backend relationship identifier; kept alongside researchId for legacy UI. */
+  researchProfileId?: string;
   researchId: string;
   company: string;
   sector: string;
@@ -151,6 +156,7 @@ export interface TalentMember {
   college: string;
   /** When the member belongs to an academic partner, set partnerId. */
   partnerId?: string;
+  partnershipId?: string;
   primarySkill: string;
   skills: string[];
   /** Role bucket for talent distribution charts. */
@@ -164,6 +170,8 @@ export interface TalentMember {
   email?: string;
   phone?: string;
   notes?: string;
+  canEdit?: boolean;
+  canArchive?: boolean;
 }
 
 /* --------------------------- Job opportunities ---------------------------- */
@@ -176,6 +184,9 @@ export type OpportunitySource = "partner" | "researched";
 
 export interface JobOpportunity {
   id: string;
+  companyId?: string;
+  researchProfileId?: string;
+  partnershipId?: string;
   title: string;
   company: string;
   source: OpportunitySource;
@@ -203,6 +214,8 @@ export type PlacementOfferStatus = "Draft" | "Sent" | "Accepted" | "Declined";
 /** Offer from the placement agent to a student for an opportunity. */
 export interface PlacementOffer {
   id: string;
+  opportunityId?: string;
+  talentSource?: "manual" | "profile";
   jobId: string;
   talentId: string;
   status: PlacementOfferStatus;

@@ -19,6 +19,12 @@ export const loadAdminQuarterlyGoalsPage = () => import("@/pages/AdminQuarterlyG
 export const loadAskMokshaPage = () => import("@/pages/AskMoksha");
 export const loadPartnersPage = () => import("@/pages/Partners");
 export const loadPartnerDetailPage = () => import("@/pages/PartnerDetail");
+export const loadTalentMapPage = () => import("@/pages/TalentMap");
+export const loadResearchPage = () => import("@/pages/Research");
+export const loadResearchDetailPage = () => import("@/pages/ResearchDetail");
+export const loadRolodexPage = () => import("@/pages/Rolodex");
+export const loadOpportunitiesPage = () => import("@/pages/Opportunities");
+export const loadPlacementAgentPage = () => import("@/pages/PlacementAgent");
 
 const routePreloaders: Record<string, () => Promise<unknown>> = {
   "/progress-report": loadProgressReportPage,
@@ -30,6 +36,11 @@ const routePreloaders: Record<string, () => Promise<unknown>> = {
   "/events": loadEventManagementPage,
   "/quarterly-goals": loadAdminQuarterlyGoalsPage,
   "/partners": loadPartnersPage,
+  "/talent-map": loadTalentMapPage,
+  "/research": loadResearchPage,
+  "/rolodex": loadRolodexPage,
+  "/opportunities": loadOpportunitiesPage,
+  "/placement": loadPlacementAgentPage,
 };
 
 export function preloadAdminRoute(pathname: string) {

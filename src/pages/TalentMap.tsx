@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Users, Plus, Search, UserCheck, UserPlus, Coffee, Layers } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatCard } from "@/components/ui/StatCard";
@@ -6,8 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { Input, Select } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 import { TalentDistributionMap } from "@/components/dashboard/TalentDistributionMap";
-import { useCollection } from "@/lib/store";
-import { talentStore, partnerStore } from "@/lib/data/collections";
+import { partnershipsQueryOptions, talentMembersQueryOptions } from "@/lib/adminQueries";
 import { getServiceStrength, normalizeTalent } from "@/lib/data/services";
 import { makeId } from "@/lib/utils";
 import type { TalentMember, TalentRole } from "@/lib/types";
@@ -15,8 +15,8 @@ import { TalentGrid } from "@/components/talent/TalentGrid";
 import { TalentDrawer } from "@/components/talent/TalentDrawer";
 
 export default function TalentMap() {
-  const talent = useCollection(talentStore);
-  const partners = useCollection(partnerStore);
+  const talent = useQuery(talentMembersQueryOptions()).data ?? [];
+  const partners = useQuery(partnershipsQueryOptions()).data ?? [];
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import {
   Briefcase,
@@ -20,8 +21,8 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Field";
 import { EmptyState } from "@/components/ui/Misc";
-import { useCollection } from "@/lib/store";
-import { jobStore } from "@/lib/data/collections";
+import { adminQueryKeys, opportunitiesQueryOptions, partnershipsQueryOptions, placementOffersQueryOptions, researchProfilesQueryOptions } from "@/lib/adminQueries";
+import { updateOpportunity } from "@/lib/api";
 import { normalizeJob, opportunitySourceLabel } from "@/lib/data/placement";
 import { JOB_STATUS_TONE, OPPORTUNITY_SOURCE_TONE } from "@/lib/constants";
 import { makeId } from "@/lib/utils";
@@ -32,8 +33,17 @@ import { cn } from "@/lib/utils";
 type SourceTab = "all" | OpportunitySource;
 
 export default function Opportunities() {
-  const jobs = useCollection(jobStore);
-  const normalizedJobs = useMemo(() => jobs.map(normalizeJob), [jobs]);
+  const queryClient = useQueryClient();
+  const { data: jobs = [], isLoading, error } = useQuery(opportunitiesQueryOptions());
+  const { data: partners = [] } = useQuery(partnershipsQueryOptions());
+  const { data: research = [] } = useQuery(researchProfilesQueryOptions());
+  const { data: offers = [] } = useQuery(placementOffersQueryOptions());
+  const normalizedJobs = useMemo(() => jobs.map((job) => {
+    const partner = partners.find((item) => item.id === (job.partnershipId || job.partnerId));
+    const profile = research.find((item) => item.id === (job.researchProfileId || job.researchId));
+    const applicants = offers.filter((offer) => offer.jobId === job.id).length;
+    return normalizeJob({ ...job, partnerId: job.partnershipId || job.partnerId, researchId: job.researchProfileId || job.researchId, company: partner?.name || profile?.name || job.company, applicants });
+  }), [jobs, offers, partners, research]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sourceTab, setSourceTab] = useState<SourceTab>("all");
@@ -77,9 +87,16 @@ export default function Opportunities() {
     sharedChannels: [],
   });
 
+  const quickShareMutation = useMutation({
+    mutationFn: (job: JobOpportunity) => {
+      const sharedChannels = job.sharedChannels.length ? job.sharedChannels : ["Pod Board"];
+      return updateOpportunity(job.id, { ...job, status: "Shared", sharedChannels });
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.opportunities }),
+  });
   const quickShare = (j: JobOpportunity) => {
     const channels = j.sharedChannels.length ? j.sharedChannels : ["Pod Board"];
-    jobStore.upsert({ id: j.id, status: "Shared", sharedChannels: channels });
+    quickShareMutation.mutate({ ...j, status: "Shared", sharedChannels: channels });
   };
 
   const sourceTabs: { key: SourceTab; label: string; count: number }[] = [
@@ -142,7 +159,8 @@ export default function Opportunities() {
         </Select>
       </div>
 
-      {filtered.length === 0 ? (
+      {error && <p className="mb-4 text-sm text-bad">{error.message}</p>}
+      {isLoading ? <p className="text-sm text-ink-muted">Loading opportunities…</p> : filtered.length === 0 ? (
         <EmptyState
           icon={Briefcase}
           title="No opportunities yet"
@@ -193,6 +211,7 @@ export default function Opportunities() {
                   className="flex-1"
                   variant={j.status === "Shared" ? "outline" : "primary"}
                   onClick={() => quickShare(j)}
+                  disabled={quickShareMutation.isPending}
                 >
                   <Share2 className="h-3.5 w-3.5" /> {j.status === "Shared" ? "Shared" : "Share"}
                 </Button>

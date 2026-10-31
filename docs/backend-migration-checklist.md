@@ -7,6 +7,11 @@ Use this checklist before mounting any legacy Pod Ops Admin page in the current 
 - [x] Partners: `/partnerships` list, create, update, archive, permissions, detail, and sponsorship assets.
 - [x] Partners: register `/partners` and `/partners/:partnerId` in the active router and Operations navigation.
 - [x] Partner detail: remove the local Talent Map editor until Talent Members is migrated.
+- [x] Talent Map: backend query, create, edit, and archive through `/talent-members`.
+- [x] Research HIVE: backend query, create, edit, archive, and Rolodex hand-off through `/research-profiles`.
+- [x] Rolodex: backend contacts, company resolution, pipeline updates, archive, and activity logs.
+- [x] Opportunity Canvas: backend opportunities with persisted partner/research links and sharing state.
+- [x] Placement Agent: backend opportunities, talent, and placement offers; offer counts are derived from persisted records.
 
 ## Migrate before routing
 

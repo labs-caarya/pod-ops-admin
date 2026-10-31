@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   UserCheck,
@@ -20,13 +21,8 @@ import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Field";
 import { Avatar, EmptyState } from "@/components/ui/Misc";
 import { TalentPickList } from "@/components/placement/TalentPickList";
-import { useCollection } from "@/lib/store";
-import {
-  jobStore,
-  partnerStore,
-  placementOfferStore,
-  talentStore,
-} from "@/lib/data/collections";
+import { adminQueryKeys, opportunitiesQueryOptions, partnershipsQueryOptions, placementOffersQueryOptions, researchProfilesQueryOptions, talentMembersQueryOptions } from "@/lib/adminQueries";
+import { createPlacementOffer } from "@/lib/api";
 import {
   getPartnerRoster,
   normalizeJob,
@@ -42,7 +38,6 @@ import {
   OPPORTUNITY_SOURCE_TONE,
   PLACEMENT_OFFER_TONE,
 } from "@/lib/constants";
-import { makeId } from "@/lib/utils";
 import type { JobOpportunity, OpportunitySource } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -56,14 +51,20 @@ const SOURCE_TABS: { key: SourceTab; label: string; icon: LucideIcon }[] = [
 
 export default function PlacementAgent() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const jobs = useCollection(jobStore);
-  const talent = useCollection(talentStore);
-  const partners = useCollection(partnerStore);
-  const offers = useCollection(placementOfferStore);
+  const queryClient = useQueryClient();
+  const { data: rawJobs = [], isLoading: jobsLoading, error: jobsError } = useQuery(opportunitiesQueryOptions());
+  const { data: talent = [] } = useQuery(talentMembersQueryOptions());
+  const { data: partners = [] } = useQuery(partnershipsQueryOptions());
+  const { data: research = [] } = useQuery(researchProfilesQueryOptions());
+  const { data: offers = [] } = useQuery(placementOffersQueryOptions());
 
   const normalizedJobs = useMemo(
-    () => jobs.map(normalizeJob).filter((j) => j.status !== "Closed"),
-    [jobs],
+    () => rawJobs.map((job) => {
+      const partner = partners.find((item) => item.id === (job.partnershipId || job.partnerId));
+      const profile = research.find((item) => item.id === (job.researchProfileId || job.researchId));
+      return normalizeJob({ ...job, partnerId: job.partnershipId || job.partnerId, researchId: job.researchProfileId || job.researchId, company: partner?.name || profile?.name || job.company });
+    }).filter((job) => job.status !== "Closed"),
+    [partners, rawJobs, research],
   );
 
   const [sourceTab, setSourceTab] = useState<SourceTab>("all");
@@ -123,11 +124,11 @@ export default function PlacementAgent() {
   const partnerRoster = useMemo(() => {
     if (!selectedJob) return [];
     try {
-      return getPartnerRoster(selectedJob, talent, jobs, offers);
+      return getPartnerRoster(selectedJob, talent, normalizedJobs, offers);
     } catch {
       return [];
     }
-  }, [selectedJob, talent, jobs, offers]);
+  }, [selectedJob, talent, normalizedJobs, offers]);
 
   const recommendationIds = useMemo(
     () => new Set(recommendations.map((r) => r.talent.id)),
@@ -170,38 +171,28 @@ export default function PlacementAgent() {
     });
   };
 
-  const sendOffers = () => {
-    if (!selectedJob || selectedTalentIds.size === 0) return;
-
-    const now = new Date().toISOString();
-    let sent = 0;
-
-    for (const talentId of selectedTalentIds) {
-      if (offeredTalentIds.has(talentId)) continue;
-      const raw = talent.find((t) => t.id === talentId);
-      if (!raw) continue;
-      const match = scoreCandidate(selectedJob, raw);
-
-      placementOfferStore.upsert({
-        id: makeId("offer"),
-        jobId: selectedJob.id,
-        talentId,
-        status: "Sent",
-        matchScore: match.score,
-        matchReason: match.reasons.join(" · ") || "Added from roster",
-        sentAt: now,
-      });
-      sent += 1;
-    }
-
-    if (sent > 0) {
-      jobStore.upsert({
-        id: selectedJob.id,
-        applicants: selectedJob.applicants + sent,
-      });
+  const sendOffersMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedJob || selectedTalentIds.size === 0) return 0;
+      const selected = [...selectedTalentIds].filter((talentId) => !offeredTalentIds.has(talentId));
+      await Promise.all(selected.map(async (talentId) => {
+        const member = talent.find((item) => item.id === talentId);
+        if (!member) return;
+        const match = scoreCandidate(selectedJob, member);
+        await createPlacementOffer({ id: "", jobId: selectedJob.id, opportunityId: selectedJob.id, talentSource: "manual", talentId, status: "Sent", matchScore: match.score, matchReason: match.reasons.join(" · ") || "Added from roster", sentAt: new Date().toISOString() });
+      }));
+      return selected.length;
+    },
+    onSuccess: async (sent) => {
+      if (!sent) return;
+      await queryClient.invalidateQueries({ queryKey: adminQueryKeys.placementOffers });
       setSelectedTalentIds(new Set());
       setJustSent(true);
-    }
+    },
+  });
+  const sendOffers = () => {
+    if (!selectedJob || selectedTalentIds.size === 0) return;
+    sendOffersMutation.mutate();
   };
 
   const pickListProps = {
@@ -245,7 +236,8 @@ export default function PlacementAgent() {
         })}
       </div>
 
-      {filteredJobs.length === 0 ? (
+      {jobsError && <p className="mb-4 text-sm text-bad">{jobsError.message}</p>}
+      {jobsLoading ? <p className="text-sm text-ink-muted">Loading placement data…</p> : filteredJobs.length === 0 ? (
         <EmptyState
           icon={UserCheck}
           title="No open opportunities"
@@ -325,9 +317,9 @@ export default function PlacementAgent() {
                 <p className="text-sm text-ink-muted">
                   {selectedTalentIds.size} selected from recommendations, partner roster, or search
                 </p>
-                <Button onClick={sendOffers} disabled={selectedTalentIds.size === 0}>
+                <Button onClick={sendOffers} disabled={selectedTalentIds.size === 0 || sendOffersMutation.isPending}>
                   <Send className="h-4 w-4" />
-                  {copy.action}
+                  {sendOffersMutation.isPending ? "Sending…" : copy.action}
                   {selectedTalentIds.size > 0 && ` (${selectedTalentIds.size})`}
                 </Button>
               </div>

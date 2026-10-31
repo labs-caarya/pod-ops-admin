@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Microscope, Plus, Search, Send, Star, Globe } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -8,25 +9,30 @@ import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Field";
 import { EmptyState } from "@/components/ui/Misc";
 import { HiveAcronym } from "@/components/research/HiveAcronym";
-import { useCollection } from "@/lib/store";
-import { researchStore, contactStore } from "@/lib/data/collections";
+import { adminQueryKeys, researchProfilesQueryOptions, rolodexContactsQueryOptions } from "@/lib/adminQueries";
+import { promoteResearchToRolodex } from "@/lib/api";
 import { computeScore } from "@/lib/data/scoring";
 import { classBand } from "@/lib/utils";
 import { RESEARCH_STATUSES, SEARCH_TARGETS, SEARCH_TARGET_TONE } from "@/lib/constants";
 import { HIVE_NAME } from "@/lib/copy/hive";
 import type { ResearchProfile, SearchTarget } from "@/lib/types";
-import { contactFromResearch, normalizeResearch, searchTargetLabel } from "@/lib/data/transforms";
+import { normalizeResearch, searchTargetLabel } from "@/lib/data/transforms";
 
 const bandTone: Record<string, Tone> = { ruby: "ruby", amber: "amber", info: "info", muted: "muted" };
 
 export default function Research() {
-  const research = useCollection(researchStore);
-  const contacts = useCollection(contactStore);
+  const queryClient = useQueryClient();
+  const research = useQuery(researchProfilesQueryOptions()).data ?? [];
+  const contacts = useQuery(rolodexContactsQueryOptions()).data ?? [];
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [targetFilter, setTargetFilter] = useState<SearchTarget | "all">("all");
 
-  const linkedIds = useMemo(() => new Set(contacts.map((c) => c.researchId)), [contacts]);
+  const linkedIds = useMemo(() => new Set(contacts.map((contact) => contact.researchProfileId || contact.researchId).filter(Boolean)), [contacts]);
+  const promoteMutation = useMutation({
+    mutationFn: promoteResearchToRolodex,
+    onSuccess: async () => { await Promise.all([queryClient.invalidateQueries({ queryKey: adminQueryKeys.researchProfiles }), queryClient.invalidateQueries({ queryKey: adminQueryKeys.rolodexContacts })]); },
+  });
 
   const rows = useMemo(() => {
     return research
@@ -47,10 +53,7 @@ export default function Research() {
 
   const addToRolodex = (r: ResearchProfile) => {
     if (linkedIds.has(r.id)) return;
-    contactStore.upsert(contactFromResearch(r));
-    if (r.status === "Research" || r.status === "Scored") {
-      researchStore.upsert({ id: r.id, status: "Outreach Sent" });
-    }
+    promoteMutation.mutate(r.id);
   };
 
   return (

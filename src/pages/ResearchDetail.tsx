@@ -1,18 +1,31 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Microscope } from "lucide-react";
 import { ResearchEditorForm } from "@/components/research/ResearchEditorForm";
 import { HiveAcronym } from "@/components/research/HiveAcronym";
 import { EmptyState } from "@/components/ui/Misc";
 import { Button } from "@/components/ui/Button";
-import { researchStore } from "@/lib/data/collections";
+import { archiveResearchProfile, createResearchProfile, updateResearchProfile } from "@/lib/api";
+import { adminQueryKeys, researchProfilesQueryOptions } from "@/lib/adminQueries";
 import { emptyResearch, normalizeResearch } from "@/lib/data/transforms";
 import { HIVE_NAME } from "@/lib/copy/hive";
+import type { ResearchProfile } from "@/lib/types";
 
 export default function ResearchDetail() {
   const { researchId } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const isNew = researchId === "new";
-  const profile = isNew ? null : researchStore.get(researchId ?? "");
+  const researchQuery = useQuery(researchProfilesQueryOptions());
+  const profile = isNew ? null : (researchQuery.data ?? []).find((item) => item.id === researchId);
+  const saveMutation = useMutation({
+    mutationFn: (input: ResearchProfile) => isNew ? createResearchProfile(input) : updateResearchProfile(input.id, input),
+    onSuccess: async (saved) => { await queryClient.invalidateQueries({ queryKey: adminQueryKeys.researchProfiles }); navigate(`/research/${saved.id}`, { replace: true }); },
+  });
+  const archiveMutation = useMutation({
+    mutationFn: () => archiveResearchProfile(profile?.id || ""),
+    onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: adminQueryKeys.researchProfiles }); navigate("/research"); },
+  });
 
   if (!isNew && !profile) {
     return (
@@ -53,13 +66,12 @@ export default function ResearchDetail() {
       <ResearchEditorForm
         initial={initial}
         isNew={isNew}
-        onSave={(saved) => navigate(`/research/${saved.id}`, { replace: isNew })}
+        onSave={(saved) => saveMutation.mutate(saved)}
         onCancel={() => navigate("/research")}
         onDelete={
           !isNew
             ? () => {
-                researchStore.remove(initial.id);
-                navigate("/research");
+                archiveMutation.mutate();
               }
             : undefined
         }

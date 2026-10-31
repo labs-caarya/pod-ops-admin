@@ -1,4 +1,3 @@
-import { createCollection } from "@/lib/store";
 import { buildActivationTemplateSeed } from "./seed";
 import { POD_ACTIVATION_CATEGORIES, CATEGORY_BY_ID } from "./categories";
 import type {
@@ -13,10 +12,7 @@ export * from "./categories";
 export * from "./types";
 export * from "./seed";
 
-export const podActivationTemplateStore = createCollection<PodActivationItemTemplate>(
-  "podActivationTemplates",
-  buildActivationTemplateSeed(),
-);
+const POD_ACTIVATION_TEMPLATES: PodActivationItemTemplate[] = buildActivationTemplateSeed();
 
 export function getItemStatus(
   template: PodActivationItemTemplate,
@@ -55,8 +51,7 @@ export function buildActivationSnapshot(
   progressOverride?: PodActivationProgress[],
   artifactsOverride?: PodActivationArtifact[],
 ): PodActivationSnapshot {
-  const templates = podActivationTemplateStore
-    .all()
+  const templates = POD_ACTIVATION_TEMPLATES
     .filter((t) => t.published)
     .sort((a, b) => {
       const catA = CATEGORY_BY_ID[a.categoryId]?.sortOrder ?? 0;

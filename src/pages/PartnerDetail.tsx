@@ -21,7 +21,7 @@ import { buildLeverageSnapshot } from "@/lib/data/sponsorshipLeverage";
 import { PARTNER_STAGE_TONE } from "@/lib/constants";
 import { makeId } from "@/lib/utils";
 import { updatePartnership } from "@/lib/api";
-import { adminQueryKeys, partnershipsQueryOptions } from "@/lib/adminQueries";
+import { adminQueryKeys, partnershipsQueryOptions, talentMembersQueryOptions } from "@/lib/adminQueries";
 import type { SponsorshipAsset, TalentMember } from "@/lib/types";
 import { PartnerDrawer } from "@/components/partners/PartnerDrawer";
 import { SponsorshipLeverageDashboard } from "@/components/partners/SponsorshipLeverageDashboard";
@@ -32,6 +32,7 @@ export default function PartnerDetail() {
   const { partnerId } = useParams();
   const queryClient = useQueryClient();
   const partnersQuery = useQuery(partnershipsQueryOptions());
+  const talentQuery = useQuery(talentMembersQueryOptions());
   const partners = partnersQuery.data ?? [];
   const partner = partners.find((p) => p.id === partnerId);
 
@@ -43,9 +44,8 @@ export default function PartnerDetail() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.partnerships }),
   });
 
-  // Talent Map remains intentionally unavailable here until it is migrated to the API.
-  // This prevents a partner detail page from exposing browser-only CRUD.
-  const partnerTalent: TalentMember[] = [];
+  // This view is read-only until the Talent Map editor is migrated to the API.
+  const partnerTalent: TalentMember[] = (talentQuery.data ?? []).filter((member) => member.partnerId === partnerId);
 
   if (partnersQuery.isLoading) {
     return <Card className="p-8 text-center"><p className="text-sm text-ink-muted">Loading partner…</p></Card>;

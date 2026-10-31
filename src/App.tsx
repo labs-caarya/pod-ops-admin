@@ -26,6 +26,12 @@ import {
   loadAdminQuarterlyGoalsPage,
   loadPartnersPage,
   loadPartnerDetailPage,
+  loadTalentMapPage,
+  loadResearchPage,
+  loadResearchDetailPage,
+  loadRolodexPage,
+  loadOpportunitiesPage,
+  loadPlacementAgentPage,
 } from "@/lib/adminRouteModules";
 
 const AdminPods = lazy(loadAdminPodsPage);
@@ -46,6 +52,12 @@ const EventManagement = lazy(loadEventManagementPage);
 const AdminQuarterlyGoals = lazy(loadAdminQuarterlyGoalsPage);
 const Partners = lazy(loadPartnersPage);
 const PartnerDetail = lazy(loadPartnerDetailPage);
+const TalentMap = lazy(loadTalentMapPage);
+const Research = lazy(loadResearchPage);
+const ResearchDetail = lazy(loadResearchDetailPage);
+const Rolodex = lazy(loadRolodexPage);
+const Opportunities = lazy(loadOpportunitiesPage);
+const PlacementAgent = lazy(loadPlacementAgentPage);
 
 function PodOpsRedirect() {
   const { collegeId = "" } = useParams();
@@ -99,6 +111,12 @@ export default function App() {
           <Route path="/events" element={<EventManagement />} />
           <Route path="/partners" element={<Partners />} />
           <Route path="/partners/:partnerId" element={<PartnerDetail />} />
+          <Route path="/talent-map" element={<TalentMap />} />
+          <Route path="/research" element={<Research />} />
+          <Route path="/research/:researchId" element={<ResearchDetail />} />
+          <Route path="/rolodex" element={<Rolodex />} />
+          <Route path="/opportunities" element={<Opportunities />} />
+          <Route path="/placement" element={<PlacementAgent />} />
           <Route path="/quarterly-goals" element={<AdminQuarterlyGoals />} />
           <Route path="/leader-goals" element={<AdminLeaderGoals />} />
           <Route path="/mentors" element={<AdminPodMentors />} />

@@ -10,6 +10,12 @@ import {
   listPodPortfolio,
   listNetworkPartners,
   listPartnerships,
+  listTalentMembers,
+  listResearchProfiles,
+  listRelationshipCompanies,
+  listRolodexContacts,
+  listOpportunities,
+  listPlacementOffers,
   listMarketingCampaigns,
   listContentCalendar,
   listPodComments,
@@ -58,6 +64,12 @@ export const adminQueryKeys = {
   podPortfolio: ["admin", "pod-portfolio"] as const,
   networkPartners: ["admin", "network-partners"] as const,
   partnerships: ["admin", "partnerships"] as const,
+  talentMembers: ["admin", "talent-members"] as const,
+  researchProfiles: ["admin", "research-profiles"] as const,
+  relationshipCompanies: ["admin", "relationship-companies"] as const,
+  rolodexContacts: ["admin", "rolodex-contacts"] as const,
+  opportunities: ["admin", "opportunities"] as const,
+  placementOffers: ["admin", "placement-offers"] as const,
   marketingCampaigns: ["admin", "marketing-campaigns"] as const,
   contentCalendar: ["admin", "content-calendar"] as const,
   podComments: (collegeId: string) => ["admin", "pod-comments", collegeId] as const,
@@ -125,6 +137,35 @@ export function partnershipsQueryOptions() {
     staleTime: 30_000,
     gcTime: THIRTY_MINUTES,
   });
+}
+
+export function talentMembersQueryOptions() {
+  return queryOptions<import("@/lib/types").TalentMember[]>({
+    queryKey: adminQueryKeys.talentMembers,
+    queryFn: listTalentMembers,
+    staleTime: 30_000,
+    gcTime: THIRTY_MINUTES,
+  });
+}
+
+export function researchProfilesQueryOptions() {
+  return queryOptions<import("@/lib/types").ResearchProfile[]>({ queryKey: adminQueryKeys.researchProfiles, queryFn: listResearchProfiles, staleTime: 30_000, gcTime: THIRTY_MINUTES });
+}
+
+export function relationshipCompaniesQueryOptions() {
+  return queryOptions<import("@/lib/api").RelationshipCompany[]>({ queryKey: adminQueryKeys.relationshipCompanies, queryFn: listRelationshipCompanies, staleTime: 30_000, gcTime: THIRTY_MINUTES });
+}
+
+export function rolodexContactsQueryOptions() {
+  return queryOptions<import("@/lib/types").Contact[]>({ queryKey: adminQueryKeys.rolodexContacts, queryFn: listRolodexContacts, staleTime: 30_000, gcTime: THIRTY_MINUTES });
+}
+
+export function opportunitiesQueryOptions() {
+  return queryOptions<import("@/lib/types").JobOpportunity[]>({ queryKey: adminQueryKeys.opportunities, queryFn: listOpportunities, staleTime: 30_000, gcTime: THIRTY_MINUTES });
+}
+
+export function placementOffersQueryOptions() {
+  return queryOptions<import("@/lib/types").PlacementOffer[]>({ queryKey: adminQueryKeys.placementOffers, queryFn: listPlacementOffers, staleTime: 30_000, gcTime: THIRTY_MINUTES });
 }
 
 export function marketingCampaignsQueryOptions() {

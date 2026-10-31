@@ -1,9 +1,11 @@
 import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Trash2 } from "lucide-react";
 import { Drawer } from "@/components/ui/Drawer";
 import { Button } from "@/components/ui/Button";
 import { Input, Select, FieldRow, Textarea, Label } from "@/components/ui/Field";
-import { talentStore, partnerStore } from "@/lib/data/collections";
+import { archiveTalentMember, createTalentMember, updateTalentMember } from "@/lib/api";
+import { adminQueryKeys, partnershipsQueryOptions } from "@/lib/adminQueries";
 import { ALL_POD_SERVICES, POD_SERVICE_GROUPS, TALENT_ROLES, normalizeTalent } from "@/lib/data/services";
 import type { PodServiceId, TalentMember } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -21,7 +23,8 @@ export function TalentDrawer({
   onClose: () => void;
 }) {
   const [form, setForm] = useState<TalentMember>(() => normalizeTalent(member));
-  const partners = partnerStore.all().filter((p) => p.type === "Academic");
+  const queryClient = useQueryClient();
+  const partners = (useQuery(partnershipsQueryOptions()).data ?? []).filter((p) => p.type === "Academic");
 
   const set =
     <K extends keyof TalentMember>(key: K) =>
@@ -36,17 +39,23 @@ export function TalentDrawer({
     });
   };
 
+  const saveMutation = useMutation({
+    mutationFn: (input: TalentMember) => isNew ? createTalentMember(input) : updateTalentMember(input.id, input),
+    onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: adminQueryKeys.talentMembers }); onClose(); },
+  });
+  const archiveMutation = useMutation({
+    mutationFn: () => archiveTalentMember(form.id),
+    onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: adminQueryKeys.talentMembers }); onClose(); },
+  });
   const save = () => {
     const skills = Array.isArray(form.skills)
       ? form.skills
       : String(form.skills).split(",").map((s) => s.trim()).filter(Boolean);
-    talentStore.upsert(normalizeTalent({ ...form, skills }));
-    onClose();
+    saveMutation.mutate(normalizeTalent({ ...form, skills }));
   };
 
   const remove = () => {
-    if (!isNew) talentStore.remove(form.id);
-    onClose();
+    if (!isNew) archiveMutation.mutate();
   };
 
   return (
