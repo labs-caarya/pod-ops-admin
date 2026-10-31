@@ -17,6 +17,8 @@ export const loadContentStudioPage = () => import("@/pages/ContentStudio");
 export const loadEventManagementPage = () => import("@/pages/EventManagement");
 export const loadAdminQuarterlyGoalsPage = () => import("@/pages/AdminQuarterlyGoals");
 export const loadAskMokshaPage = () => import("@/pages/AskMoksha");
+export const loadPartnersPage = () => import("@/pages/Partners");
+export const loadPartnerDetailPage = () => import("@/pages/PartnerDetail");
 
 const routePreloaders: Record<string, () => Promise<unknown>> = {
   "/progress-report": loadProgressReportPage,
@@ -27,6 +29,7 @@ const routePreloaders: Record<string, () => Promise<unknown>> = {
   "/content": loadContentStudioPage,
   "/events": loadEventManagementPage,
   "/quarterly-goals": loadAdminQuarterlyGoalsPage,
+  "/partners": loadPartnersPage,
 };
 
 export function preloadAdminRoute(pathname: string) {

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import {
@@ -8,19 +8,15 @@ import {
   Factory,
   Mail,
   Phone,
-  Users2,
   IndianRupee,
   Pencil,
   Rocket,
-  Plus,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/Misc";
-import { talentStore } from "@/lib/data/collections";
-import { useCollection } from "@/lib/store";
 import { buildLeverageSnapshot } from "@/lib/data/sponsorshipLeverage";
 import { PARTNER_STAGE_TONE } from "@/lib/constants";
 import { makeId } from "@/lib/utils";
@@ -29,32 +25,27 @@ import { adminQueryKeys, partnershipsQueryOptions } from "@/lib/adminQueries";
 import type { SponsorshipAsset, TalentMember } from "@/lib/types";
 import { PartnerDrawer } from "@/components/partners/PartnerDrawer";
 import { SponsorshipLeverageDashboard } from "@/components/partners/SponsorshipLeverageDashboard";
-import { TalentDrawer } from "@/components/talent/TalentDrawer";
-import { TalentGrid } from "@/components/talent/TalentGrid";
 
-type Tab = "overview" | "leverage" | "talent";
+type Tab = "overview" | "leverage";
 
 export default function PartnerDetail() {
   const { partnerId } = useParams();
   const queryClient = useQueryClient();
   const partnersQuery = useQuery(partnershipsQueryOptions());
   const partners = partnersQuery.data ?? [];
-  const talent = useCollection(talentStore);
   const partner = partners.find((p) => p.id === partnerId);
 
   const [tab, setTab] = useState<Tab>("overview");
   const [editing, setEditing] = useState(false);
-  const [talentEditing, setTalentEditing] = useState<TalentMember | "new" | null>(null);
 
   const partnerMutation = useMutation({
     mutationFn: (input: Parameters<typeof updatePartnership>[1]) => updatePartnership(String(partnerId), input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.partnerships }),
   });
 
-  const partnerTalent = useMemo(
-    () => talent.filter((t) => t.partnerId === partnerId),
-    [talent, partnerId],
-  );
+  // Talent Map remains intentionally unavailable here until it is migrated to the API.
+  // This prevents a partner detail page from exposing browser-only CRUD.
+  const partnerTalent: TalentMember[] = [];
 
   if (partnersQuery.isLoading) {
     return <Card className="p-8 text-center"><p className="text-sm text-ink-muted">Loading partner…</p></Card>;
@@ -99,24 +90,9 @@ export default function PartnerDetail() {
   };
   const enableSponsorship = () => partnerMutation.mutate({ sponsorshipEnabled: true });
 
-  const newTalent = (): TalentMember => ({
-    id: makeId("tal"),
-    name: "",
-    college: partner.name,
-    partnerId: partner.id,
-    primarySkill: "",
-    skills: [],
-    talentRole: "Content Creator",
-    serviceOfferings: [],
-    level: "Explorer",
-    status: "Available",
-    availability: "",
-  });
-
   const tabs: { key: Tab; label: string; show: boolean }[] = [
     { key: "overview", label: "Overview", show: true },
     { key: "leverage", label: "Sponsorship Leverage", show: isAcademic },
-    { key: "talent", label: "Talent Map", show: isAcademic },
   ];
 
   return (
@@ -194,8 +170,6 @@ export default function PartnerDetail() {
               <Info label="Type" value={`${partner.type} · ${partner.kind}`} />
               {isAcademic && leverageSnapshot && (
                 <>
-                  <Info label="Students mapped" value={String(leverageSnapshot.mappedTalent)} />
-                  <Info label="Services ready" value={String(leverageSnapshot.activeServices)} />
                   <Info
                     label="Sponsorship inventory"
                     value={partner.sponsorshipEnabled ? `₹${(leverageSnapshot.totalLeverage / 100000).toFixed(1)}L` : "Not enabled"}
@@ -208,9 +182,6 @@ export default function PartnerDetail() {
               <div className="mt-4 flex flex-col gap-2">
                 <Button size="sm" variant="secondary" className="w-full" onClick={() => setTab("leverage")}>
                   <IndianRupee className="h-4 w-4" /> Sponsorship leverage dashboard
-                </Button>
-                <Button size="sm" variant="secondary" className="w-full" onClick={() => setTab("talent")}>
-                  <Users2 className="h-4 w-4" /> Talent map
                 </Button>
               </div>
             )}
@@ -226,23 +197,7 @@ export default function PartnerDetail() {
           onAddAsset={addAsset}
           onUpdateAsset={updateAsset}
           onRemoveAsset={removeAsset}
-          onOpenTalentMap={() => setTab("talent")}
         />
-      )}
-
-      {tab === "talent" && isAcademic && (
-        <div>
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h3 className="font-display text-lg font-bold text-ink">{partner.name} · Talent map</h3>
-              <p className="text-sm text-ink-muted">Students from this academic partner — manage roster, skills and availability.</p>
-            </div>
-            <Button onClick={() => setTalentEditing("new")}>
-              <Plus className="h-4 w-4" /> Add student
-            </Button>
-          </div>
-          <TalentGrid members={partnerTalent} onOpen={(m) => setTalentEditing(m)} />
-        </div>
       )}
 
       {editing && (
@@ -252,13 +207,6 @@ export default function PartnerDetail() {
           onClose={() => {
             setEditing(false);
           }}
-        />
-      )}
-      {talentEditing && (
-        <TalentDrawer
-          member={talentEditing === "new" ? newTalent() : talentEditing}
-          isNew={talentEditing === "new"}
-          onClose={() => setTalentEditing(null)}
         />
       )}
     </div>

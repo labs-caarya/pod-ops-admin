@@ -7,6 +7,7 @@ import {
   FileText,
   CalendarDays,
   HardDrive,
+  Handshake,
   Flag,
   type LucideIcon,
 } from "lucide-react";
@@ -41,6 +42,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Quarterly Goals", to: "/quarterly-goals", icon: Flag },
       { label: "Content Studio", to: "/content", icon: FileText },
       { label: "Event Management", to: "/events", icon: CalendarDays },
+      { label: "Partners", to: "/partners", icon: Handshake },
       { label: "Knowledge Space", to: "/knowledge-space", icon: BookOpen },
       {
         label: "cdrive",
