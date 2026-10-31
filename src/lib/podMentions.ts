@@ -100,7 +100,7 @@ export function visibilitySlashToken(option: (typeof VISIBILITY_SLASH_OPTIONS)[n
 
 export function resolveVisibilityFromSlash(body: string): PodComment["visibility"] | null {
   const matches = [...body.matchAll(/\/(admin|pod)\b/gi)];
-  const last = matches.at(-1)?.[1]?.toLowerCase();
+  const last = matches[matches.length - 1]?.[1]?.toLowerCase();
   if (last === "admin") return "admin";
   if (last === "pod") return "both";
   return null;
@@ -142,7 +142,7 @@ export function filterLeadersForMention(leaders: PodLeaderOption[], query: strin
 
 export function resolveLeaderKeyFromSlash(body: string, leaders: PodLeaderOption[]): string | null {
   const matches = [...body.matchAll(/\/([^/\n]+?)(?=\s|$)/g)];
-  const token = matches.at(-1)?.[1]?.trim();
+  const token = matches[matches.length - 1]?.[1]?.trim();
   if (!token) return null;
   const q = token.toLowerCase();
   if (q === "admin" || q === "pod") return null;

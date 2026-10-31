@@ -612,7 +612,8 @@ function ViewAllButton({ count, onClick }: { count: number; onClick: () => void 
 }
 
 function severityColumnTone(severity: ChallengeSeverity): "bad" | "amber" | "info" | "muted" {
-  return CHALLENGE_SEVERITY_TONE[severity] ?? "muted";
+  const tone = CHALLENGE_SEVERITY_TONE[severity];
+  return tone === "bad" || tone === "amber" || tone === "info" || tone === "muted" ? tone : "muted";
 }
 
 function SeverityColumn({
