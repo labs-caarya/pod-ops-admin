@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import { Link } from "react-router-dom";
 
@@ -36,11 +37,9 @@ import { Button } from "@/components/ui/Button";
 
 import { Input } from "@/components/ui/Field";
 
-import { useCollection } from "@/lib/store";
-
-import { partnerStore } from "@/lib/data/collections";
-
 import { PARTNER_STAGE_TONE } from "@/lib/constants";
+
+import { partnershipsQueryOptions } from "@/lib/adminQueries";
 
 import { cn, makeId } from "@/lib/utils";
 
@@ -87,7 +86,8 @@ const TAB_ICON = {
 
 export default function Partners() {
 
-  const partners = useCollection(partnerStore);
+  const partnersQuery = useQuery(partnershipsQueryOptions());
+  const partners = partnersQuery.data ?? [];
 
   const [tab, setTab] = useState<PartnerTab>("Academic");
 
@@ -229,6 +229,14 @@ export default function Partners() {
 
       />
 
+      {partnersQuery.isError ? (
+        <Card className="mb-4 p-5">
+          <p className="font-display font-bold text-ink">Partners could not be loaded</p>
+          <p className="mt-1 text-sm text-ink-muted">{partnersQuery.error instanceof Error ? partnersQuery.error.message : "Try again."}</p>
+          <Button className="mt-3" size="sm" variant="secondary" onClick={() => partnersQuery.refetch()}>Try again</Button>
+        </Card>
+      ) : null}
+
 
 
       <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -333,7 +341,9 @@ export default function Partners() {
 
 
 
-      {filtered.length === 0 ? (
+      {partnersQuery.isLoading ? (
+        <Card className="p-10 text-center"><p className="text-sm text-ink-muted">Loading partners…</p></Card>
+      ) : filtered.length === 0 ? (
 
         <Card className="p-10 text-center">
 
@@ -443,7 +453,7 @@ export default function Partners() {
 
                 <div className="mt-4 flex flex-col gap-2 border-t border-line pt-3 sm:flex-row">
 
-                  <Button
+                  {p.canEdit !== false && <Button
 
                     variant="secondary"
 
@@ -463,7 +473,7 @@ export default function Partners() {
 
                     Edit
 
-                  </Button>
+                  </Button>}
 
                   <Link to={`/partners/${p.id}`} className="flex-1">
 

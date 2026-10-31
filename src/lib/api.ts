@@ -3,7 +3,7 @@ import { normalizeLeaderGoal } from "@/lib/leaderGoals";
 import { normalizeMentor } from "@/lib/mentors";
 import type { PodActivationArtifact, PodActivationProgress } from "@/lib/podActivation/types";
 import type { PodRoleApi } from "@/lib/podRoles";
-import type { Challenge, PodLeaderGoal, PodMentor } from "@/lib/types";
+import type { Challenge, Partner, PodLeaderGoal, PodMentor } from "@/lib/types";
 import type {
   KnowledgeResource,
   KnowledgeResourceOptions,
@@ -96,8 +96,10 @@ export interface FutureCraftApplicant {
 }
 
 export interface TechnicalSkill {
+  id: string;
   name: string;
   proficiency: number;
+  domain?: string;
 }
 
 export interface Tool {
@@ -119,6 +121,8 @@ export interface Profile {
     collegeName?: string;
     yearOfGraduation?: string;
     projectsWorkedOn?: string;
+    hasProjectExperience?: boolean | null;
+    experienceType?: string;
   };
   roles: string[];
   status: string;
@@ -148,6 +152,11 @@ export interface PodPortfolioEntry extends Omit<ManagedPod, "clubs"> {
   resolvedChallenges: number;
   activationPercent: number;
   health: "Thriving" | "Watching" | "At Risk";
+}
+
+export interface ShortlistingCompany {
+  id: string;
+  name: string;
 }
 
 export interface PodComment {
@@ -528,6 +537,19 @@ export async function listIndustryApplicants(): Promise<Profile[]> {
   return Array.isArray(data) ? data : [];
 }
 
+export async function listShortlistingCompanies(profileId: string): Promise<ShortlistingCompany[]> {
+  ensureApiBaseUrl();
+  const res = await fetch(`${API_BASE_URL}/profile/${encodeURIComponent(profileId)}/shortlists`, {
+    headers: authHeaders(),
+  });
+  const payload = await readJson(res);
+  if (!res.ok) {
+    throw new Error(apiErrorMessage(payload, `Could not load shortlist companies (${res.status}).`));
+  }
+  const data = unwrapData<ShortlistingCompany[]>(payload);
+  return Array.isArray(data) ? data : [];
+}
+
 export async function listColleges(): Promise<College[]> {
   const payload = await requestJson("/colleges");
   return normalizeColleges(payload);
@@ -629,6 +651,30 @@ export interface NetworkPartner {
   createdAt: string;
 }
 
+export interface PartnerOrganisationInput {
+  name: string;
+  organizationType?: string;
+  industry?: string;
+  city?: string;
+  contactName?: string;
+  contactRole?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  notes?: string;
+}
+
+export type PartnerWriteInput = Omit<Partial<Partner>, "id" | "companyId"> & {
+  companyId?: string;
+  organisation?: PartnerOrganisationInput;
+  type: Partner["type"];
+  kind: Partner["kind"];
+};
+
+export interface AcademicPartnerAccess {
+  canCreate: boolean;
+  canManage: boolean;
+}
+
 interface StrategicPartnerRecord {
   _id?: string;
   id?: string;
@@ -728,6 +774,43 @@ export async function listNetworkPartners(): Promise<NetworkPartner[]> {
     .map(normalizeNetworkPartner)
     .filter((partner): partner is NetworkPartner => Boolean(partner))
     .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime());
+}
+
+export async function listPartnerships(): Promise<Partner[]> {
+  const payload = await requestJson("/partnerships");
+  return unwrapList<Partner>(payload, "partnerships");
+}
+
+export async function getPartnership(id: string): Promise<Partner> {
+  const payload = await requestJson(`/partnerships/${encodeURIComponent(id)}`);
+  const partner = unwrapData<Partner>(payload);
+  if (!partner?.id) throw new Error("Partner response was incomplete.");
+  return partner;
+}
+
+export async function getAcademicPartnerAccess(): Promise<AcademicPartnerAccess> {
+  const payload = await requestJson("/partnerships/academic-access");
+  const access = unwrapData<AcademicPartnerAccess>(payload);
+  if (!access) throw new Error("Academic partner access response was incomplete.");
+  return access;
+}
+
+export async function createPartnership(input: PartnerWriteInput): Promise<Partner> {
+  const payload = await requestJson("/partnerships", { method: "POST", body: JSON.stringify(input) });
+  const partner = unwrapData<Partner>(payload);
+  if (!partner?.id) throw new Error("Partner response was incomplete.");
+  return partner;
+}
+
+export async function updatePartnership(id: string, input: Partial<PartnerWriteInput>): Promise<Partner> {
+  const payload = await requestJson(`/partnerships/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(input) });
+  const partner = unwrapData<Partner>(payload);
+  if (!partner?.id) throw new Error("Partner response was incomplete.");
+  return partner;
+}
+
+export async function archivePartnership(id: string): Promise<void> {
+  await requestJson(`/partnerships/${encodeURIComponent(id)}`, { method: "DELETE" });
 }
 
 export async function listPodComments(collegeId: string): Promise<PodComment[]> {

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   Building2,
@@ -18,11 +19,13 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/Misc";
+import { talentStore } from "@/lib/data/collections";
 import { useCollection } from "@/lib/store";
-import { partnerStore, talentStore } from "@/lib/data/collections";
 import { buildLeverageSnapshot } from "@/lib/data/sponsorshipLeverage";
 import { PARTNER_STAGE_TONE } from "@/lib/constants";
 import { makeId } from "@/lib/utils";
+import { updatePartnership } from "@/lib/api";
+import { adminQueryKeys, partnershipsQueryOptions } from "@/lib/adminQueries";
 import type { SponsorshipAsset, TalentMember } from "@/lib/types";
 import { PartnerDrawer } from "@/components/partners/PartnerDrawer";
 import { SponsorshipLeverageDashboard } from "@/components/partners/SponsorshipLeverageDashboard";
@@ -33,8 +36,9 @@ type Tab = "overview" | "leverage" | "talent";
 
 export default function PartnerDetail() {
   const { partnerId } = useParams();
-  const navigate = useNavigate();
-  const partners = useCollection(partnerStore);
+  const queryClient = useQueryClient();
+  const partnersQuery = useQuery(partnershipsQueryOptions());
+  const partners = partnersQuery.data ?? [];
   const talent = useCollection(talentStore);
   const partner = partners.find((p) => p.id === partnerId);
 
@@ -42,10 +46,19 @@ export default function PartnerDetail() {
   const [editing, setEditing] = useState(false);
   const [talentEditing, setTalentEditing] = useState<TalentMember | "new" | null>(null);
 
+  const partnerMutation = useMutation({
+    mutationFn: (input: Parameters<typeof updatePartnership>[1]) => updatePartnership(String(partnerId), input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.partnerships }),
+  });
+
   const partnerTalent = useMemo(
     () => talent.filter((t) => t.partnerId === partnerId),
     [talent, partnerId],
   );
+
+  if (partnersQuery.isLoading) {
+    return <Card className="p-8 text-center"><p className="text-sm text-ink-muted">Loading partner…</p></Card>;
+  }
 
   if (!partner) {
     return (
@@ -67,14 +80,11 @@ export default function PartnerDetail() {
     ? buildLeverageSnapshot(partner, partnerTalent)
     : null;
 
-  const updateAsset = (id: string, patch: Partial<SponsorshipAsset>) => {
-    partnerStore.upsert({
-      id: partner.id,
-      sponsorshipAssets: partner.sponsorshipAssets.map((a) => (a.id === id ? { ...a, ...patch } : a)),
-    });
-  };
+  const updateAsset = (id: string, patch: Partial<SponsorshipAsset>) => partnerMutation.mutate({
+    sponsorshipAssets: partner.sponsorshipAssets.map((asset) => asset.id === id ? { ...asset, ...patch } : asset),
+  });
   const removeAsset = (id: string) => {
-    partnerStore.upsert({ id: partner.id, sponsorshipAssets: partner.sponsorshipAssets.filter((a) => a.id !== id) });
+    partnerMutation.mutate({ sponsorshipAssets: partner.sponsorshipAssets.filter((asset) => asset.id !== id) });
   };
   const addAsset = () => {
     const asset: SponsorshipAsset = {
@@ -85,9 +95,9 @@ export default function PartnerDetail() {
       format: "On-ground",
       status: "Available",
     };
-    partnerStore.upsert({ id: partner.id, sponsorshipAssets: [...partner.sponsorshipAssets, asset] });
+    partnerMutation.mutate({ sponsorshipAssets: [...partner.sponsorshipAssets, asset] });
   };
-  const enableSponsorship = () => partnerStore.upsert({ id: partner.id, sponsorshipEnabled: true });
+  const enableSponsorship = () => partnerMutation.mutate({ sponsorshipEnabled: true });
 
   const newTalent = (): TalentMember => ({
     id: makeId("tal"),
@@ -123,11 +133,11 @@ export default function PartnerDetail() {
             ? `${partner.kind} · ${partner.city} · Capability & talent dashboard for industry sponsors`
             : `${partner.kind} · ${partner.city}`
         }
-        actions={
+        actions={partner.canEdit !== false ? (
           <Button variant="secondary" onClick={() => setEditing(true)}>
             <Pencil className="h-4 w-4" /> Edit
           </Button>
-        }
+        ) : undefined}
       />
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -241,7 +251,6 @@ export default function PartnerDetail() {
           isNew={false}
           onClose={() => {
             setEditing(false);
-            if (!partnerStore.get(partner.id)) navigate("/partners");
           }}
         />
       )}

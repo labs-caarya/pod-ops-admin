@@ -9,6 +9,7 @@ import {
   getAdminDashboard,
   listPodPortfolio,
   listNetworkPartners,
+  listPartnerships,
   listMarketingCampaigns,
   listContentCalendar,
   listPodComments,
@@ -56,6 +57,7 @@ export const adminQueryKeys = {
   dashboard: ["admin", "dashboard"] as const,
   podPortfolio: ["admin", "pod-portfolio"] as const,
   networkPartners: ["admin", "network-partners"] as const,
+  partnerships: ["admin", "partnerships"] as const,
   marketingCampaigns: ["admin", "marketing-campaigns"] as const,
   contentCalendar: ["admin", "content-calendar"] as const,
   podComments: (collegeId: string) => ["admin", "pod-comments", collegeId] as const,
@@ -112,6 +114,15 @@ export function networkPartnersQueryOptions() {
     queryKey: adminQueryKeys.networkPartners,
     queryFn: listNetworkPartners,
     staleTime: TEN_MINUTES,
+    gcTime: THIRTY_MINUTES,
+  });
+}
+
+export function partnershipsQueryOptions() {
+  return queryOptions<import("@/lib/types").Partner[]>({
+    queryKey: adminQueryKeys.partnerships,
+    queryFn: listPartnerships,
+    staleTime: 30_000,
     gcTime: THIRTY_MINUTES,
   });
 }

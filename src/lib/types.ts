@@ -237,6 +237,9 @@ export interface SponsorshipAsset {
 
 export interface Partner {
   id: string;
+  companyId?: string;
+  researchProfileId?: string;
+  primaryContactId?: string;
   name: string;
   type: PartnerType;
   kind: PartnerKind;
@@ -255,6 +258,9 @@ export interface Partner {
   tags: string[];
   createdAt?: string;
   updatedAt?: string;
+  /** Supplied by the partnership API; clients must not infer access from the type. */
+  canEdit?: boolean;
+  canArchive?: boolean;
 }
 
 /* --------------------------------- Goals ---------------------------------- */
