@@ -433,85 +433,6 @@ export async function listManagedUsers(): Promise<AllowedUser[]> {
   return unwrapList<AllowedUser>(payload, "users");
 }
 
-export async function listManagedPods(): Promise<ManagedPod[]> {
-  ensureApiBaseUrl();
-  const res = await fetch(`${API_BASE_URL}/pods`, {
-    headers: authHeaders(),
-  });
-  const payload = await readJson(res);
-  if (!res.ok) {
-    throw new Error(apiErrorMessage(payload, `Could not load pods (${res.status}).`));
-  }
-  return unwrapList<ManagedPod>(payload, "pods");
-}
-
-export async function listPublicPods(): Promise<ManagedPod[]> {
-  ensureApiBaseUrl();
-  const res = await fetch(`${API_BASE_URL}/pods/public`);
-  const payload = await readJson(res);
-  if (!res.ok) {
-    throw new Error(apiErrorMessage(payload, `Could not load pods (${res.status}).`));
-  }
-  return unwrapList<ManagedPod>(payload, "pods");
-}
-
-export async function createManagedPod(input: {
-  collegeName: string;
-  podLeader: string;
-  podTalentManager: string;
-  podOutreachManager: string;
-  podResearcher: string;
-  podPartnerManager: string;
-}): Promise<ManagedPod> {
-  ensureApiBaseUrl();
-  const res = await fetch(`${API_BASE_URL}/pods`, {
-    method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify(input),
-  });
-  const payload = await readJson(res);
-  if (!res.ok) {
-    throw new Error(apiErrorMessage(payload, `Could not create pod (${res.status}).`));
-  }
-  return unwrapEntity<ManagedPod>(payload, "pod");
-}
-
-export async function updateManagedPod(
-  id: string,
-  input: Partial<{
-    collegeName: string;
-    podLeader: string;
-    podTalentManager: string;
-    podOutreachManager: string;
-    podResearcher: string;
-    podPartnerManager: string;
-  }>,
-): Promise<ManagedPod> {
-  ensureApiBaseUrl();
-  const res = await fetch(`${API_BASE_URL}/pods/${id}`, {
-    method: "PATCH",
-    headers: authHeaders(),
-    body: JSON.stringify(input),
-  });
-  const payload = await readJson(res);
-  if (!res.ok) {
-    throw new Error(apiErrorMessage(payload, `Could not update pod (${res.status}).`));
-  }
-  return unwrapEntity<ManagedPod>(payload, "pod");
-}
-
-export async function deleteManagedPod(id: string): Promise<void> {
-  ensureApiBaseUrl();
-  const res = await fetch(`${API_BASE_URL}/pods/${id}`, {
-    method: "DELETE",
-    headers: authHeaders(),
-  });
-  if (!res.ok) {
-    const payload = await readJson(res);
-    throw new Error(apiErrorMessage(payload, `Delete failed (${res.status}).`));
-  }
-}
-
 export async function listFutureCraftApplicants(): Promise<FutureCraftApplicant[]> {
   ensureApiBaseUrl();
   const res = await fetch(`${API_BASE_URL}/future-crafts/applicants`, {
@@ -675,37 +596,6 @@ export interface AcademicPartnerAccess {
   canManage: boolean;
 }
 
-interface StrategicPartnerRecord {
-  _id?: string;
-  id?: string;
-  startupName?: string;
-  institution?: string;
-  category?: string;
-  spaType?: string;
-  domain?: string;
-  pod?: { _id?: string; id?: string; name?: string } | string | null;
-  createdAt?: string;
-}
-
-function normalizeNetworkPartner(partner: StrategicPartnerRecord): NetworkPartner | null {
-  const id = partner._id || partner.id || "";
-  if (!id) return null;
-  const pod = partner.pod;
-  const podId = typeof pod === "string" ? pod : pod?._id || pod?.id || "";
-  const podName = typeof pod === "string" ? "" : pod?.name || "";
-  return {
-    id,
-    name: partner.startupName || "Untitled partner",
-    institution: partner.institution || "",
-    category: partner.category || "",
-    spaType: partner.spaType || "",
-    domain: partner.domain || "",
-    podId,
-    podName,
-    createdAt: partner.createdAt || "",
-  };
-}
-
 export interface MarketingCalendarCampaign {
   id: string;
   title: string;
@@ -730,7 +620,7 @@ function recordId(record: { id?: string; _id?: string }) {
 }
 
 export async function listMarketingCampaigns(): Promise<MarketingCalendarCampaign[]> {
-  const payload = await requestJson("/marketing/campaigns");
+  const payload = await requestJson("/marketing/campaigns?scope=network");
   const data = unwrapData<Array<Partial<MarketingCalendarCampaign> & { _id?: string }>>(payload);
   if (!Array.isArray(data)) return [];
   return data.flatMap((campaign) => {
@@ -748,7 +638,7 @@ export async function listMarketingCampaigns(): Promise<MarketingCalendarCampaig
 }
 
 export async function listContentCalendar(): Promise<ContentCalendarItem[]> {
-  const payload = await requestJson("/marketing/content");
+  const payload = await requestJson("/marketing/content?scope=network");
   const data = unwrapData<Array<Partial<ContentCalendarItem> & { _id?: string }>>(payload);
   if (!Array.isArray(data)) return [];
   return data.flatMap((item) => {
@@ -767,12 +657,28 @@ export async function listContentCalendar(): Promise<ContentCalendarItem[]> {
 }
 
 export async function listNetworkPartners(): Promise<NetworkPartner[]> {
-  const payload = await requestJson("/admin/strategic-partners");
-  const data = unwrapData<StrategicPartnerRecord[]>(payload);
-  if (!Array.isArray(data)) return [];
-  return data
-    .map(normalizeNetworkPartner)
-    .filter((partner): partner is NetworkPartner => Boolean(partner))
+  const [partnerships, colleges] = await Promise.all([listPartnerships(), listColleges()]);
+  const podsById = new Map(
+    colleges
+      .filter((college) => college.isPod)
+      .map((college) => [college.id, college]),
+  );
+
+  return partnerships
+    .map((partner) => {
+      const pod = partner.collegeId ? podsById.get(partner.collegeId) : undefined;
+      return {
+        id: partner.id,
+        name: partner.name || "Untitled partner",
+        institution: partner.city || "",
+        category: partner.type.toLowerCase(),
+        spaType: partner.kind === "Club" ? "Clubs" : partner.kind,
+        domain: partner.tags.join(", "),
+        podId: pod?.id || "",
+        podName: pod?.name || "",
+        createdAt: partner.createdAt || "",
+      };
+    })
     .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime());
 }
 

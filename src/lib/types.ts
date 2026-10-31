@@ -250,6 +250,8 @@ export interface SponsorshipAsset {
 
 export interface Partner {
   id: string;
+  /** Pod/college this relationship belongs to; supplied by the partnership API. */
+  collegeId?: string;
   companyId?: string;
   researchProfileId?: string;
   primaryContactId?: string;
