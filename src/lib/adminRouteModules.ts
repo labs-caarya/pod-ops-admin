@@ -25,6 +25,7 @@ export const loadResearchDetailPage = () => import("@/pages/ResearchDetail");
 export const loadRolodexPage = () => import("@/pages/Rolodex");
 export const loadOpportunitiesPage = () => import("@/pages/Opportunities");
 export const loadPlacementAgentPage = () => import("@/pages/PlacementAgent");
+export const loadCommunityNewsPage = () => import("@/pages/CommunityNews");
 
 const routePreloaders: Record<string, () => Promise<unknown>> = {
   "/progress-report": loadProgressReportPage,
@@ -41,6 +42,7 @@ const routePreloaders: Record<string, () => Promise<unknown>> = {
   "/rolodex": loadRolodexPage,
   "/opportunities": loadOpportunitiesPage,
   "/placement": loadPlacementAgentPage,
+  "/community-news": loadCommunityNewsPage,
 };
 
 export function preloadAdminRoute(pathname: string) {

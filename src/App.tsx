@@ -32,6 +32,7 @@ import {
   loadRolodexPage,
   loadOpportunitiesPage,
   loadPlacementAgentPage,
+  loadCommunityNewsPage,
 } from "@/lib/adminRouteModules";
 
 const AdminPods = lazy(loadAdminPodsPage);
@@ -58,6 +59,7 @@ const ResearchDetail = lazy(loadResearchDetailPage);
 const Rolodex = lazy(loadRolodexPage);
 const Opportunities = lazy(loadOpportunitiesPage);
 const PlacementAgent = lazy(loadPlacementAgentPage);
+const CommunityNews = lazy(loadCommunityNewsPage);
 
 function PodOpsRedirect() {
   const { collegeId = "" } = useParams();
@@ -117,6 +119,7 @@ export default function App() {
           <Route path="/rolodex" element={<Rolodex />} />
           <Route path="/opportunities" element={<Opportunities />} />
           <Route path="/placement" element={<PlacementAgent />} />
+          <Route path="/community-news" element={<CommunityNews />} />
           <Route path="/quarterly-goals" element={<AdminQuarterlyGoals />} />
           <Route path="/leader-goals" element={<AdminLeaderGoals />} />
           <Route path="/mentors" element={<AdminPodMentors />} />

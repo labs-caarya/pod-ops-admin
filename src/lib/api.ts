@@ -291,6 +291,25 @@ export interface PodActivationData {
   artifacts: PodActivationArtifact[];
 }
 
+export interface CommunityUpdate {
+  id: string;
+  authorName: string;
+  authorHandle: string;
+  collegeName: string;
+  publishedAt: string;
+  updatedAt: string;
+  title: string;
+  hashtags: string[];
+  podRole?: string;
+  canEdit: boolean;
+  canDelete: boolean;
+}
+
+export interface CommunityUpdatePage {
+  items: CommunityUpdate[];
+  nextCursor: string | null;
+}
+
 function apiErrorMessage(payload: unknown, fallback: string): string {
   if (!payload || typeof payload !== "object") return fallback;
   const record = payload as { error?: { message?: string }; message?: string };
@@ -536,6 +555,16 @@ export async function getAdminDashboard(): Promise<AdminDashboardData> {
   const data = unwrapData<AdminDashboardData>(payload);
   if (!data) throw new Error("Dashboard response was incomplete.");
   return data;
+}
+
+export async function listCommunityUpdates(input: { limit?: number; cursor?: string } = {}): Promise<CommunityUpdatePage> {
+  const search = new URLSearchParams();
+  if (input.limit) search.set("limit", String(input.limit));
+  if (input.cursor) search.set("cursor", input.cursor);
+  const payload = await requestJson(`/community-updates${search.size ? `?${search}` : ""}`);
+  const data = unwrapData<CommunityUpdatePage>(payload);
+  if (!data || !Array.isArray(data.items)) throw new Error("Community updates response was incomplete.");
+  return { items: data.items, nextCursor: data.nextCursor || null };
 }
 
 export async function listCrewLeadReports(): Promise<CrewLeadReport[]> {

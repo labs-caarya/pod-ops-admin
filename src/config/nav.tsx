@@ -15,6 +15,7 @@ import {
   Users,
   BriefcaseBusiness,
   UserCheck,
+  Newspaper,
   type LucideIcon,
 } from "lucide-react";
 
@@ -40,6 +41,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Progress Report", to: "/progress-report", icon: ClipboardList },
       { label: "Pod Portfolio", to: "/pods", icon: Network },
       { label: "Challenge Vault", to: "/challenges", icon: Vault },
+      { label: "Community News", to: "/community-news", icon: Newspaper },
     ],
   },
   {
