@@ -51,12 +51,6 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Quarterly Goals", to: "/quarterly-goals", icon: Flag },
       { label: "Content Studio", to: "/content", icon: FileText },
       { label: "Event Management", to: "/events", icon: CalendarDays },
-      { label: "Partners", to: "/partners", icon: Handshake },
-      { label: "Talent Map", to: "/talent-map", icon: Users },
-      { label: "Research HIVE", to: "/research", icon: Microscope },
-      { label: "Rolodex", to: "/rolodex", icon: Contact2 },
-      { label: "Opportunities", to: "/opportunities", icon: BriefcaseBusiness },
-      { label: "Placement Agent", to: "/placement", icon: UserCheck },
       { label: "Knowledge Space", to: "/knowledge-space", icon: BookOpen },
       {
         label: "cdrive",
@@ -64,6 +58,17 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: HardDrive,
         external: true,
       },
+    ],
+  },
+  {
+    heading: "Business",
+    items: [
+      { label: "Partners", to: "/partners", icon: Handshake },
+      { label: "Talent Map", to: "/talent-map", icon: Users },
+      { label: "Research HIVE", to: "/research", icon: Microscope },
+      { label: "Rolodex", to: "/rolodex", icon: Contact2 },
+      { label: "Opportunities", to: "/opportunities", icon: BriefcaseBusiness },
+      { label: "Placement Agent", to: "/placement", icon: UserCheck },
     ],
   },
 ];

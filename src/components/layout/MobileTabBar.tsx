@@ -1,12 +1,14 @@
 import { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LayoutDashboard, Layers, Network, Vault } from "lucide-react";
-import { NAV_SECTIONS } from "@/config/nav";
+import { NAV_SECTIONS, type NavItem } from "@/config/nav";
 import { preloadAdminRoute } from "@/lib/adminRouteModules";
 import { ResponsiveSheet } from "@/components/ui/ResponsiveSheet";
 import { cn } from "@/lib/utils";
 
 const OPERATIONS_ITEMS = NAV_SECTIONS.find((section) => section.heading === "Operations")?.items ?? [];
+const BUSINESS_ITEMS = NAV_SECTIONS.find((section) => section.heading === "Business")?.items ?? [];
+const MORE_ITEMS = [...OPERATIONS_ITEMS, ...BUSINESS_ITEMS];
 
 function isDashboardPath(pathname: string) {
   return pathname === "/";
@@ -25,7 +27,7 @@ function isChallengesPath(pathname: string) {
 }
 
 function isOperationsPath(pathname: string) {
-  return OPERATIONS_ITEMS.some((item) => pathname === item.to || pathname.startsWith(`${item.to}/`));
+  return MORE_ITEMS.some((item) => !item.external && (pathname === item.to || pathname.startsWith(`${item.to}/`)));
 }
 
 export function MobileTabBar() {
@@ -91,42 +93,12 @@ export function MobileTabBar() {
       <ResponsiveSheet
         open={operationsOpen}
         onClose={() => setOperationsOpen(false)}
-        title="Operations"
+        title="Workspaces"
         subtitle="Choose a workspace"
       >
-        <div className="space-y-2">
-          {OPERATIONS_ITEMS.map((item) => {
-            const selected =
-              !item.external &&
-              (location.pathname === item.to || location.pathname.startsWith(`${item.to}/`));
-            return (
-              <button
-                key={item.to}
-                type="button"
-                onClick={() => {
-                  if (item.external) {
-                    setOperationsOpen(false);
-                    window.open(item.to, "_blank", "noopener,noreferrer");
-                    return;
-                  }
-                  goOperations(item.to);
-                }}
-                onMouseEnter={() => {
-                  if (!item.external) void preloadAdminRoute(item.to);
-                }}
-                className={cn(
-                  "flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors",
-                  selected ? "border-ruby/40 bg-ruby/10" : "border-line bg-surface-2 hover:border-line-strong",
-                )}
-              >
-                <item.icon className={cn("h-5 w-5 shrink-0", selected ? "text-ruby-bright" : "text-ink-muted")} />
-                <span className="text-sm font-semibold text-ink">{item.label}</span>
-                {item.external ? (
-                  <span className="ml-auto text-[10px] font-medium uppercase tracking-wide text-ink-faint">New tab</span>
-                ) : null}
-              </button>
-            );
-          })}
+        <div className="space-y-4">
+          <MobileNavGroup heading="Operations" items={OPERATIONS_ITEMS} pathname={location.pathname} onSelect={goOperations} onExternal={() => setOperationsOpen(false)} />
+          <MobileNavGroup heading="Business" items={BUSINESS_ITEMS} pathname={location.pathname} onSelect={goOperations} onExternal={() => setOperationsOpen(false)} />
         </div>
       </ResponsiveSheet>
     </>
@@ -157,6 +129,57 @@ function TabLink({
       <Icon className={cn("h-5 w-5", active ? "text-ruby-bright" : "text-ink-faint")} />
       <span className="truncate">{label}</span>
     </Link>
+  );
+}
+
+function MobileNavGroup({
+  heading,
+  items,
+  pathname,
+  onSelect,
+  onExternal,
+}: {
+  heading: string;
+  items: NavItem[];
+  pathname: string;
+  onSelect: (to: string) => void;
+  onExternal: () => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <p className="px-1 text-[10px] font-bold uppercase tracking-widest text-ink-faint">{heading}</p>
+      {items.map((item) => {
+        const selected =
+          !item.external && (pathname === item.to || pathname.startsWith(`${item.to}/`));
+        return (
+          <button
+            key={item.to}
+            type="button"
+            onClick={() => {
+              if (item.external) {
+                onExternal();
+                window.open(item.to, "_blank", "noopener,noreferrer");
+                return;
+              }
+              onSelect(item.to);
+            }}
+            onMouseEnter={() => {
+              if (!item.external) void preloadAdminRoute(item.to);
+            }}
+            className={cn(
+              "flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors",
+              selected ? "border-ruby/40 bg-ruby/10" : "border-line bg-surface-2 hover:border-line-strong",
+            )}
+          >
+            <item.icon className={cn("h-5 w-5 shrink-0", selected ? "text-ruby-bright" : "text-ink-muted")} />
+            <span className="text-sm font-semibold text-ink">{item.label}</span>
+            {item.external ? (
+              <span className="ml-auto text-[10px] font-medium uppercase tracking-wide text-ink-faint">New tab</span>
+            ) : null}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
