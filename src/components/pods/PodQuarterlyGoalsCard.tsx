@@ -2,7 +2,8 @@ import { Link } from "react-router-dom";
 import { ArrowUpRight, Flag } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { ProgressBar } from "@/components/ui/Misc";
-import { buildQuarterlySnapshot, QUARTERLY_SECTIONS } from "@/lib/quarterlyGoals";
+import { QuarterlyTargetsBreakdown } from "@/components/pods/QuarterlyTargetsBreakdown";
+import { buildQuarterlySnapshot } from "@/lib/quarterlyGoals";
 
 type QuarterlySnapshot = ReturnType<typeof buildQuarterlySnapshot>;
 
@@ -37,21 +38,8 @@ export function PodQuarterlyGoalsCard({
         <span className="font-display text-2xl font-black tabular-nums text-ink">{snapshot.percent}%</span>
       </div>
       <ProgressBar className="mt-2" value={snapshot.percent} tone={progressTone(snapshot.percent)} />
-      <ul className="mt-4 grid gap-2 sm:grid-cols-2">
-        {snapshot.sections.map((section) => {
-          const def = QUARTERLY_SECTIONS.find((item) => item.id === section.id);
-          if (!def) return null;
-          return (
-            <li key={section.id} className="rounded-xl border border-line bg-surface-2 px-3 py-2.5">
-              <div className="flex items-center justify-between gap-2">
-                <p className="truncate text-sm font-semibold text-ink">{def.title}</p>
-                <span className="text-xs font-bold tabular-nums text-ink-muted">{section.percent}%</span>
-              </div>
-              <ProgressBar className="mt-2 h-1.5" value={section.percent} tone={progressTone(section.percent)} />
-            </li>
-          );
-        })}
-      </ul>
+      <p className="mt-3 text-xs text-ink-faint">Expand a category to see where progress is counted.</p>
+      <QuarterlyTargetsBreakdown snapshot={snapshot} className="mt-2" />
     </Card>
   );
 }

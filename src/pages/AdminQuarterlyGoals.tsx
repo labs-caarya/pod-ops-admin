@@ -35,7 +35,7 @@ import type { PodInsight, PodPortfolioEntry, Profile } from "@/lib/api";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { ProgressBar } from "@/components/ui/Misc";
+import { PodQuarterlyProgressCard } from "@/components/pods/QuarterlyTargetsBreakdown";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -53,12 +53,6 @@ const SECTION_ICONS: Record<QuarterlyGoalSectionId, typeof Flag> = {
   "campus-companies": Building2,
   community: CalendarDays,
 };
-
-function progressTone(percent: number): "ruby" | "amber" | "good" {
-  if (percent >= 70) return "good";
-  if (percent >= 35) return "amber";
-  return "ruby";
-}
 
 function parseTab(value: string | null): GoalsTab {
   return TABS.some((tab) => tab.id === value) ? (value as GoalsTab) : "progress";
@@ -185,35 +179,7 @@ export default function AdminQuarterlyGoals() {
             ) : rows.length ? (
               <div className="space-y-3">
                 {rows.map(({ pod, snapshot }) => (
-                  <Link
-                    key={pod.id}
-                    to={`/pods/${pod.id}`}
-                    className="focus-ring block rounded-xl border border-line bg-surface-2 p-4 hover:border-line-strong"
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="truncate font-semibold text-ink">{pod.name}</p>
-                        <p className="text-xs text-ink-muted">{pod.collegeName} · {snapshot.complete}/{snapshot.total} targets</p>
-                      </div>
-                      <span className="font-display text-lg font-black tabular-nums text-ink">{snapshot.percent}%</span>
-                    </div>
-                    <ProgressBar className="mt-2" value={snapshot.percent} tone={progressTone(snapshot.percent)} />
-                    <div className="mt-3 hidden gap-2 sm:grid sm:grid-cols-2 lg:grid-cols-3">
-                      {snapshot.sections.map((section) => {
-                        const def = QUARTERLY_SECTIONS.find((item) => item.id === section.id);
-                        if (!def) return null;
-                        return (
-                          <div key={section.id} className="rounded-lg border border-line bg-surface px-3 py-2">
-                            <div className="flex items-center justify-between gap-2">
-                              <p className="truncate text-xs font-semibold text-ink">{def.title}</p>
-                              <span className="text-xs font-bold tabular-nums text-ink-muted">{section.percent}%</span>
-                            </div>
-                            <ProgressBar className="mt-1.5 h-1.5" value={section.percent} tone={progressTone(section.percent)} />
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </Link>
+                  <PodQuarterlyProgressCard key={pod.id} pod={pod} snapshot={snapshot} />
                 ))}
               </div>
             ) : (

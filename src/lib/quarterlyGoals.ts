@@ -320,6 +320,35 @@ export type QuarterlyCounts = {
   eventEngagement: number;
 };
 
+const GOAL_BY_ID = new Map(QUARTERLY_GOALS.map((goal) => [goal.id, goal]));
+
+export function getQuarterlyGoalDef(goalId: string) {
+  return GOAL_BY_ID.get(goalId);
+}
+
+/** Where live pod progress numbers come from (matches portfolio / quarterly snapshot inputs). */
+export function quarterlyProgressSource(goalId: string): string {
+  const sources: Record<string, string> = {
+    "experience-studio": "Experience Studio applicants matched to this pod (observership seats).",
+    castle: "CASTLE applicants plus industry profiles tagged for first work experience.",
+    "fws-placements": "Fusion Work Study / industry applicants and weekly placement counts from the dashboard.",
+    "industry-partners": "Active industry partners on this pod’s dashboard snapshot.",
+    outreach: "Contacts in conversation (Rolodex pipeline) on the dashboard snapshot.",
+    "research-hive": "Research profiles created and scored this week (dashboard activity).",
+    "published-content": "Published pieces in Content Studio (when tracked for the quarter).",
+    "educational-content": "Educational content in Content Studio (when tracked for the quarter).",
+    "partnership-content": "Partnership content in Content Studio (when tracked for the quarter).",
+    "promotional-content": "Promotional content in Content Studio (when tracked for the quarter).",
+    "academic-partnerships": "Academic partners — clubs linked to this pod on the portfolio record.",
+    "brand-engagement-specialists": "Talent mapped count on the dashboard snapshot.",
+    "nano-influencers": "Industry applicants marked as nano-influencer interested.",
+    "campus-company-partnerships": "Network partners tagged as campus / startup for this pod.",
+    events: "Events scheduled in Event Management (when tracked for the quarter).",
+    "event-engagement": "Event attendance totals (when tracked for the quarter).",
+  };
+  return sources[goalId] ?? "Admin metrics aggregated for this pod.";
+}
+
 const COUNT_BY_GOAL: Record<string, keyof QuarterlyCounts> = {
   "experience-studio": "observership",
   castle: "castle",
