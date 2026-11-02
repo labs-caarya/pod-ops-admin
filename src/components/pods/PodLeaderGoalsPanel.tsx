@@ -36,6 +36,9 @@ type GoalDraft = {
   podRole: PodRoleLabel;
   status: PodLeaderGoalStatus;
   dueDate: string;
+  /** Blank means "use the global Experience Credits rule". */
+  creditsPerUpdate: string;
+  completionCredits: string;
 };
 
 type LeaderWithGoals = {
@@ -51,7 +54,18 @@ const EMPTY_DRAFT: GoalDraft = {
   podRole: "Exec Lead",
   status: "active",
   dueDate: "",
+  creditsPerUpdate: "",
+  completionCredits: "",
 };
+
+function creditOverride(value: string): number | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const parsed = Number.parseInt(trimmed, 10);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+}
+
+const GOAL_STATUS_ORDER: Record<PodLeaderGoalStatus, number> = { in_review: 0, active: 1, done: 2 };
 
 function useIsDesktopPanel() {
   const [desktop, setDesktop] = useState(() => window.matchMedia("(min-width: 768px)").matches);
@@ -81,7 +95,7 @@ function goalBelongsToLeader(goal: PodLeaderGoal, user: AllowedUser, role: PodRo
 
 function sortGoals(goals: PodLeaderGoal[]) {
   return [...goals].sort((left, right) => {
-    if (left.status !== right.status) return left.status === "active" ? -1 : 1;
+    if (left.status !== right.status) return GOAL_STATUS_ORDER[left.status] - GOAL_STATUS_ORDER[right.status];
     const leftDue = left.dueDate ? new Date(left.dueDate).getTime() : Number.POSITIVE_INFINITY;
     const rightDue = right.dueDate ? new Date(right.dueDate).getTime() : Number.POSITIVE_INFINITY;
     return leftDue - rightDue || left.title.localeCompare(right.title);
@@ -173,6 +187,8 @@ export function PodLeaderGoalsPanel({
       podRole: podRoleToLabel(goal.assignedPodRole),
       status: goal.status,
       dueDate: goal.dueDate ? goal.dueDate.slice(0, 10) : "",
+      creditsPerUpdate: goal.creditsPerUpdate == null ? "" : String(goal.creditsPerUpdate),
+      completionCredits: goal.completionCredits == null ? "" : String(goal.completionCredits),
     });
     setFormError(null);
     setFormOpen(true);
@@ -221,6 +237,8 @@ export function PodLeaderGoalsPanel({
         description: draft.description.trim(),
         status: draft.status,
         dueDate: draft.dueDate || undefined,
+        creditsPerUpdate: creditOverride(draft.creditsPerUpdate),
+        completionCredits: creditOverride(draft.completionCredits),
       };
       const saved = await upsertLeaderGoal(payload);
       queryClient.setQueryData<PodLeaderGoal[]>(adminQueryKeys.leaderGoals, (current = []) => {
@@ -289,13 +307,41 @@ export function PodLeaderGoalsPanel({
         <FieldRow label="Status">
           <Select value={draft.status} onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value as PodLeaderGoalStatus }))}>
             <option value="active">Active</option>
-            <option value="done">Done</option>
+            <option value="in_review">In review</option>
+            <option value="done">Done (issues credits)</option>
           </Select>
         </FieldRow>
         <FieldRow label="Due">
           <Input type="date" value={draft.dueDate} onChange={(event) => setDraft((current) => ({ ...current, dueDate: event.target.value }))} />
         </FieldRow>
       </div>
+      <div className="grid grid-cols-2 gap-3">
+        <FieldRow label="Credits per update">
+          <Input
+            type="number"
+            min={0}
+            max={1000}
+            inputMode="numeric"
+            value={draft.creditsPerUpdate}
+            onChange={(event) => setDraft((current) => ({ ...current, creditsPerUpdate: event.target.value }))}
+            placeholder="Default"
+          />
+        </FieldRow>
+        <FieldRow label="Credits on completion">
+          <Input
+            type="number"
+            min={0}
+            max={5000}
+            inputMode="numeric"
+            value={draft.completionCredits}
+            onChange={(event) => setDraft((current) => ({ ...current, completionCredits: event.target.value }))}
+            placeholder="Default"
+          />
+        </FieldRow>
+      </div>
+      <p className="text-[11px] leading-relaxed text-ink-faint">
+        Set the credits this task is worth. They are issued to the assignee once you mark the task complete; members can only send it for review. Leave a field blank to use the global Experience Credits rules.
+      </p>
       <div className="flex justify-end gap-2 pt-1">
         <Button type="button" variant="ghost" size="sm" onClick={closeForm} disabled={saving}>Cancel</Button>
         <Button type="submit" size="sm" disabled={saving}>
@@ -479,8 +525,8 @@ function GoalRow({
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-1.5">
           <p className="text-sm font-medium text-ink">{goal.title}</p>
-          <Badge tone={goal.status === "done" ? "good" : overdue ? "bad" : "amber"} className="text-[10px]">
-            {goal.status === "done" ? "Done" : overdue ? "Overdue" : "Active"}
+          <Badge tone={goal.status === "done" ? "good" : goal.status === "in_review" ? "info" : overdue ? "bad" : "amber"} className="text-[10px]">
+            {goal.status === "done" ? "Done" : goal.status === "in_review" ? "In review" : overdue ? "Overdue" : "Active"}
           </Badge>
         </div>
         {goal.dueDate ? (

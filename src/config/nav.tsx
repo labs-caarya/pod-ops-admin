@@ -17,6 +17,9 @@ import {
   BriefcaseBusiness,
   UserCheck,
   Newspaper,
+  Sparkles,
+  GraduationCap,
+  CalendarCheck,
   type LucideIcon,
 } from "lucide-react";
 
@@ -60,6 +63,14 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: HardDrive,
         external: true,
       },
+    ],
+  },
+  {
+    heading: "Experience",
+    items: [
+      { label: "Experience Credits", to: "/experience", icon: Sparkles },
+      { label: "Assessments", to: "/assessments", icon: GraduationCap },
+      { label: "Internal Events", to: "/internal-events", icon: CalendarCheck },
     ],
   },
   {

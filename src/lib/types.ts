@@ -290,7 +290,8 @@ export interface PodGoal {
   due: string;
 }
 
-export type PodLeaderGoalStatus = "active" | "done";
+/** `in_review`: the pod sent the work to CREW. Only an admin can move work to `done`. */
+export type PodLeaderGoalStatus = "active" | "in_review" | "done";
 
 export type LeaderGoalIcon =
   | "target"
@@ -311,6 +312,14 @@ export interface PodLeaderGoal {
   description?: string;
   status: PodLeaderGoalStatus;
   dueDate?: string;
+  /** Experience Credits per progress update. `null` uses the global rule. */
+  creditsPerUpdate?: number | null;
+  /** Experience Credits when CREW completes the work. `null` uses the global rule. */
+  completionCredits?: number | null;
+  submittedAt?: string;
+  submissionNote?: string;
+  reviewNote?: string;
+  completedAt?: string;
   createdAt?: string;
   updatedAt?: string;
 }

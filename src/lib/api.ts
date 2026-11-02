@@ -317,7 +317,7 @@ function apiErrorMessage(payload: unknown, fallback: string): string {
   return record.error?.message || record.message || fallback;
 }
 
-function unwrapData<T>(payload: unknown): T | undefined {
+export function unwrapData<T>(payload: unknown): T | undefined {
   if (!payload || typeof payload !== "object") return undefined;
   const record = payload as { data?: T };
   return record.data !== undefined ? record.data : (payload as T);
@@ -386,7 +386,7 @@ function ensureApiBaseUrl() {
   }
 }
 
-async function requestJson(path: string, options: RequestInit = {}) {
+export async function requestJson(path: string, options: RequestInit = {}) {
   ensureApiBaseUrl();
   const res = await fetch(`${API_BASE_URL}${path}`, {
     ...options,

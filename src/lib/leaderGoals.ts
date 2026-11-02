@@ -13,6 +13,12 @@ export function normalizeLeaderGoal(goal: Partial<PodLeaderGoal> & { id: string 
     description: goal.description ?? "",
     status: goal.status ?? "active",
     dueDate: goal.dueDate,
+    creditsPerUpdate: goal.creditsPerUpdate ?? null,
+    completionCredits: goal.completionCredits ?? null,
+    submittedAt: goal.submittedAt,
+    submissionNote: goal.submissionNote,
+    reviewNote: goal.reviewNote,
+    completedAt: goal.completedAt,
     createdAt: goal.createdAt,
     updatedAt: goal.updatedAt,
   };

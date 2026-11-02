@@ -214,7 +214,7 @@ export default function AdminPodDetail() {
 
 function sortSprintGoals(goals: PodLeaderGoal[]) {
   return [...goals].sort((left, right) => {
-    if (left.status !== right.status) return left.status === "active" ? -1 : 1;
+    if (left.status !== right.status) return left.status === "in_review" ? -1 : right.status === "in_review" ? 1 : left.status === "active" ? -1 : 1;
     const leftDue = left.dueDate ? new Date(left.dueDate).getTime() : Number.POSITIVE_INFINITY;
     const rightDue = right.dueDate ? new Date(right.dueDate).getTime() : Number.POSITIVE_INFINITY;
     return leftDue - rightDue || left.title.localeCompare(right.title);
@@ -269,7 +269,7 @@ function SummaryTab({
             <div key={goal.id} className="rounded-xl border border-line bg-surface-2 p-3">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-sm font-semibold text-ink">{goal.title}</p>
-                <Badge tone={goal.status === "done" ? "good" : "amber"}>{goal.status === "done" ? "Done" : "Active"}</Badge>
+                <Badge tone={goal.status === "done" ? "good" : goal.status === "in_review" ? "info" : "amber"}>{goal.status === "done" ? "Done" : goal.status === "in_review" ? "In review" : "Active"}</Badge>
               </div>
               <p className="mt-1 text-xs text-ink-muted">
                 {goal.assigneeName || "Unassigned"} · {formatPodRole(goal.assignedPodRole)}

@@ -8,7 +8,8 @@ import { cn } from "@/lib/utils";
 
 const OPERATIONS_ITEMS = NAV_SECTIONS.find((section) => section.heading === "Operations")?.items ?? [];
 const BUSINESS_ITEMS = NAV_SECTIONS.find((section) => section.heading === "Business")?.items ?? [];
-const MORE_ITEMS = [...OPERATIONS_ITEMS, ...BUSINESS_ITEMS];
+const EXPERIENCE_ITEMS = NAV_SECTIONS.find((section) => section.heading === "Experience")?.items ?? [];
+const MORE_ITEMS = [...OPERATIONS_ITEMS, ...BUSINESS_ITEMS, ...EXPERIENCE_ITEMS];
 
 function isDashboardPath(pathname: string) {
   return pathname === "/";
@@ -98,6 +99,7 @@ export function MobileTabBar() {
       >
         <div className="space-y-4">
           <MobileNavGroup heading="Operations" items={OPERATIONS_ITEMS} pathname={location.pathname} onSelect={goOperations} onExternal={() => setOperationsOpen(false)} />
+          <MobileNavGroup heading="Experience" items={EXPERIENCE_ITEMS} pathname={location.pathname} onSelect={goOperations} onExternal={() => setOperationsOpen(false)} />
           <MobileNavGroup heading="Business" items={BUSINESS_ITEMS} pathname={location.pathname} onSelect={goOperations} onExternal={() => setOperationsOpen(false)} />
         </div>
       </ResponsiveSheet>

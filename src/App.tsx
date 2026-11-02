@@ -33,6 +33,9 @@ import {
   loadOpportunitiesPage,
   loadPlacementAgentPage,
   loadCommunityNewsPage,
+  loadExperienceCreditsPage,
+  loadAssessmentsPage,
+  loadInternalEventsPage,
 } from "@/lib/adminRouteModules";
 
 const AdminPods = lazy(loadAdminPodsPage);
@@ -60,6 +63,9 @@ const Rolodex = lazy(loadRolodexPage);
 const Opportunities = lazy(loadOpportunitiesPage);
 const PlacementAgent = lazy(loadPlacementAgentPage);
 const CommunityNews = lazy(loadCommunityNewsPage);
+const ExperienceCredits = lazy(loadExperienceCreditsPage);
+const Assessments = lazy(loadAssessmentsPage);
+const InternalEvents = lazy(loadInternalEventsPage);
 
 function PodOpsRedirect() {
   const { collegeId = "" } = useParams();
@@ -121,6 +127,9 @@ export default function App() {
           <Route path="/opportunities" element={<Opportunities />} />
           <Route path="/placement" element={<PlacementAgent />} />
           <Route path="/community-news" element={<CommunityNews />} />
+          <Route path="/experience" element={<ExperienceCredits />} />
+          <Route path="/assessments" element={<Assessments />} />
+          <Route path="/internal-events" element={<InternalEvents />} />
           <Route path="/quarterly-targets" element={<AdminQuarterlyGoals />} />
           <Route path="/quarterly-goals" element={<Navigate to="/quarterly-targets" replace />} />
           <Route path="/leader-goals" element={<Navigate to="/pods" replace />} />
