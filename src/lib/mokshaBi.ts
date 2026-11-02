@@ -149,13 +149,13 @@ export function answerAdminBiQuestion(question: string, snapshot: AdminBiSnapsho
   const wantsPartners = /partner|club|industry|spa|sponsor/.test(text);
   const wantsResearch = /research|hive|submitted|submission/.test(text);
   const wantsNext = /what should|do next|priorit|recommend|focus|action/.test(text);
-  const wantsQuarterly = /quarterly goal|financial stability|experience studio|castle|fusion work|fws/.test(text);
+  const wantsQuarterly = /quarterly goal|quarterly target|financial stability|experience studio|castle|fusion work|fws/.test(text);
 
   if (wantsQuarterly) {
     return [
-      "Quarterly Goals playbook — what any pod should achieve this quarter.",
+      "Quarterly Targets playbook — what any pod should achieve this quarter.",
       quarterlyPlaybookForMoksha(),
-      "Open Operations → Quarterly Goals for the full playbook, or a pod’s Summary tab for that pod’s live progress.",
+      "Open Operations → Quarterly Targets for the full playbook, or a pod’s Summary tab for that pod’s live progress.",
     ].join("\n\n");
   }
 

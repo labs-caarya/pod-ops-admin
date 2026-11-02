@@ -151,12 +151,12 @@ export default function AdminQuarterlyGoals() {
     <div className="flex h-[calc(100dvh-6rem)] min-h-0 flex-col gap-4 overflow-hidden lg:h-[calc(100dvh-8rem)]">
       <PageHeader
         icon={Flag}
-        title="Quarterly Goals"
-        description="Goals that we recommend for every pod to get financial stability."
+        title="Quarterly Targets"
+        description="Targets we recommend for every pod to reach financial stability."
         className="mb-0 shrink-0"
       />
 
-      <div className="flex shrink-0 gap-1 overflow-x-auto rounded-2xl border border-line bg-surface-2 p-1" role="tablist" aria-label="Quarterly goals views">
+      <div className="flex shrink-0 gap-1 overflow-x-auto rounded-2xl border border-line bg-surface-2 p-1" role="tablist" aria-label="Quarterly targets views">
         {TABS.map((item) => (
           <button
             key={item.id}

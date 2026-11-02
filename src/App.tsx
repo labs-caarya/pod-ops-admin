@@ -11,7 +11,6 @@ import {
   loadAdminPodRegistryPage,
   loadAdminPodDetailPage,
   loadAdminPodsPage,
-  loadAdminLeaderGoalsPage,
   loadAdminPodMentorsPage,
   loadChallengeVaultPage,
   loadChallengeDetailPage,
@@ -39,7 +38,6 @@ import {
 const AdminPods = lazy(loadAdminPodsPage);
 const AdminPodDetail = lazy(loadAdminPodDetailPage);
 const AdminPodRegistry = lazy(loadAdminPodRegistryPage);
-const AdminLeaderGoals = lazy(loadAdminLeaderGoalsPage);
 const AdminPodMentors = lazy(loadAdminPodMentorsPage);
 const ChallengeVault = lazy(loadChallengeVaultPage);
 const ChallengeDetail = lazy(loadChallengeDetailPage);
@@ -123,8 +121,9 @@ export default function App() {
           <Route path="/opportunities" element={<Opportunities />} />
           <Route path="/placement" element={<PlacementAgent />} />
           <Route path="/community-news" element={<CommunityNews />} />
-          <Route path="/quarterly-goals" element={<AdminQuarterlyGoals />} />
-          <Route path="/leader-goals" element={<AdminLeaderGoals />} />
+          <Route path="/quarterly-targets" element={<AdminQuarterlyGoals />} />
+          <Route path="/quarterly-goals" element={<Navigate to="/quarterly-targets" replace />} />
+          <Route path="/leader-goals" element={<Navigate to="/pods" replace />} />
           <Route path="/mentors" element={<AdminPodMentors />} />
           <Route path="/applicants/futurecraft" element={<FutureCraftApplicants />} />
           <Route path="/applicants/castle" element={<CastleApplicants />} />

@@ -49,7 +49,7 @@ export const NAV_SECTIONS: NavSection[] = [
     heading: "Operations",
     items: [
       { label: "Pod Registry", to: "/pods-admin", icon: Building2 },
-      { label: "Quarterly Goals", to: "/quarterly-goals", icon: Flag },
+      { label: "Quarterly Targets", to: "/quarterly-targets", icon: Flag },
       { label: "Content Studio", to: "/content", icon: FileText },
       { label: "Program Management", to: "/programs", icon: ListChecks },
       { label: "Event Management", to: "/events", icon: CalendarDays },

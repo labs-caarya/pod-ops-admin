@@ -11,6 +11,7 @@ import {
   GraduationCap,
   Lock,
   Package,
+  Plus,
   Rocket,
   Users2,
 } from "lucide-react";
@@ -29,7 +30,7 @@ import { leadershipRows } from "@/lib/podLeadership";
 import { buildActivationSnapshot } from "@/lib/podActivation";
 import type { AllowedUser, PodClub, PodPortfolioEntry } from "@/lib/api";
 import { clubStageTone } from "@/lib/clubStage";
-import { formatPodRole, normalizePodRole, POD_ROLES } from "@/lib/podRoles";
+import { formatPodRole } from "@/lib/podRoles";
 import type { PodLeaderGoal, PodMentor } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -39,6 +40,7 @@ import { Button } from "@/components/ui/Button";
 import { ExpertiseTags } from "@/components/ui/ExpertiseTags";
 import { ProgressBar } from "@/components/ui/Misc";
 import { cn } from "@/lib/utils";
+import { PodLeaderGoalsPanel } from "@/components/pods/PodLeaderGoalsPanel";
 import { PodQuarterlyGoalsCard } from "@/components/pods/PodQuarterlyGoalsCard";
 import { buildQuarterlySnapshot, emptyQuarterlyCounts } from "@/lib/quarterlyGoals";
 
@@ -115,7 +117,6 @@ export default function AdminPodDetail() {
   }
 
   const goals = (goalsQuery.data || []).filter((goal) => goal.collegeId === pod.id);
-  const activeGoals = goals.filter((goal) => goal.status === "active");
   const roster = (usersQuery.data || []).filter((user) => user.collegeId === pod.id && user.isActive !== false);
   const mentors = (mentorsQuery.data || []).filter((mentor) => mentor.collegeId === pod.id);
   const applicants = buildTrackerApplicants(studioQuery.data || [], industryQuery.data || []).filter((applicant) => (
@@ -174,7 +175,7 @@ export default function AdminPodDetail() {
 
       <div className="min-h-0 flex-1 overflow-y-auto pr-1">
         {tab === "summary" ? (
-          <SummaryTab pod={pod} activeGoals={activeGoals} goalsLoading={goalsQuery.isPending} snapshot={snapshot} quarterlySnapshot={quarterlySnapshot} />
+          <SummaryTab pod={pod} goals={goals} goalsLoading={goalsQuery.isPending} quarterlySnapshot={quarterlySnapshot} />
         ) : null}
         {tab === "talent" ? (
           <TalentTab
@@ -196,27 +197,42 @@ export default function AdminPodDetail() {
           />
         ) : null}
         {tab === "ops" ? (
-          <OpsTab podId={pod.id} goals={goals} roster={roster} snapshot={snapshot} loading={goalsQuery.isPending || activationQuery.isPending} />
+          <OpsTab
+            podId={pod.id}
+            podName={pod.name}
+            goals={goals}
+            roster={roster}
+            snapshot={snapshot}
+            goalsLoading={goalsQuery.isPending}
+            activationLoading={activationQuery.isPending}
+          />
         ) : null}
       </div>
     </div>
   );
 }
 
+function sortSprintGoals(goals: PodLeaderGoal[]) {
+  return [...goals].sort((left, right) => {
+    if (left.status !== right.status) return left.status === "active" ? -1 : 1;
+    const leftDue = left.dueDate ? new Date(left.dueDate).getTime() : Number.POSITIVE_INFINITY;
+    const rightDue = right.dueDate ? new Date(right.dueDate).getTime() : Number.POSITIVE_INFINITY;
+    return leftDue - rightDue || left.title.localeCompare(right.title);
+  });
+}
+
 function SummaryTab({
   pod,
-  activeGoals,
+  goals,
   goalsLoading,
-  snapshot,
   quarterlySnapshot,
 }: {
   pod: PodPortfolioEntry;
-  activeGoals: PodLeaderGoal[];
+  goals: PodLeaderGoal[];
   goalsLoading: boolean;
-  snapshot: ReturnType<typeof buildActivationSnapshot>;
   quarterlySnapshot: ReturnType<typeof buildQuarterlySnapshot>;
 }) {
-  const nextActivation = snapshot.items.filter((item) => item.status === "available").slice(0, 3);
+  const sprintGoals = sortSprintGoals(goals);
 
   return (
     <div className="space-y-4">
@@ -234,29 +250,49 @@ function SummaryTab({
       <PodQuarterlyGoalsCard snapshot={quarterlySnapshot} />
 
       <Card className="p-4 sm:p-5">
-        <h2 className="font-display text-lg font-bold text-ink">Next steps</h2>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="font-display text-lg font-bold text-ink">Sprint Goals</h2>
+            <p className="mt-1 text-sm text-ink-muted">Leader commitments for this pod&apos;s current sprint.</p>
+          </div>
+          <Link
+            to={`/pods/${pod.id}?tab=ops`}
+            className="focus-ring inline-flex h-8 items-center gap-2 rounded-lg border border-line bg-surface-2 px-3 text-xs font-semibold text-ink hover:bg-surface-3"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Assign goal
+          </Link>
+        </div>
         <div className="mt-3 space-y-2">
-          {goalsLoading ? <p className="text-sm text-ink-muted">Loading assignments…</p> : null}
-          {activeGoals.map((goal) => (
+          {goalsLoading ? <p className="text-sm text-ink-muted">Loading sprint goals…</p> : null}
+          {sprintGoals.map((goal) => (
             <div key={goal.id} className="rounded-xl border border-line bg-surface-2 p-3">
-              <p className="text-sm font-semibold text-ink">{goal.title}</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-sm font-semibold text-ink">{goal.title}</p>
+                <Badge tone={goal.status === "done" ? "good" : "amber"}>{goal.status === "done" ? "Done" : "Active"}</Badge>
+              </div>
               <p className="mt-1 text-xs text-ink-muted">
                 {goal.assigneeName || "Unassigned"} · {formatPodRole(goal.assignedPodRole)}
               </p>
+              {goal.description ? <p className="mt-1 text-xs text-ink-muted">{goal.description}</p> : null}
               <p className="mt-1 flex items-center gap-1.5 text-xs text-ink-faint">
                 <CalendarClock className="h-3.5 w-3.5" />
                 {goal.dueDate ? `Due ${formatDate(goal.dueDate)}` : "No due date"}
               </p>
             </div>
           ))}
-          {nextActivation.map((item) => (
-            <div key={item.id} className="rounded-xl border border-line bg-surface-2 p-3">
-              <p className="text-sm font-semibold text-ink">{item.title}</p>
-              <p className="mt-1 text-xs text-ink-muted">Activation · {item.type === "learn" ? "Learn" : "Do"}</p>
+          {!goalsLoading && !sprintGoals.length ? (
+            <div className="rounded-xl border border-dashed border-line bg-surface-2 px-4 py-6 text-center">
+              <p className="text-sm font-semibold text-ink">No sprint goals yet</p>
+              <p className="mt-1 text-sm text-ink-muted">Assign a goal in Pod Ops so leaders know what to focus on this sprint.</p>
+              <Link
+                to={`/pods/${pod.id}?tab=ops`}
+                className="focus-ring btn-primary mt-4 inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold shadow-lg shadow-ruby/20"
+              >
+                <Plus className="h-4 w-4" />
+                Assign sprint goal
+              </Link>
             </div>
-          ))}
-          {!goalsLoading && !activeGoals.length && !nextActivation.length ? (
-            <p className="text-sm text-ink-muted">Nothing is waiting on this pod right now.</p>
           ) : null}
         </div>
       </Card>
@@ -443,16 +479,20 @@ function PartnersTab({
 
 function OpsTab({
   podId,
+  podName,
   goals,
   roster,
   snapshot,
-  loading,
+  goalsLoading,
+  activationLoading,
 }: {
   podId: string;
+  podName: string;
   goals: PodLeaderGoal[];
   roster: AllowedUser[];
   snapshot: ReturnType<typeof buildActivationSnapshot>;
-  loading: boolean;
+  goalsLoading: boolean;
+  activationLoading: boolean;
 }) {
   const firstOpen = snapshot.byCategory.find((category) => category.complete < category.total)?.categoryId ?? null;
   const [openCategory, setOpenCategory] = useState<string | null>(firstOpen);
@@ -463,41 +503,7 @@ function OpsTab({
 
   return (
     <div className="space-y-4">
-      <Card className="p-4 sm:p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 className="font-display text-lg font-bold text-ink">Who is assigned what</h2>
-            <p className="mt-1 text-sm text-ink-muted">Current work sitting with each leadership role.</p>
-          </div>
-          <Link to="/leader-goals" className="text-sm font-semibold text-ruby-bright hover:underline">Edit assignments</Link>
-        </div>
-        <div className="mt-4 space-y-3">
-          {POD_ROLES.map((role) => {
-            const person = roster.find((user) => normalizePodRole(user.podRole) === role.apiValue);
-            const assigned = goals.filter((goal) => normalizePodRole(goal.assignedPodRole) === role.apiValue);
-            return (
-              <div key={role.apiValue} className="rounded-xl border border-line bg-surface-2 p-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-sm font-semibold text-ink">{role.label}</p>
-                  <p className="text-xs text-ink-muted">{person?.name || assigned[0]?.assigneeName || "Unassigned"}</p>
-                </div>
-                {assigned.length ? (
-                  <div className="mt-2 space-y-2">
-                    {assigned.map((goal) => (
-                      <div key={goal.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                        <span className="text-ink">{goal.title}</span>
-                        <Badge tone={goal.status === "done" ? "good" : "amber"}>{goal.status === "done" ? "Done" : goal.dueDate ? formatDate(goal.dueDate) : "Active"}</Badge>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="mt-2 text-xs text-ink-faint">No work assigned to this role.</p>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </Card>
+      <PodLeaderGoalsPanel podId={podId} podName={podName} goals={goals} roster={roster} loading={goalsLoading} />
 
       <Card className="p-4 sm:p-5">
         <div className="mb-3 flex items-end justify-between gap-3">
@@ -508,7 +514,7 @@ function OpsTab({
           <span className="font-display text-2xl font-black text-gradient">{snapshot.percent}%</span>
         </div>
         <ProgressBar value={snapshot.percent} tone={snapshot.percent >= 100 ? "good" : "ruby"} />
-        {loading ? <p className="mt-3 text-sm text-ink-muted">Loading activation…</p> : null}
+        {activationLoading ? <p className="mt-3 text-sm text-ink-muted">Loading activation…</p> : null}
         <div className="mt-4 space-y-2">
           {snapshot.byCategory.map((category) => {
             const open = openCategory === category.categoryId;

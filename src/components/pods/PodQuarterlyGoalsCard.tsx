@@ -23,11 +23,11 @@ export function PodQuarterlyGoalsCard({
         <div>
           <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.08em] text-ink-muted">
             <Flag className="h-3.5 w-3.5 text-ruby-bright" />
-            Quarterly Goals
+            Quarterly Targets
           </p>
           <h2 className="mt-1 font-display text-lg font-bold text-ink">Recommended quarter for financial stability</h2>
         </div>
-        <Link to="/quarterly-goals" className="inline-flex items-center gap-1.5 text-sm font-semibold text-ruby-bright hover:underline">
+        <Link to="/quarterly-targets" className="inline-flex items-center gap-1.5 text-sm font-semibold text-ruby-bright hover:underline">
           Playbook
           <ArrowUpRight className="h-3.5 w-3.5" />
         </Link>

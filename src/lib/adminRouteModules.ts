@@ -1,7 +1,6 @@
 export const loadAdminPodsPage = () => import("@/pages/AdminPods");
 export const loadAdminPodDetailPage = () => import("@/pages/AdminPodDetail");
 export const loadAdminPodRegistryPage = () => import("@/pages/AdminPodRegistry");
-export const loadAdminLeaderGoalsPage = () => import("@/pages/AdminLeaderGoals");
 export const loadAdminPodMentorsPage = () => import("@/pages/AdminPodMentors");
 export const loadChallengeVaultPage = () => import("@/pages/ChallengeVault");
 export const loadChallengeDetailPage = () => import("@/pages/ChallengeDetail");
@@ -37,7 +36,7 @@ const routePreloaders: Record<string, () => Promise<unknown>> = {
   "/content": loadContentStudioPage,
   "/programs": loadProgramManagementPage,
   "/events": loadEventManagementPage,
-  "/quarterly-goals": loadAdminQuarterlyGoalsPage,
+  "/quarterly-targets": loadAdminQuarterlyGoalsPage,
   "/partners": loadPartnersPage,
   "/talent-map": loadTalentMapPage,
   "/research": loadResearchPage,

@@ -583,13 +583,13 @@ function AttentionList({ insight, metrics }: { insight: PodInsight; metrics: Pod
       tone: "amber" as const,
       title: `${insight.snapshot.overdueGoals} commitment${insight.snapshot.overdueGoals === 1 ? " is" : "s are"} overdue`,
       body: "Check whether the scope is still realistic before asking the owner to recommit.",
-      to: "/leader-goals",
+      to: `/pods/${insight.collegeId}?tab=ops`,
     },
     metrics.outreachActivities === 0 && {
       tone: "muted" as const,
       title: "No outreach movement recorded",
       body: "A small, specific next message can be easier to begin than a broad outreach target.",
-      to: "/leader-goals",
+      to: `/pods/${insight.collegeId}?tab=ops`,
     },
   ].filter(Boolean) as { tone: "bad" | "amber" | "muted"; title: string; body: string; to: string }[];
 
