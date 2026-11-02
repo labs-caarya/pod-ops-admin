@@ -43,22 +43,22 @@ export function QuarterlyTargetsBreakdown({
           <li key={section.id} className="overflow-hidden rounded-xl border border-line bg-surface-2">
             <button
               type="button"
-              className="focus-ring flex w-full items-start gap-2 px-3 py-2.5 text-left"
+              className="focus-ring relative w-full px-3 py-2.5 pr-10 text-left"
               aria-expanded={open}
+              aria-label={open ? `Collapse ${def.title}` : `Expand ${def.title} progress`}
               onClick={() => toggleSection(section.id)}
             >
-              <ChevronDown
-                className={cn("mt-0.5 h-4 w-4 shrink-0 text-ink-faint transition-transform", open && "rotate-180")}
-                aria-hidden="true"
-              />
-              <span className="min-w-0 flex-1">
-                <span className="flex items-center justify-between gap-2">
-                  <span className="truncate text-sm font-semibold text-ink">{def.title}</span>
-                  <span className="shrink-0 text-xs font-bold tabular-nums text-ink-muted">{section.percent}%</span>
-                </span>
+              <span className="absolute right-2.5 top-2.5 flex h-7 w-7 items-center justify-center rounded-lg text-ink-muted">
+                <ChevronDown
+                  className={cn("h-4 w-4 transition-transform", open && "rotate-180")}
+                  aria-hidden="true"
+                />
+              </span>
+              <span className="block min-w-0 pr-1">
+                <span className="truncate text-sm font-semibold text-ink">{def.title}</span>
                 <ProgressBar className="mt-2 h-1.5" value={section.percent} tone={progressTone(section.percent)} />
                 <span className="mt-1 block text-[11px] text-ink-faint">
-                  {section.complete}/{section.total} targets met
+                  {section.complete}/{section.total} targets met · <span className="font-bold tabular-nums text-ink-muted">{section.percent}%</span>
                 </span>
               </span>
             </button>
@@ -117,28 +117,26 @@ export function PodQuarterlyProgressCard({
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="rounded-xl border border-line bg-surface-2 p-4">
-      <div className="flex items-start gap-2">
-        <button
-          type="button"
-          className="focus-ring mt-0.5 shrink-0 rounded-lg p-1 text-ink-muted hover:bg-surface hover:text-ink"
-          aria-expanded={open}
-          aria-label={open ? "Hide target breakdown" : "Show where progress was made"}
-          onClick={() => setOpen((value) => !value)}
-        >
-          <ChevronDown className={cn("h-5 w-5 transition-transform", open && "rotate-180")} />
-        </button>
-        <Link to={`/pods/${pod.id}`} className="focus-ring min-w-0 flex-1 rounded-lg">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="min-w-0">
-              <p className="truncate font-semibold text-ink">{pod.name}</p>
-              <p className="text-xs text-ink-muted">{pod.collegeName} · {snapshot.complete}/{snapshot.total} targets</p>
-            </div>
-            <span className="font-display text-lg font-black tabular-nums text-ink">{snapshot.percent}%</span>
+    <div className="relative rounded-xl border border-line bg-surface-2 p-4 pr-12">
+      <button
+        type="button"
+        className="focus-ring absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-lg text-ink-muted hover:bg-surface hover:text-ink"
+        aria-expanded={open}
+        aria-label={open ? "Hide target breakdown" : "Show where progress was made"}
+        onClick={() => setOpen((value) => !value)}
+      >
+        <ChevronDown className={cn("h-5 w-5 transition-transform", open && "rotate-180")} />
+      </button>
+      <Link to={`/pods/${pod.id}`} className="focus-ring block min-w-0 rounded-lg">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="truncate font-semibold text-ink">{pod.name}</p>
+            <p className="text-xs text-ink-muted">{pod.collegeName} · {snapshot.complete}/{snapshot.total} targets</p>
           </div>
-          <ProgressBar className="mt-2" value={snapshot.percent} tone={progressTone(snapshot.percent)} />
-        </Link>
-      </div>
+          <span className="font-display text-lg font-black tabular-nums text-ink">{snapshot.percent}%</span>
+        </div>
+        <ProgressBar className="mt-2" value={snapshot.percent} tone={progressTone(snapshot.percent)} />
+      </Link>
       {open ? (
         <div className="mt-3 border-t border-line pt-3">
           <p className="mb-2 text-xs text-ink-faint">Where progress is counted for {pod.name}</p>
