@@ -12,6 +12,7 @@ import type {
 import type { ContentItem, ContentWriteInput } from "@/lib/content";
 import type { Audience, AudienceWriteInput } from "@/lib/audiences";
 import type { AdminEvent, AdminEventWriteInput } from "@/lib/events";
+import type { ProgramTodo, ProgramTodoWriteInput } from "@/lib/programTodos";
 
 const API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || "")
   .trim()
@@ -396,7 +397,9 @@ async function requestJson(path: string, options: RequestInit = {}) {
   });
   const payload = await readJson(res);
   if (!res.ok) {
-    throw new Error(apiErrorMessage(payload, `Request failed (${res.status}).`));
+    const error = new Error(apiErrorMessage(payload, `Request failed (${res.status}).`));
+    (error as Error & { status?: number }).status = res.status;
+    throw error;
   }
   return payload;
 }
@@ -1217,3 +1220,26 @@ export async function listAdminEvents(): Promise<AdminEvent[]> { return unwrapLi
 export async function createAdminEvent(input: AdminEventWriteInput): Promise<AdminEvent> { const data = unwrapData<AdminEvent>(await requestJson("/admin/events", { method: "POST", body: JSON.stringify(input) })); if (!data?.id) throw new Error("Event response was incomplete."); return data; }
 export async function updateAdminEvent(id: string, input: AdminEventWriteInput): Promise<AdminEvent> { const data = unwrapData<AdminEvent>(await requestJson(`/admin/events/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(input) })); if (!data?.id) throw new Error("Event response was incomplete."); return data; }
 export async function deleteAdminEvent(id: string): Promise<void> { await requestJson(`/admin/events/${encodeURIComponent(id)}`, { method: "DELETE" }); }
+
+export async function listProgramTodos(programId: string): Promise<ProgramTodo[]> {
+  return unwrapList<ProgramTodo>(
+    await requestJson(`/admin/program-todos?programId=${encodeURIComponent(programId)}`),
+    "todos",
+  );
+}
+
+export async function createProgramTodo(input: ProgramTodoWriteInput): Promise<ProgramTodo> {
+  const data = unwrapData<ProgramTodo>(await requestJson("/admin/program-todos", { method: "POST", body: JSON.stringify(input) }));
+  if (!data?.id) throw new Error("Program todo response was incomplete.");
+  return data;
+}
+
+export async function updateProgramTodo(id: string, input: ProgramTodoWriteInput): Promise<ProgramTodo> {
+  const data = unwrapData<ProgramTodo>(await requestJson(`/admin/program-todos/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(input) }));
+  if (!data?.id) throw new Error("Program todo response was incomplete.");
+  return data;
+}
+
+export async function deleteProgramTodo(id: string): Promise<void> {
+  await requestJson(`/admin/program-todos/${encodeURIComponent(id)}`, { method: "DELETE" });
+}

@@ -28,6 +28,7 @@ import {
   getAdminContentOptions,
   listAdminAudiences,
   listAdminEvents,
+  listProgramTodos,
   listCrewLeadReports,
   type College,
   type FutureCraftApplicant,
@@ -48,6 +49,7 @@ import type { ContentItem } from "@/lib/content";
 import type { ContentDirectoryOptions } from "@/lib/content";
 import type { Audience } from "@/lib/audiences";
 import type { AdminEvent } from "@/lib/events";
+import type { ProgramTodo } from "@/lib/programTodos";
 import type { Challenge, PodLeaderGoal, PodMentor } from "@/lib/types";
 
 const TEN_MINUTES = 10 * 60 * 1000;
@@ -82,6 +84,7 @@ export const adminQueryKeys = {
   contentOptions: ["admin", "content-options"] as const,
   audiences: ["admin", "audiences"] as const,
   events: ["admin", "events"] as const,
+  programTodos: ["admin", "program-todos"] as const,
   crewLeadReports: ["admin", "crew-lead-reports"] as const,
 };
 
@@ -265,6 +268,15 @@ export function adminAudiencesQueryOptions() {
 
 export function adminEventsQueryOptions() { return queryOptions<AdminEvent[]>({ queryKey: adminQueryKeys.events, queryFn: listAdminEvents, staleTime: 30_000, gcTime: THIRTY_MINUTES }); }
 
+export function programTodosQueryOptions(programId: string) {
+  return queryOptions<ProgramTodo[]>({
+    queryKey: [...adminQueryKeys.programTodos, programId],
+    queryFn: () => listProgramTodos(programId),
+    staleTime: 30_000,
+    gcTime: THIRTY_MINUTES,
+  });
+}
+
 export function managedUsersQueryOptions() {
   return queryOptions<AllowedUser[]>({
     queryKey: adminQueryKeys.managedUsers,
@@ -329,5 +341,6 @@ export function warmAdminWorkspaceCache(queryClient: QueryClient) {
     queryClient.prefetchQuery(knowledgeResourceOptionsQueryOptions()),
     queryClient.prefetchQuery(adminContentQueryOptions()),
     queryClient.prefetchQuery(adminEventsQueryOptions()),
+    queryClient.prefetchQuery(programTodosQueryOptions("experience-studio")),
   ]);
 }

@@ -14,6 +14,7 @@ export const loadAdminKnowledgeSpacePage = () => import("@/pages/AdminKnowledgeS
 export const loadPodReportsPage = () => import("@/pages/PodReports");
 export const loadProgressReportPage = () => import("@/pages/ProgressReport");
 export const loadContentStudioPage = () => import("@/pages/ContentStudio");
+export const loadProgramManagementPage = () => import("@/pages/ProgramManagement");
 export const loadEventManagementPage = () => import("@/pages/EventManagement");
 export const loadAdminQuarterlyGoalsPage = () => import("@/pages/AdminQuarterlyGoals");
 export const loadAskMokshaPage = () => import("@/pages/AskMoksha");
@@ -34,6 +35,7 @@ const routePreloaders: Record<string, () => Promise<unknown>> = {
   "/challenges": loadChallengeVaultPage,
   "/knowledge-space": loadAdminKnowledgeSpacePage,
   "/content": loadContentStudioPage,
+  "/programs": loadProgramManagementPage,
   "/events": loadEventManagementPage,
   "/quarterly-goals": loadAdminQuarterlyGoalsPage,
   "/partners": loadPartnersPage,

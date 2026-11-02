@@ -22,6 +22,7 @@ import {
   loadPodReportsPage,
   loadProgressReportPage,
   loadContentStudioPage,
+  loadProgramManagementPage,
   loadEventManagementPage,
   loadAdminQuarterlyGoalsPage,
   loadPartnersPage,
@@ -49,6 +50,7 @@ const AdminKnowledgeSpace = lazy(loadAdminKnowledgeSpacePage);
 const PodReports = lazy(loadPodReportsPage);
 const ProgressReport = lazy(loadProgressReportPage);
 const ContentStudio = lazy(loadContentStudioPage);
+const ProgramManagement = lazy(loadProgramManagementPage);
 const EventManagement = lazy(loadEventManagementPage);
 const AdminQuarterlyGoals = lazy(loadAdminQuarterlyGoalsPage);
 const Partners = lazy(loadPartnersPage);
@@ -110,6 +112,7 @@ export default function App() {
           <Route path="/pod-activation/:collegeId" element={<PodOpsRedirect />} />
           <Route path="/knowledge-space" element={<AdminKnowledgeSpace />} />
           <Route path="/content" element={<ContentStudio />} />
+          <Route path="/programs" element={<ProgramManagement />} />
           <Route path="/events" element={<EventManagement />} />
           <Route path="/partners" element={<Partners />} />
           <Route path="/partners/:partnerId" element={<PartnerDetail />} />

@@ -6,6 +6,7 @@ import {
   Vault,
   FileText,
   CalendarDays,
+  ListChecks,
   HardDrive,
   Handshake,
   Flag,
@@ -50,6 +51,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Pod Registry", to: "/pods-admin", icon: Building2 },
       { label: "Quarterly Goals", to: "/quarterly-goals", icon: Flag },
       { label: "Content Studio", to: "/content", icon: FileText },
+      { label: "Program Management", to: "/programs", icon: ListChecks },
       { label: "Event Management", to: "/events", icon: CalendarDays },
       { label: "Knowledge Space", to: "/knowledge-space", icon: BookOpen },
       {
