@@ -14,6 +14,7 @@ import {
   Contact2,
   Building2,
   Users,
+  UserPlus,
   BriefcaseBusiness,
   UserCheck,
   Newspaper,
