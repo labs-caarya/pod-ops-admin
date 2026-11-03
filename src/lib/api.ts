@@ -23,11 +23,12 @@ export interface AllowedUser {
   username?: string;
   name?: string;
   primary_role?: string;
-  accountType?: "super_admin" | "pod_ops_admin" | "pod_leader";
+  accountType?: "super_admin" | "pod_ops_admin" | "crew_manager" | "pod_leader";
   permissions?: string[];
   collegeId?: string;
   collegeName?: string;
   collegeCrew?: string;
+  crewScope?: { key: string; label: string };
   podRole?: PodRoleApi;
   isActive?: boolean;
   createdAt?: string | null;

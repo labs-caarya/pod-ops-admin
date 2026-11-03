@@ -30,6 +30,7 @@ export interface NavItem {
   end?: boolean;
   /** Opens in a new tab; `to` is treated as an absolute URL. */
   external?: boolean;
+  crewManager?: boolean;
 }
 
 export interface NavSection {
@@ -43,8 +44,8 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: "Dashboard", to: "/", icon: LayoutDashboard, end: true },
       { label: "Progress Report", to: "/progress-report", icon: ClipboardList },
-      { label: "Pod Portfolio", to: "/pods", icon: Network },
-      { label: "Challenge Vault", to: "/challenges", icon: Vault },
+      { label: "Pod Portfolio", to: "/pods", icon: Network, crewManager: true },
+      { label: "Challenge Vault", to: "/challenges", icon: Vault, crewManager: true },
       { label: "Community News", to: "/community-news", icon: Newspaper },
     ],
   },
