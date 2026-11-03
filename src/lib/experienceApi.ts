@@ -167,3 +167,30 @@ export async function reviewLorRequest(
 ): Promise<LorRequest> {
   return need(await requestJson(`${BASE}/lor/${encodeURIComponent(id)}/review`, json("POST", input)), "LoR");
 }
+
+export interface ContentWorkAssignment {
+  id: string;
+  contentId: string;
+  contentName: string;
+  userId: string;
+  userName: string;
+  collegeName: string;
+  crew: string;
+  roleLabel: string;
+  status: "offered" | "picked_up" | "delivered" | "dropped";
+  campaignTitle: string;
+  dueDate: string;
+  creditsAwarded: number;
+}
+
+export async function listContentAssignments(contentId: string): Promise<ContentWorkAssignment[]> {
+  return list<ContentWorkAssignment>(await requestJson(`${BASE}/content-work/${encodeURIComponent(contentId)}`));
+}
+
+export async function assignContentWork(contentId: string, userIds: string[]): Promise<ContentWorkAssignment[]> {
+  return list<ContentWorkAssignment>(await requestJson(`${BASE}/content-work/${encodeURIComponent(contentId)}`, json("POST", { userIds })));
+}
+
+export async function removeContentAssignment(contentId: string, userId: string): Promise<void> {
+  await requestJson(`${BASE}/content-work/${encodeURIComponent(contentId)}/${encodeURIComponent(userId)}`, json("DELETE"));
+}

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Edit3, FileText, Plus, Search, Tags, Trash2, UsersRound } from "lucide-react";
 import { AudienceManagement } from "@/components/content/AudienceManagement";
 import { ContentEditorDrawer } from "@/components/content/ContentEditorDrawer";
+import { ContentAssignmentSheet } from "@/components/content/ContentAssignmentSheet";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -21,6 +22,7 @@ export default function ContentStudio() {
   const [bucket, setBucket] = useState("");
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ContentItem | null>(null);
+  const [assigning, setAssigning] = useState<ContentItem | null>(null);
   const [activeTab, setActiveTab] = useState<"content" | "audiences">("content");
   const saveMutation = useMutation({
     mutationFn: ({ item, input }: { item: ContentItem | null; input: ContentWriteInput }) => item ? updateAdminContent(item.id, input) : createAdminContent(input),
@@ -65,12 +67,13 @@ export default function ContentStudio() {
 
       <div className="mb-3 flex items-center justify-between"><p className="text-sm text-ink-muted">{rows.length} {rows.length === 1 ? "content item" : "content items"}</p></div>
       {contentQuery.isError ? <Card className="p-8 text-center"><p className="font-display font-bold text-ink">Content could not be loaded</p><p className="mt-1 text-sm text-ink-muted">{contentQuery.error instanceof Error ? contentQuery.error.message : "Try again."}</p><Button className="mt-4" variant="secondary" onClick={() => contentQuery.refetch()}>Try again</Button></Card> : rows.length === 0 ? <EmptyState icon={FileText} title={content.length ? "No matching content" : "Your content calendar starts here"} description={content.length ? "Try another search or bucket." : "Add the first item to begin organizing the content pipeline."} action={!content.length ? <Button onClick={openCreate}><Plus className="h-4 w-4" />Add content</Button> : undefined} /> :
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{rows.map((item) => <Card key={item.id} className="flex min-w-0 flex-col p-4" hover>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{rows.map((item) => <Card key={item.id} className="flex min-w-0 cursor-pointer flex-col p-4" hover onClick={() => setAssigning(item)}>
           <div className="flex items-start justify-between gap-3"><div className="min-w-0"><h2 className="truncate font-display text-base font-bold text-ink" title={item.name}>{item.name}</h2><p className="mt-1 text-xs text-ink-muted">{item.type} · {item.platform}</p></div><Badge tone={item.directoryStatus === "needs_review" ? "amber" : "ruby"}>{item.directoryStatus === "needs_review" ? "Review needed" : item.bucket}</Badge></div>
           <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-ink-muted">{item.description}</p>
           <div className="mt-4 space-y-2 border-t border-line pt-3 text-xs"><p className="truncate text-ink-muted"><span className="text-ink-faint">Pillar · </span>{item.pillar}</p><p className="truncate text-ink-muted"><span className="text-ink-faint">Marketing · </span>{item.marketingType}</p>{item.topicClusters.length ? <div className="flex flex-wrap gap-1.5">{item.topicClusters.map((topic) => <Badge key={topic} tone="info">{topic}</Badge>)}</div> : null}{item.tags.length ? <div className="flex flex-wrap gap-1.5">{item.tags.map((tag) => <span key={tag} className="inline-flex items-center gap-1 text-ink-faint"><Tags className="h-3 w-3" />{tag}</span>)}</div> : null}</div>
-          <div className="mt-4 flex gap-2"><Button className="flex-1" variant="secondary" size="sm" onClick={() => openEdit(item)}><Edit3 className="h-3.5 w-3.5" />Edit</Button><Button size="sm" variant="danger" aria-label={`Delete ${item.name}`} title="Delete content" onClick={() => remove(item)}><Trash2 className="h-3.5 w-3.5" /></Button></div>
+          <div className="mt-4 flex gap-2" onClick={(event) => event.stopPropagation()}><Button className="flex-1" variant="secondary" size="sm" onClick={() => openEdit(item)}><Edit3 className="h-3.5 w-3.5" />Edit</Button><Button size="sm" variant="danger" aria-label={`Delete ${item.name}`} title="Delete content" onClick={() => remove(item)}><Trash2 className="h-3.5 w-3.5" /></Button></div>
         </Card>)}</div>}
+      <ContentAssignmentSheet item={assigning} onClose={() => setAssigning(null)} />
       <ContentEditorDrawer open={editorOpen} onClose={() => setEditorOpen(false)} item={editingItem} options={directoryQuery.data} optionsError={directoryQuery.isError ? "The content directory could not be loaded. Try again." : ""} onSave={save} isSaving={saveMutation.isPending} saveError={saveMutation.error instanceof Error ? saveMutation.error.message : ""} />
       {deleteMutation.isError ? <p className="mt-4 text-sm text-bad">{deleteMutation.error instanceof Error ? deleteMutation.error.message : "Could not delete content."}</p> : null}
       </> : <AudienceManagement />}

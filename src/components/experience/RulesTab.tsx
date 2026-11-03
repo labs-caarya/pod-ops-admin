@@ -9,7 +9,7 @@ import { saveExperienceRules } from "@/lib/experienceApi";
 import { activationBudgetQuery, experienceKeys, experienceRulesQuery } from "@/lib/experienceQueries";
 import { InlineError, QueryState, errorMessage } from "./shared";
 
-const GROUPS = ["Updates", "Work", "Research", "Referrals", "Internal events", "Activation", "Letter of Recommendation"] as const;
+const GROUPS = ["Updates", "Work", "Research", "Referrals", "Internal events", "Activation", "Content work", "Letter of Recommendation"] as const;
 
 function ActivationBudgetPanel() {
   const budget = useQuery(activationBudgetQuery());

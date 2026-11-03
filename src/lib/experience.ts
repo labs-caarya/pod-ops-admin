@@ -11,6 +11,9 @@ export const CREDIT_SOURCES = [
   "assessment",
   "activation_task",
   "internal_event",
+  "content_work_on_time",
+  "content_work_late",
+  "content_work_missed",
   "manual",
 ] as const;
 export type CreditSource = (typeof CREDIT_SOURCES)[number];
@@ -26,6 +29,9 @@ export const CREDIT_SOURCE_LABELS: Record<CreditSource, string> = {
   assessment: "Assessment passed",
   activation_task: "Pod setup task",
   internal_event: "Internal event",
+  content_work_on_time: "Content delivered on time",
+  content_work_late: "Content delivered late",
+  content_work_missed: "Content picked up and not delivered",
   manual: "Issued by CREW",
 };
 
@@ -82,6 +88,9 @@ export interface ExperienceRules {
   eventParticipatedCredits: number;
   eventHostedCredits: number;
   activationPoolCredits: number;
+  contentWorkOnTimeCredits: number;
+  contentWorkLateCredits: number;
+  contentWorkMissedCredits: number;
   lorThreshold: number;
 }
 
@@ -89,7 +98,7 @@ export interface RuleField {
   key: keyof ExperienceRules;
   label: string;
   hint: string;
-  group: "Updates" | "Work" | "Research" | "Referrals" | "Internal events" | "Activation" | "Letter of Recommendation";
+  group: "Updates" | "Work" | "Research" | "Referrals" | "Internal events" | "Activation" | "Content work" | "Letter of Recommendation";
 }
 
 export const RULE_FIELDS: RuleField[] = [
@@ -108,6 +117,9 @@ export const RULE_FIELDS: RuleField[] = [
   { key: "eventParticipatedCredits", label: "Actively participated", hint: "Default for the Participated tier.", group: "Internal events" },
   { key: "eventHostedCredits", label: "Hosted an event", hint: "Default for the Hosted tier.", group: "Internal events" },
   { key: "activationPoolCredits", label: "Activation pool per member", hint: "Split between the assessments for a role and its pod setup tasks. Assessments keep what you set on them; the rest is shared across the setup tasks.", group: "Activation" },
+  { key: "contentWorkOnTimeCredits", label: "Content delivered on time", hint: "Paid when someone delivers assigned Content Studio work on or before the due date they chose.", group: "Content work" },
+  { key: "contentWorkLateCredits", label: "Content delivered late", hint: "Paid when they still deliver, but after the due date.", group: "Content work" },
+  { key: "contentWorkMissedCredits", label: "Picked up and not delivered", hint: "Taken off their balance when they pick the work up and then mark it as not delivered.", group: "Content work" },
   { key: "lorThreshold", label: "Credits needed for an LoR", hint: "Members at or above this balance can request a Letter of Recommendation.", group: "Letter of Recommendation" },
 ];
 
