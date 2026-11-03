@@ -55,6 +55,8 @@ export function MemberDrawer({ userId, onClose }: { userId: string; onClose: () 
   }
 
   const data = overview.data;
+  const canIssue = data?.capabilities?.canIssueCredits !== false;
+  const canRevoke = data?.capabilities?.canRevokeCredits !== false;
 
   return (
     <Drawer
@@ -105,7 +107,7 @@ export function MemberDrawer({ userId, onClose }: { userId: string; onClose: () 
             </div>
           </section>
 
-          <section className="rounded-2xl border border-line p-4">
+          {canIssue ? <section className="rounded-2xl border border-line p-4">
             <h3 className="mb-3 font-display text-sm font-bold text-ink">Issue or correct credits</h3>
             <div className="space-y-3">
               <div className="grid grid-cols-3 gap-3">
@@ -127,7 +129,7 @@ export function MemberDrawer({ userId, onClose }: { userId: string; onClose: () 
                 </Button>
               </div>
             </div>
-          </section>
+          </section> : null}
 
           <section>
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink-faint">Ledger</h3>
@@ -149,7 +151,7 @@ export function MemberDrawer({ userId, onClose }: { userId: string; onClose: () 
                       {entry.amount > 0 ? "+" : ""}
                       {formatCredits(entry.amount)}
                     </Badge>
-                    {!entry.revoked ? (
+                    {!entry.revoked && canRevoke ? (
                       <Button
                         variant="ghost"
                         size="icon"
@@ -159,7 +161,7 @@ export function MemberDrawer({ userId, onClose }: { userId: string; onClose: () 
                         disabled={revoke.isPending}
                         onClick={() => {
                           const reason = window.prompt("Why are you revoking these credits?", "");
-                          if (reason !== null) revoke.mutate({ id: entry.id, reason });
+                          if (reason?.trim()) revoke.mutate({ id: entry.id, reason: reason.trim() });
                         }}
                       >
                         <Undo2 className="h-3.5 w-3.5" />

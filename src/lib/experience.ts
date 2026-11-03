@@ -142,6 +142,7 @@ export interface ExperienceMemberOverview {
   breakdown: { source: CreditSource; label: string; total: number; count: number }[];
   recent: CreditEntry[];
   rules: ExperienceRules;
+  capabilities?: { canReview: boolean; canIssueCredits: boolean; canRevokeCredits: boolean; canEditRules: boolean };
 }
 
 export interface LedgerPage {
