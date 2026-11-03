@@ -12,6 +12,7 @@ import {
   listInternalEvents,
   listLorRequests,
   listTalentReferrals,
+  getTalentReferralUnseenCount,
   listWorkItems,
 } from "@/lib/experienceApi";
 
@@ -25,6 +26,7 @@ export const experienceKeys = {
   assessments: ["admin", "experience", "assessments"] as const,
   events: ["admin", "experience", "events"] as const,
   referrals: ["admin", "experience", "referrals"] as const,
+  referralUnread: ["admin", "experience", "referrals", "unread"] as const,
   lor: ["admin", "experience", "lor"] as const,
 };
 
@@ -102,6 +104,9 @@ export const referralsQuery = (status: string) =>
     queryFn: () => listTalentReferrals(status),
     staleTime: THIRTY_SECONDS,
   });
+
+export const talentReferralUnseenQuery = () =>
+  queryOptions({ queryKey: experienceKeys.referralUnread, queryFn: getTalentReferralUnseenCount, staleTime: THIRTY_SECONDS, refetchInterval: THIRTY_SECONDS });
 
 export const lorQuery = (status: string) =>
   queryOptions({

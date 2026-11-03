@@ -18,6 +18,7 @@ import type {
   WorkUpdateEntry,
   ActivationBudgetOverview,
   AttendeeStatus,
+  ReferralUnseenCount,
 } from "@/lib/experience";
 
 const BASE = "/admin/experience";
@@ -147,6 +148,14 @@ export async function markEventAttendance(
 
 export async function listTalentReferrals(status?: string): Promise<TalentReferral[]> {
   return list<TalentReferral>(await requestJson(`${BASE}/referrals${query({ status })}`));
+}
+
+export async function getTalentReferralUnseenCount(): Promise<ReferralUnseenCount> {
+  return need(await requestJson(`${BASE}/referrals/unseen-count`), "Referral count");
+}
+
+export async function markTalentReferralsSeen(): Promise<{ seenAt: string }> {
+  return need(await requestJson(`${BASE}/referrals/mark-seen`, json("POST")), "Referral view");
 }
 
 export async function getActivationBudget(): Promise<ActivationBudgetOverview> {

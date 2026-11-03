@@ -5,8 +5,10 @@ import { preloadAdminRoute } from "@/lib/adminRouteModules";
 import { cn } from "@/lib/utils";
 import { AdminLogo } from "./CaaryaLogo";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { talentReferralUnseenQuery } from "@/lib/experienceQueries";
 
-function SidebarNavItem({ item, onNavigate }: { item: NavItem; onNavigate?: () => void }) {
+function SidebarNavItem({ item, onNavigate, badge }: { item: NavItem; onNavigate?: () => void; badge?: number }) {
   const iconClass = (active: boolean) =>
     cn("h-4 w-4 shrink-0", active ? "text-ruby-bright" : "text-ink-faint group-hover:text-ink-muted");
 
@@ -46,6 +48,7 @@ function SidebarNavItem({ item, onNavigate }: { item: NavItem; onNavigate?: () =
         <>
           <item.icon className={iconClass(isActive)} />
           <span className="truncate">{item.label}</span>
+          {badge ? <span className="ml-auto min-w-5 rounded-full bg-ruby px-1.5 py-0.5 text-center text-[10px] font-bold text-white">{badge > 99 ? "99+" : badge}</span> : null}
         </>
       )}
     </NavLink>
@@ -54,6 +57,7 @@ function SidebarNavItem({ item, onNavigate }: { item: NavItem; onNavigate?: () =
 
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { user } = useAuth();
+  const unreadReferrals = useQuery(talentReferralUnseenQuery()).data?.count ?? 0;
   const crewManager = user?.accountType === "crew_manager";
   const sections = crewManager
     ? NAV_SECTIONS.map((section) => ({ ...section, items: section.items.filter((item) => item.crewManager) })).filter((section) => section.items.length)
@@ -83,7 +87,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             </p>
             <div className="space-y-0.5">
               {section.items.map((item) => (
-                <SidebarNavItem key={item.to} item={item} onNavigate={onNavigate} />
+                <SidebarNavItem key={item.to} item={item} onNavigate={onNavigate} badge={item.to === "/talent-referrals" ? unreadReferrals : 0} />
               ))}
             </div>
           </div>

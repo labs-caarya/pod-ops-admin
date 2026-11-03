@@ -34,6 +34,7 @@ import {
   loadPlacementAgentPage,
   loadCommunityNewsPage,
   loadExperienceCreditsPage,
+  loadTalentReferralsPage,
   loadAssessmentsPage,
   loadInternalEventsPage,
 } from "@/lib/adminRouteModules";
@@ -64,6 +65,7 @@ const Opportunities = lazy(loadOpportunitiesPage);
 const PlacementAgent = lazy(loadPlacementAgentPage);
 const CommunityNews = lazy(loadCommunityNewsPage);
 const ExperienceCredits = lazy(loadExperienceCreditsPage);
+const TalentReferrals = lazy(loadTalentReferralsPage);
 const Assessments = lazy(loadAssessmentsPage);
 const InternalEvents = lazy(loadInternalEventsPage);
 
@@ -128,6 +130,7 @@ export default function App() {
           <Route path="/placement" element={<PlacementAgent />} />
           <Route path="/community-news" element={<CommunityNews />} />
           <Route path="/experience" element={<ExperienceCredits />} />
+          <Route path="/talent-referrals" element={<TalentReferrals />} />
           <Route path="/assessments" element={<Assessments />} />
           <Route path="/internal-events" element={<InternalEvents />} />
           <Route path="/quarterly-targets" element={<AdminQuarterlyGoals />} />

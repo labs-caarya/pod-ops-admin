@@ -27,6 +27,7 @@ export const loadOpportunitiesPage = () => import("@/pages/Opportunities");
 export const loadPlacementAgentPage = () => import("@/pages/PlacementAgent");
 export const loadCommunityNewsPage = () => import("@/pages/CommunityNews");
 export const loadExperienceCreditsPage = () => import("@/pages/ExperienceCredits");
+export const loadTalentReferralsPage = () => import("@/pages/TalentReferrals");
 export const loadAssessmentsPage = () => import("@/pages/Assessments");
 export const loadInternalEventsPage = () => import("@/pages/InternalEvents");
 
@@ -48,6 +49,7 @@ const routePreloaders: Record<string, () => Promise<unknown>> = {
   "/placement": loadPlacementAgentPage,
   "/community-news": loadCommunityNewsPage,
   "/experience": loadExperienceCreditsPage,
+  "/talent-referrals": loadTalentReferralsPage,
   "/assessments": loadAssessmentsPage,
   "/internal-events": loadInternalEventsPage,
 };

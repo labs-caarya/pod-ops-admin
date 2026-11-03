@@ -32,7 +32,7 @@ export const CREDIT_SOURCE_LABELS: Record<CreditSource, string> = {
   content_work_on_time: "Content delivered on time",
   content_work_late: "Content delivered late",
   content_work_missed: "Content picked up and not delivered",
-  manual: "Issued by CREW",
+  manual: "Issued by Crew Manager",
 };
 
 export interface CreditEntry {
@@ -70,6 +70,8 @@ export interface ExperienceDirectory {
   totals: { members: number; credits: number; lorEligible: number };
   lorThreshold: number;
 }
+
+export interface ReferralUnseenCount { count: number }
 
 export interface ExperienceRules {
   updateDayCredits: number;

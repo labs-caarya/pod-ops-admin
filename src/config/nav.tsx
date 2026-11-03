@@ -70,6 +70,7 @@ export const NAV_SECTIONS: NavSection[] = [
     heading: "Experience",
     items: [
       { label: "Experience Credits", to: "/experience", icon: Sparkles, crewManager: true },
+      { label: "Talent Referrals", to: "/talent-referrals", icon: UserPlus, crewManager: true },
       { label: "Assessments", to: "/assessments", icon: GraduationCap },
       { label: "Internal Events", to: "/internal-events", icon: CalendarCheck },
     ],
