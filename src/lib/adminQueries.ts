@@ -20,6 +20,7 @@ import {
   listContentCalendar,
   listPodComments,
   listPodCommentUnreadCounts,
+  listPodSuccessMeetings,
   listChallenges,
   listPodActivationData,
   listKnowledgeResources,
@@ -41,6 +42,7 @@ import {
   type ContentCalendarItem,
   type PodComment,
   type PodCommentUnreadCount,
+  type PodSuccessMeeting,
   type PodActivationData,
   type CrewLeadReport,
 } from "@/lib/api";
@@ -76,6 +78,7 @@ export const adminQueryKeys = {
   contentCalendar: ["admin", "content-calendar"] as const,
   podComments: (collegeId: string) => ["admin", "pod-comments", collegeId] as const,
   podCommentUnreadCounts: ["admin", "pod-comment-unread-counts"] as const,
+  podSuccessMeetings: (collegeId: string) => ["admin", "pod-success-meetings", collegeId] as const,
   challenges: ["admin", "challenges"] as const,
   podActivation: ["admin", "pod-activation"] as const,
   knowledgeResources: ["admin", "knowledge-resources"] as const,
@@ -193,6 +196,16 @@ export function podCommentsQueryOptions(collegeId: string) {
   return queryOptions<PodComment[]>({
     queryKey: adminQueryKeys.podComments(collegeId),
     queryFn: () => listPodComments(collegeId),
+    enabled: Boolean(collegeId),
+    staleTime: 30_000,
+    gcTime: THIRTY_MINUTES,
+  });
+}
+
+export function podSuccessMeetingsQueryOptions(collegeId: string) {
+  return queryOptions<PodSuccessMeeting[]>({
+    queryKey: adminQueryKeys.podSuccessMeetings(collegeId),
+    queryFn: () => listPodSuccessMeetings(collegeId),
     enabled: Boolean(collegeId),
     staleTime: 30_000,
     gcTime: THIRTY_MINUTES,

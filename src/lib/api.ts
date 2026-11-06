@@ -183,6 +183,37 @@ export interface PodComment {
   canResolve: boolean;
 }
 
+export type SuccessMeetingPulse = "strong" | "steady" | "struggling" | "";
+
+export interface PodSuccessMeetingActionItem {
+  text: string;
+  /** Role id the item was agreed with, or "" when it belongs to the whole pod. */
+  ownerRole: string;
+  /** YYYY-MM-DD, or "". */
+  dueDate: string;
+}
+
+/** Minutes of one pod success meeting. They feed the plans Moksha recommends for the pod. */
+export interface PodSuccessMeeting {
+  id: string;
+  collegeId: string;
+  collegeName: string;
+  /** YYYY-MM-DD */
+  meetingDate: string;
+  attendees: string[];
+  summary: string;
+  decisions: string[];
+  actionItems: PodSuccessMeetingActionItem[];
+  blockers: string[];
+  pulse: SuccessMeetingPulse;
+  loggedBy: string;
+  loggedByName: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type PodSuccessMeetingInput = Omit<PodSuccessMeeting, "id" | "collegeId" | "collegeName" | "loggedBy" | "loggedByName" | "createdAt" | "updatedAt">;
+
 export interface PodCommentUnreadCount {
   collegeId: string;
   unreadCount: number;
@@ -989,6 +1020,30 @@ export async function resolvePodComment(id: string, resolutionNote: string): Pro
   const data = unwrapData<PodComment>(payload);
   if (!data?.id) throw new Error("Comment response was incomplete.");
   return data;
+}
+
+export async function listPodSuccessMeetings(collegeId: string): Promise<PodSuccessMeeting[]> {
+  const payload = await requestJson(`/admin/pod-success-meetings?collegeId=${encodeURIComponent(collegeId)}`);
+  const data = unwrapData<PodSuccessMeeting[]>(payload);
+  return Array.isArray(data) ? data : [];
+}
+
+export async function createPodSuccessMeeting(input: PodSuccessMeetingInput & { collegeId: string }): Promise<PodSuccessMeeting> {
+  const payload = await requestJson("/admin/pod-success-meetings", { method: "POST", body: JSON.stringify(input) });
+  const data = unwrapData<PodSuccessMeeting>(payload);
+  if (!data?.id) throw new Error("Meeting response was incomplete.");
+  return data;
+}
+
+export async function updatePodSuccessMeeting(id: string, input: PodSuccessMeetingInput): Promise<PodSuccessMeeting> {
+  const payload = await requestJson(`/admin/pod-success-meetings/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(input) });
+  const data = unwrapData<PodSuccessMeeting>(payload);
+  if (!data?.id) throw new Error("Meeting response was incomplete.");
+  return data;
+}
+
+export async function deletePodSuccessMeeting(id: string): Promise<void> {
+  await requestJson(`/admin/pod-success-meetings/${encodeURIComponent(id)}`, { method: "DELETE" });
 }
 
 export async function listChallenges(): Promise<Challenge[]> {

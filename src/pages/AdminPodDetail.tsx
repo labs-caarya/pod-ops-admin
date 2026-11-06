@@ -41,6 +41,7 @@ import { ExpertiseTags } from "@/components/ui/ExpertiseTags";
 import { ProgressBar } from "@/components/ui/Misc";
 import { cn } from "@/lib/utils";
 import { PodLeaderGoalsPanel } from "@/components/pods/PodLeaderGoalsPanel";
+import { PodSuccessMeetingsPanel } from "@/components/pods/PodSuccessMeetingsPanel";
 import { PodQuarterlyGoalsCard } from "@/components/pods/PodQuarterlyGoalsCard";
 import { buildQuarterlySnapshot, emptyQuarterlyCounts } from "@/lib/quarterlyGoals";
 
@@ -49,6 +50,7 @@ const TABS = [
   { id: "talent", label: "Talent" },
   { id: "partners", label: "Partners" },
   { id: "ops", label: "Pod Ops" },
+  { id: "meets", label: "Success meets" },
 ] as const;
 
 type PodTab = (typeof TABS)[number]["id"];
@@ -207,6 +209,7 @@ export default function AdminPodDetail() {
             activationLoading={activationQuery.isPending}
           />
         ) : null}
+        {tab === "meets" ? <PodSuccessMeetingsPanel collegeId={pod.id} podName={pod.name} /> : null}
       </div>
     </div>
   );
