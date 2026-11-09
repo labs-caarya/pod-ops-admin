@@ -57,8 +57,8 @@ function SidebarNavItem({ item, onNavigate, badge }: { item: NavItem; onNavigate
 
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { user } = useAuth();
-  const unreadReferrals = useQuery(talentReferralUnseenQuery()).data?.count ?? 0;
-  const crewManager = user?.accountType === "crew_manager";
+  const crewManager = user?.accountType === "crew_manager" || user?.permissions?.includes("pod_ops:crew_manager") === true;
+  const unreadReferrals = useQuery({ ...talentReferralUnseenQuery(), enabled: !crewManager }).data?.count ?? 0;
   const sections = crewManager
     ? NAV_SECTIONS.map((section) => ({ ...section, items: section.items.filter((item) => item.crewManager) })).filter((section) => section.items.length)
     : NAV_SECTIONS;

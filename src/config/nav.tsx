@@ -43,7 +43,7 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     heading: "Overview",
     items: [
-      { label: "Dashboard", to: "/", icon: LayoutDashboard, end: true },
+      { label: "Dashboard", to: "/", icon: LayoutDashboard, end: true, crewManager: true },
       { label: "Progress Report", to: "/progress-report", icon: ClipboardList },
       { label: "Pod Portfolio", to: "/pods", icon: Network, crewManager: true },
       { label: "Challenge Vault", to: "/challenges", icon: Vault, crewManager: true },

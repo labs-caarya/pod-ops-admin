@@ -43,6 +43,7 @@ import { CompactStatGrid } from "@/components/ui/CompactStatGrid";
 import { Badge } from "@/components/ui/Badge";
 import { ProgressBar } from "@/components/ui/Misc";
 import { ResponsiveSheet } from "@/components/ui/ResponsiveSheet";
+import { useAuth } from "@/contexts/AuthContext";
 import type { ContentCalendarItem, MarketingCalendarCampaign, NetworkPartner, PodPortfolioEntry } from "@/lib/api";
 import { cn, formatDate } from "@/lib/utils";
 
@@ -66,15 +67,18 @@ const trackTone = {
 } as const;
 
 export default function AdminDashboard() {
+  const { user } = useAuth();
+  const crewManager = user?.accountType === "crew_manager" || user?.permissions?.includes("pod_ops:crew_manager") === true;
+  const dashboardTabs = crewManager ? DASHBOARD_TABS.filter((item) => item.id === "pod-ops") : DASHBOARD_TABS;
   const dashboardQuery = useQuery(dashboardQueryOptions());
   const collegesQuery = useQuery(collegesQueryOptions());
   const activationQuery = useQuery(podActivationQueryOptions());
-  const studioQuery = useQuery(futureCraftApplicantsQueryOptions());
-  const industryQuery = useQuery(industryApplicantsQueryOptions());
+  const studioQuery = useQuery({ ...futureCraftApplicantsQueryOptions(), enabled: !crewManager });
+  const industryQuery = useQuery({ ...industryApplicantsQueryOptions(), enabled: !crewManager });
   const portfolioQuery = useQuery(podPortfolioQueryOptions());
-  const partnersQuery = useQuery(networkPartnersQueryOptions());
-  const campaignsQuery = useQuery(marketingCampaignsQueryOptions());
-  const contentCalendarQuery = useQuery(contentCalendarQueryOptions());
+  const partnersQuery = useQuery({ ...networkPartnersQueryOptions(), enabled: !crewManager });
+  const campaignsQuery = useQuery({ ...marketingCampaignsQueryOptions(), enabled: !crewManager });
+  const contentCalendarQuery = useQuery({ ...contentCalendarQueryOptions(), enabled: !crewManager });
   const [dashboardTab, setDashboardTab] = useState<DashboardTab>("pod-ops");
   const [sheet, setSheet] = useState<SheetId>(null);
   const [track, setTrack] = useState<TrackFilter>("all");
@@ -154,13 +158,13 @@ export default function AdminDashboard() {
     <div className="flex h-[calc(100dvh-6rem)] min-h-0 flex-col gap-4 overflow-hidden lg:h-[calc(100dvh-8rem)]">
       <PageHeader
         icon={LayoutDashboard}
-        title="Network dashboard"
-        description="Pod ops, partnerships, and marketing."
+        title={crewManager ? "Crew dashboard" : "Network dashboard"}
+        description={crewManager ? `${user?.crewScope?.label || "Your crew"} pods and operational health.` : "Pod ops, partnerships, and marketing."}
         className="mb-0 shrink-0"
       />
 
       <div className="flex shrink-0 gap-1 overflow-x-auto rounded-2xl border border-line bg-surface-2 p-1" role="tablist" aria-label="Dashboard sections">
-        {DASHBOARD_TABS.map((item) => (
+        {dashboardTabs.map((item) => (
           <button
             key={item.id}
             type="button"

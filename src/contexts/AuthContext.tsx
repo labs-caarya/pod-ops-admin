@@ -69,11 +69,16 @@ function isTokenValid(token: string) {
   return (payload.exp as number) * 1000 > Date.now();
 }
 
-function isAdminUser(user: AllowedUser | null) {
+function canAccessAdminPortal(user: AllowedUser | null) {
   if (!user) return false;
   return user.accountType === "super_admin"
     || user.accountType === "pod_ops_admin"
-    || Boolean(user.permissions?.some((permission) => permission === "*" || permission === "pod_ops:admin"));
+    || user.accountType === "crew_manager"
+    || Boolean(
+      user.permissions?.some(
+        (permission) => permission === "*" || permission === "pod_ops:admin" || permission === "pod_ops:crew_manager",
+      ),
+    );
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -101,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       stored = null;
     }
 
-    if (!isAdminUser(stored)) {
+    if (!canAccessAdminPortal(stored)) {
       remove(TOKEN_KEY);
       remove(USER_KEY);
       setUser(null);
@@ -111,7 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     void getCurrentSession()
       .then((sessionUser) => {
-        if (!active || !isAdminUser(sessionUser)) throw new Error("Session is not authorized for Pod Ops Admin.");
+        if (!active || !canAccessAdminPortal(sessionUser)) throw new Error("Session is not authorized for Pod Ops Admin.");
         write(USER_KEY, JSON.stringify(sessionUser));
         setUser(sessionUser);
       })
@@ -147,7 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setStatus({ message: "Signing in…", type: "info" });
       try {
         const data = await loginWithCredentials(normalizedUsername, normalizedPassword);
-        if (!isAdminUser(data.user)) {
+        if (!canAccessAdminPortal(data.user)) {
           setStatus({ message: "This account does not have admin dashboard access.", type: "error" });
           remove(TOKEN_KEY);
           remove(USER_KEY);
