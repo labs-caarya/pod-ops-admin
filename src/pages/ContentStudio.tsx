@@ -51,13 +51,19 @@ export default function ContentStudio() {
   return (
     <div>
       <PageHeader icon={FileText} title="Content Studio" description="Plan content and define the audiences it is designed to reach." />
-      <div className="mb-5 flex w-fit rounded-xl border border-line bg-surface-2 p-1" role="tablist" aria-label="Content Studio sections">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex w-fit rounded-xl border border-line bg-surface-2 p-1" role="tablist" aria-label="Content Studio sections">
         <button type="button" role="tab" aria-selected={activeTab === "content"} onClick={() => setActiveTab("content")} className={`focus-ring inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${activeTab === "content" ? "bg-surface text-ink shadow-sm" : "text-ink-muted hover:text-ink"}`}><FileText className="h-4 w-4" />Content</button>
         <button type="button" role="tab" aria-selected={activeTab === "audiences"} onClick={() => setActiveTab("audiences")} className={`focus-ring inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${activeTab === "audiences" ? "bg-surface text-ink shadow-sm" : "text-ink-muted hover:text-ink"}`}><UsersRound className="h-4 w-4" />Audience</button>
+        </div>
+        {activeTab === "content" && (
+          <Button className="ml-auto min-h-11 shrink-0 whitespace-nowrap px-3 sm:px-4" onClick={openCreate}>
+            <Plus className="h-4 w-4" aria-hidden="true" />Add content
+          </Button>
+        )}
       </div>
 
       {activeTab === "content" ? <>
-      <div className="mb-4 flex justify-end"><Button onClick={openCreate}><Plus className="h-4 w-4" />Add content</Button></div>
       <Card className="mb-5 p-3 sm:p-4">
         <div className="flex flex-col gap-3 sm:flex-row">
           <div className="relative min-w-0 flex-1"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" /><input aria-label="Search content" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search name, platform, pillar, topic, or tag" className="min-h-10 w-full rounded-xl border border-line bg-surface-2 py-2 pl-9 pr-3.5 text-sm text-ink outline-none focus:border-ruby focus:ring-2 focus:ring-ruby/25" /></div>

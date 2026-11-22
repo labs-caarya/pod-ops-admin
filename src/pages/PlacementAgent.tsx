@@ -398,8 +398,8 @@ export default function PlacementAgent() {
                     <p className="text-xs text-ink-muted">Browse and add anyone from your talent map — not limited to recommendations</p>
                   </div>
                 </div>
-                <div className="mb-4 flex flex-wrap items-center gap-2">
-                  <div className="relative min-w-[220px] flex-1">
+                <div className="mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+                  <div className="relative min-w-0">
                     <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
                     <Input
                       placeholder="Search by name, skill, role, college…"
@@ -411,7 +411,7 @@ export default function PlacementAgent() {
                   <Select
                     value={talentStatusFilter}
                     onChange={(e) => setTalentStatusFilter(e.target.value)}
-                    className="w-40"
+                    className="w-auto min-w-[8.5rem]"
                   >
                     <option value="all">All statuses</option>
                     <option value="Available">Available</option>

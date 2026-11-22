@@ -172,8 +172,8 @@ export default function Opportunities() {
           {filtered.map((j) => (
             <Card key={j.id} hover className="flex flex-col p-4">
               <div className="flex items-start justify-between gap-2">
-                <button onClick={() => setEditing(j)} className="min-w-0 text-left">
-                  <h3 className="truncate font-display font-bold text-ink">{j.title}</h3>
+                <button onClick={() => setEditing(j)} className="min-w-0 flex-1 text-left">
+                  <h3 className="truncate whitespace-nowrap font-display font-bold text-ink">{j.title}</h3>
                   <p className="truncate text-xs text-ink-muted">{j.company}</p>
                 </button>
                 <Badge tone={JOB_STATUS_TONE[j.status] ?? "muted"}>{j.status}</Badge>
@@ -184,10 +184,12 @@ export default function Opportunities() {
                   {j.source === "partner" ? <Building2 className="mr-1 inline h-3 w-3" /> : <Microscope className="mr-1 inline h-3 w-3" />}
                   {opportunitySourceLabel(j.source)}
                 </Badge>
-                <Badge tone="ruby">{j.type}</Badge>
-                <span className="flex items-center gap-1 rounded-full bg-surface-3 px-2 py-0.5 text-[11px] text-ink-muted">
-                  <MapPin className="h-3 w-3" /> {j.workMode}
-                </span>
+                {j.type && <Badge tone="ruby">{j.type}</Badge>}
+                {j.workMode && (
+                  <span className="flex items-center gap-1 rounded-full bg-surface-3 px-2 py-0.5 text-[11px] text-ink-muted">
+                    <MapPin className="h-3 w-3" /> {j.workMode}
+                  </span>
+                )}
                 {j.stipend && (
                   <span className="flex items-center gap-1 rounded-full bg-surface-3 px-2 py-0.5 text-[11px] text-ink-muted">
                     <IndianRupee className="h-3 w-3" /> {j.stipend}

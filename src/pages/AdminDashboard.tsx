@@ -13,6 +13,7 @@ import {
   LayoutDashboard,
   Megaphone,
   Rocket,
+  Search,
   Sparkles,
   TriangleAlert,
   UserRound,
@@ -38,6 +39,7 @@ import {
 } from "@/lib/applicantTracks";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
+import { Input } from "@/components/ui/Field";
 import { StatCard } from "@/components/ui/StatCard";
 import { CompactStatGrid } from "@/components/ui/CompactStatGrid";
 import { Badge } from "@/components/ui/Badge";
@@ -82,6 +84,9 @@ export default function AdminDashboard() {
   const [dashboardTab, setDashboardTab] = useState<DashboardTab>("pod-ops");
   const [sheet, setSheet] = useState<SheetId>(null);
   const [track, setTrack] = useState<TrackFilter>("all");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [applicantSearch, setApplicantSearch] = useState("");
+  const searchTerm = applicantSearch.trim().toLowerCase();
 
   const activationRows = useMemo(() => {
     const pods = (collegesQuery.data || []).filter((college) => college.isPod);
@@ -114,8 +119,12 @@ export default function AdminDashboard() {
     [industryQuery.data, studioQuery.data],
   );
   const filteredApplicants = useMemo(
-    () => (track === "all" ? applicants : applicants.filter((applicant) => applicant.track === track)),
-    [applicants, track],
+    () => applicants.filter((applicant) =>
+      (track === "all" || applicant.track === track) &&
+      (!searchTerm || [applicant.name, applicant.college, applicant.podName]
+        .some((value) => value?.toLowerCase().includes(searchTerm))),
+    ),
+    [applicants, track, searchTerm],
   );
 
   const healthGroups = useMemo(() => {
@@ -210,7 +219,7 @@ export default function AdminDashboard() {
           ) : portfolioQuery.isError ? (
             <p className="mt-4 text-sm text-bad">Could not load pod health.</p>
           ) : (
-            <div className="mt-4 grid gap-3 lg:grid-cols-3">
+            <div className="mt-3 grid min-w-0 grid-cols-1 gap-2 sm:mt-4 sm:gap-3 lg:grid-cols-3">
               <HealthColumn
                 title="At risk"
                 tone="bad"
@@ -287,8 +296,23 @@ export default function AdminDashboard() {
                 icon={GraduationCap}
                 title="Applicants tracker"
                 description="Latest applications across Experience Studio, Castle, and FWS."
-                action={filteredApplicants.length > 0 ? <ViewAllButton count={filteredApplicants.length} onClick={() => setSheet("applicants")} /> : null}
+                action={<div className="flex items-center gap-2">
+                  <button type="button" aria-label="Search applicants" aria-expanded={searchOpen}
+                    className="focus-ring grid size-11 place-items-center rounded-xl border border-line text-ink-muted hover:bg-surface-2"
+                    onClick={() => {
+                      if (searchOpen) setApplicantSearch("");
+                      setSearchOpen(!searchOpen);
+                    }}>
+                    <Search className="size-4" aria-hidden="true" />
+                  </button>
+                  {filteredApplicants.length > 0 && <ViewAllButton count={filteredApplicants.length} onClick={() => setSheet("applicants")} />}
+                </div>}
               />
+              {searchOpen && (
+                <Input autoFocus type="search" aria-label="Search by name, college, or pod"
+                  placeholder="Search by name, college, or pod" className="mt-3"
+                  value={applicantSearch} onChange={(event) => setApplicantSearch(event.target.value)} />
+              )}
               <TrackFilter value={track} onChange={setTrack} />
               {applicantsLoading ? (
                 <p className="mt-4 text-sm text-ink-muted">Loading applicants…</p>
@@ -301,7 +325,7 @@ export default function AdminDashboard() {
                   ))}
                 </div>
               ) : (
-                <p className="mt-4 text-sm text-ink-muted">{emptyApplicantsCopy(track)}</p>
+                <p className="mt-4 text-sm text-ink-muted">{searchTerm ? "No applicants match your search." : emptyApplicantsCopy(track)}</p>
               )}
             </Card>
           </>
@@ -404,7 +428,7 @@ export default function AdminDashboard() {
           {filteredApplicants.length ? (
             filteredApplicants.map((applicant) => <ApplicantRow key={applicant.id} applicant={applicant} />)
           ) : (
-            <p className="text-sm text-ink-muted">{emptyApplicantsCopy(track)}</p>
+            <p className="text-sm text-ink-muted">{searchTerm ? "No applicants match your search." : emptyApplicantsCopy(track)}</p>
           )}
         </div>
       </ResponsiveSheet>
@@ -589,36 +613,44 @@ function HealthColumn({
 }) {
   const Icon = tone === "bad" ? TriangleAlert : tone === "amber" ? Eye : Sparkles;
   return (
-    <div className={`rounded-2xl border p-3 ${highlighted ? "border-good/50 bg-good/10" : tone === "bad" ? "border-bad/30 bg-bad/5" : "border-amber/30 bg-amber/5"}`}>
+    <div className={`min-w-0 rounded-xl border p-2.5 sm:rounded-2xl sm:p-3 ${highlighted ? "border-good/50 bg-good/10" : tone === "bad" ? "border-bad/30 bg-bad/5" : "border-amber/30 bg-amber/5"}`}>
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Icon className={`h-4 w-4 ${tone === "bad" ? "text-bad" : tone === "amber" ? "text-amber-bright" : "text-good"}`} />
           <h3 className="font-display text-sm font-bold text-ink">{title}</h3>
           <Badge tone={tone}>{pods.length}</Badge>
         </div>
-        {pods.length > PREVIEW_COUNT ? <ViewAllButton count={pods.length} onClick={onViewAll} /> : null}
+        {pods.length > 2 && (
+          <div className={pods.length <= PREVIEW_COUNT ? "sm:hidden" : undefined}>
+            <ViewAllButton count={pods.length} onClick={onViewAll} />
+          </div>
+        )}
       </div>
       {pods.length ? (
-        <div className="mt-3 space-y-2">
-          {pods.slice(0, PREVIEW_COUNT).map((pod) => (
-            <HealthPodRow key={pod.id} pod={pod} />
+        <div className="mt-2 space-y-1.5 sm:mt-3 sm:space-y-2">
+          {pods.slice(0, PREVIEW_COUNT).map((pod, index) => (
+            <div key={pod.id} className={index >= 2 ? "hidden sm:block" : undefined}>
+              <HealthPodRow pod={pod} grouped />
+            </div>
           ))}
         </div>
       ) : (
-        <p className="mt-3 text-sm text-ink-muted">None right now.</p>
+        <p className="mt-1 text-xs text-ink-muted sm:mt-3 sm:text-sm">None right now.</p>
       )}
     </div>
   );
 }
 
-function HealthPodRow({ pod }: { pod: PodPortfolioEntry }) {
+function HealthPodRow({ pod, grouped = false }: { pod: PodPortfolioEntry; grouped?: boolean }) {
   return (
-    <Link to={`/pods/${pod.id}`} className="block rounded-xl border border-line bg-surface px-3 py-2 hover:border-line-strong">
+    <Link to={`/pods/${pod.id}`} className="block min-h-11 min-w-0 rounded-lg border border-line bg-surface px-2.5 py-1.5 hover:border-line-strong sm:rounded-xl sm:px-3 sm:py-2">
       <div className="flex items-center justify-between gap-2">
-        <p className="truncate text-sm font-semibold text-ink">{pod.name}</p>
-        <Badge tone={healthTone[pod.health]}>{pod.health}</Badge>
+        <p className="min-w-0 break-words text-sm font-semibold text-ink sm:truncate">{pod.name}</p>
+        <span className={grouped ? "hidden shrink-0 sm:inline-flex" : "shrink-0"}>
+          <Badge tone={healthTone[pod.health]}>{pod.health}</Badge>
+        </span>
       </div>
-      <p className="mt-0.5 text-xs text-ink-muted">
+      <p className="mt-0.5 break-words text-xs text-ink-muted">
         {pod.openChallenges} open · {pod.activationPercent}% activated
         {pod.podLeader ? ` · ${pod.podLeader}` : ""}
       </p>

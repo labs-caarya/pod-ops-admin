@@ -132,8 +132,8 @@ export default function ProgramManagement() {
             />
           ) : (
             <div className="overflow-x-auto rounded-xl border border-line">
-              <table className="w-full min-w-[520px] text-left text-sm">
-                <thead>
+              <table role="table" className="block w-full text-left text-sm sm:table sm:min-w-[520px]">
+                <thead className="sr-only sm:not-sr-only">
                   <tr className="border-b border-line text-[11px] font-medium uppercase tracking-[0.12em] text-ink-faint">
                     <th className="px-4 py-2.5 font-medium">Todo</th>
                     <th className="px-4 py-2.5 font-medium">Role</th>
@@ -142,24 +142,26 @@ export default function ProgramManagement() {
                     </th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody role="rowgroup" className="block sm:table-row-group">
                   {todos.map((todo) => (
-                    <tr key={todo.id} className="border-b border-line last:border-0">
-                      <td className="px-4 py-3 font-medium text-ink">{todo.title}</td>
-                      <td className="px-4 py-3 text-ink-muted">{formatPodRole(todo.role)}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex justify-end gap-1">
-                          <Button size="sm" variant="secondary" onClick={() => setEditor(todo)}>
+                    <tr key={todo.id} role="row" className="block border-b border-line last:border-0 sm:table-row">
+                      <td role="cell" className="block break-words px-4 pt-3 font-medium text-ink sm:table-cell sm:py-3">{todo.title}</td>
+                      <td role="cell" className="block break-words px-4 pt-1 text-ink-muted sm:table-cell sm:py-3">{formatPodRole(todo.role)}</td>
+                      <td role="cell" className="block px-4 py-3 sm:table-cell">
+                        <div className="flex flex-wrap gap-2 sm:justify-end sm:gap-1">
+                          <Button size="sm" className="min-h-11 sm:min-h-0" variant="secondary" onClick={() => setEditor(todo)}>
                             <Edit3 className="h-3.5 w-3.5" />
                             Edit
                           </Button>
                           <Button
-                            size="icon"
+                            size="sm"
                             variant="danger"
-                            aria-label={`Remove ${todo.title}`}
+                            className="min-h-11 sm:min-h-0"
+                            aria-label={`Delete ${todo.title}`}
                             onClick={() => remove(todo)}
                           >
                             <Trash2 className="h-3.5 w-3.5" />
+                            Delete
                           </Button>
                         </div>
                       </td>
