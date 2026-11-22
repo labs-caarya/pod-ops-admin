@@ -57,7 +57,7 @@ export function ResponsiveSheet({
           "relative flex w-full flex-col border-line bg-base-2 shadow-2xl",
           desktop
             ? "h-full max-w-xl border-l animate-[slidein_0.25s_ease]"
-            : "max-h-[85dvh] rounded-t-3xl border-t animate-[slideup_0.25s_ease]",
+            : "max-h-[85dvh] rounded-t-3xl border-t pb-[env(safe-area-inset-bottom)] animate-[slideup_0.25s_ease]",
         )}
         style={{ animationFillMode: "both" }}
       >
@@ -71,12 +71,12 @@ export function ResponsiveSheet({
             type="button"
             aria-label="Close panel"
             onClick={onClose}
-            className="focus-ring rounded-lg p-1.5 text-ink-muted hover:bg-surface-2 hover:text-ink"
+            className="focus-ring grid size-11 shrink-0 place-items-center rounded-lg text-ink-muted hover:bg-surface-2 hover:text-ink"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 sm:py-5">{children}</div>
       </div>
       <style>{`
         @keyframes slidein { from { transform: translateX(24px); opacity: 0 } to { transform: translateX(0); opacity: 1 } }

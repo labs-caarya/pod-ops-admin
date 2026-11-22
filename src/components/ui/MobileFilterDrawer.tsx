@@ -30,7 +30,7 @@ export function MobileFilterDrawer({
         type="button"
         variant={active ? "primary" : "secondary"}
         size="icon"
-        className={triggerClassName}
+        className={cn("min-h-11 min-w-11", triggerClassName)}
         aria-label={triggerLabel}
         title={triggerLabel}
         aria-expanded={open}

@@ -5,11 +5,13 @@ import { NAV_SECTIONS, type NavItem } from "@/config/nav";
 import { preloadAdminRoute } from "@/lib/adminRouteModules";
 import { ResponsiveSheet } from "@/components/ui/ResponsiveSheet";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
-const OPERATIONS_ITEMS = NAV_SECTIONS.find((section) => section.heading === "Operations")?.items ?? [];
-const BUSINESS_ITEMS = NAV_SECTIONS.find((section) => section.heading === "Business")?.items ?? [];
-const EXPERIENCE_ITEMS = NAV_SECTIONS.find((section) => section.heading === "Experience")?.items ?? [];
-const MORE_ITEMS = [...OPERATIONS_ITEMS, ...BUSINESS_ITEMS, ...EXPERIENCE_ITEMS];
+const TAB_PATHS = new Set(["/", "/pods", "/challenges"]);
+const MORE_SECTIONS = NAV_SECTIONS.map((section) => ({
+  ...section,
+  items: section.items.filter((item) => !TAB_PATHS.has(item.to)),
+}));
 
 function isDashboardPath(pathname: string) {
   return pathname === "/";
@@ -27,16 +29,18 @@ function isChallengesPath(pathname: string) {
   return pathname === "/challenges" || pathname.startsWith("/challenges/");
 }
 
-function isOperationsPath(pathname: string) {
-  return MORE_ITEMS.some((item) => !item.external && (pathname === item.to || pathname.startsWith(`${item.to}/`)));
-}
-
 export function MobileTabBar() {
   const location = useLocation();
   const navigate = useNavigate();
   const [operationsOpen, setOperationsOpen] = useState(false);
 
-  const operationsActive = useMemo(() => isOperationsPath(location.pathname), [location.pathname]);
+  const { user } = useAuth();
+  const crewManager = user?.accountType === "crew_manager" || user?.permissions?.includes("pod_ops:crew_manager") === true;
+  const sections = useMemo(() => crewManager
+    ? MORE_SECTIONS.map((section) => ({ ...section, items: section.items.filter((item) => item.crewManager) })).filter((section) => section.items.length)
+    : MORE_SECTIONS, [crewManager]);
+  const operationsActive = sections.some(({ items }) => items.some((item) =>
+    !item.external && (location.pathname === item.to || location.pathname.startsWith(`${item.to}/`))));
 
   function openOperations() {
     setOperationsOpen(true);
@@ -87,7 +91,7 @@ export function MobileTabBar() {
             icon={Vault}
             active={isChallengesPath(location.pathname)}
           />
-          <OperationsTab active={operationsActive} onClick={openOperations} />
+          <OperationsTab active={operationsActive} open={operationsOpen} onClick={openOperations} />
         </div>
       </nav>
 
@@ -98,9 +102,9 @@ export function MobileTabBar() {
         subtitle="Choose a workspace"
       >
         <div className="space-y-4">
-          <MobileNavGroup heading="Operations" items={OPERATIONS_ITEMS} pathname={location.pathname} onSelect={goOperations} onExternal={() => setOperationsOpen(false)} />
-          <MobileNavGroup heading="Experience" items={EXPERIENCE_ITEMS} pathname={location.pathname} onSelect={goOperations} onExternal={() => setOperationsOpen(false)} />
-          <MobileNavGroup heading="Business" items={BUSINESS_ITEMS} pathname={location.pathname} onSelect={goOperations} onExternal={() => setOperationsOpen(false)} />
+          {sections.map(({ heading, items }) => (
+            <MobileNavGroup key={heading} heading={heading} items={items} pathname={location.pathname} onSelect={goOperations} onExternal={() => setOperationsOpen(false)} />
+          ))}
         </div>
       </ResponsiveSheet>
     </>
@@ -121,10 +125,11 @@ function TabLink({
   return (
     <Link
       to={to}
+      aria-current={active ? "page" : undefined}
       onMouseEnter={() => void preloadAdminRoute(to)}
       onFocus={() => void preloadAdminRoute(to)}
       className={cn(
-        "focus-ring flex flex-col items-center gap-0.5 rounded-lg px-1 py-2 text-[10px] font-semibold transition-colors",
+        "focus-ring flex min-h-11 min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-2 text-[10px] font-semibold transition-colors",
         active ? "text-ruby-bright" : "text-ink-muted hover:text-ink",
       )}
     >
@@ -185,10 +190,12 @@ function MobileNavGroup({
   );
 }
 
-function OperationsTab({ active, onClick }: { active: boolean; onClick: () => void }) {
+function OperationsTab({ active, open, onClick }: { active: boolean; open: boolean; onClick: () => void }) {
   return (
     <button
       type="button"
+      aria-haspopup="dialog"
+      aria-expanded={open}
       onClick={onClick}
       className={cn(
         "focus-ring flex flex-col items-center gap-0.5 rounded-lg px-1 py-2 text-[10px] font-semibold transition-colors",
@@ -196,7 +203,7 @@ function OperationsTab({ active, onClick }: { active: boolean; onClick: () => vo
       )}
     >
       <Layers className={cn("h-5 w-5", active ? "text-ruby-bright" : "text-ink-faint")} />
-      <span className="truncate">Operations</span>
+      <span>More</span>
     </button>
   );
 }

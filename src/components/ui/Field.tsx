@@ -3,7 +3,7 @@ import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const fieldBase =
-  "w-full rounded-xl border border-line bg-surface-2 px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-faint transition-colors hover:border-line-strong focus:border-ruby focus:outline-none focus:ring-2 focus:ring-ruby/25";
+  "w-full min-w-0 rounded-xl border border-line bg-surface-2 px-3.5 py-2.5 text-base text-ink placeholder:text-ink-faint transition-colors hover:border-line-strong focus:border-ruby focus:outline-none focus:ring-2 focus:ring-ruby/25 sm:text-sm";
 
 export function Label({ children, className }: { children: React.ReactNode; className?: string }) {
   return (

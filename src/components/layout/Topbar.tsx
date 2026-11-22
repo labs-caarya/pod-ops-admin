@@ -19,7 +19,7 @@ export function Topbar() {
   const name = user?.name || user?.username || user?.phoneNumber || "Pod Member";
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-line bg-base/70 px-4 backdrop-blur-xl lg:px-6">
+    <header className="sticky top-0 z-30 flex min-h-[calc(4rem+env(safe-area-inset-top))] shrink-0 items-center justify-between gap-3 border-b border-line bg-base/70 px-4 pt-[env(safe-area-inset-top)] backdrop-blur-xl lg:px-6">
       <div className="flex min-w-0 items-center gap-2.5 lg:hidden">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-line bg-surface">
           <img src="/admin-logo.png" alt="" className="h-full w-full object-cover" />
@@ -33,14 +33,17 @@ export function Topbar() {
 
       <div ref={ref} className="relative">
         <button
+          type="button"
+          aria-label="Account profile"
+          aria-expanded={open}
           onClick={() => setOpen((o) => !o)}
-          className="focus-ring flex items-center gap-2 rounded-xl border border-line bg-surface-2 py-1.5 pl-1.5 pr-2.5 hover:border-line-strong"
+          className="focus-ring flex min-h-11 items-center gap-2 rounded-xl border border-line bg-surface-2 py-1.5 pl-1.5 pr-2.5 hover:border-line-strong"
         >
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-ruby-bright to-amber text-xs font-bold text-[#1a0c10]">
             {initials(name)}
           </div>
           <span className="hidden max-w-[140px] truncate text-sm text-ink sm:block">{name}</span>
-          <ChevronDown className="h-4 w-4 text-ink-faint" />
+          <ChevronDown className="hidden h-4 w-4 text-ink-faint sm:block" aria-hidden="true" />
         </button>
         {open && (
           <div className="absolute right-0 mt-2 w-48 overflow-hidden rounded-xl border border-line bg-base-2 shadow-2xl">

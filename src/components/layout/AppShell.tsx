@@ -16,6 +16,7 @@ export function AppShell() {
   useEffect(() => {
     if (hasWarmedWorkspace.current) return;
     hasWarmedWorkspace.current = true;
+    if (!window.matchMedia("(min-width: 1024px)").matches) return;
 
     void Promise.allSettled([
       preloadAdminRouteModules(),
@@ -32,7 +33,7 @@ export function AppShell() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar />
-        <main className="flex-1 overflow-y-auto pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:pb-0">
+        <main className="min-h-0 min-w-0 flex-1 overflow-y-auto pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:pb-0">
           <div className="mx-auto w-full max-w-[90rem] px-3 py-3 sm:px-5 sm:py-5 lg:px-6 lg:py-6">
             <Suspense fallback={<RouteLoadFallback />}>
               <Outlet />

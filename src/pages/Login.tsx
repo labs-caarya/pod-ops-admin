@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Loader2, LockKeyhole, User2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, LockKeyhole, User2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Field";
@@ -9,6 +9,7 @@ export default function Login() {
   const { status, isSigningIn, loginWithCredentials, clearStatus } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const statusTone =
     status.type === "error"
@@ -67,7 +68,7 @@ export default function Login() {
                   <LockKeyhole className="h-4 w-4" />
                 </span>
                 <Input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
                   placeholder="Enter your password"
                   value={password}
@@ -75,8 +76,16 @@ export default function Login() {
                     clearStatus();
                     setPassword(e.target.value);
                   }}
-                  className="border-line/70 bg-base/50 pl-10 backdrop-blur-sm"
+                  className="border-line/70 bg-base/50 pl-10 pr-14 backdrop-blur-sm"
                 />
+                <button
+                  type="button"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  onClick={() => setShowPassword((visible) => !visible)}
+                  className="focus-ring absolute right-1 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-lg text-ink-muted hover:text-ink"
+                >
+                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
               </div>
             </label>
 
@@ -91,7 +100,7 @@ export default function Login() {
           </form>
 
           {status.message && (
-            <p className={cn("mt-3 text-center text-xs", statusTone)}>{status.message}</p>
+            <p role={status.type === "error" ? "alert" : "status"} className={cn("mt-3 text-center text-xs", statusTone)}>{status.message}</p>
           )}
         </div>
 

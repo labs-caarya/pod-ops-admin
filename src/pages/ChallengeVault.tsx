@@ -383,7 +383,7 @@ export default function ChallengeVault() {
   }, [openChallenges, search, statusFilter, pillarFilter, collegeFilter]);
 
   return (
-    <div className="flex h-[calc(100dvh-6rem)] min-h-0 flex-col gap-4 overflow-hidden lg:h-[calc(100dvh-8rem)]">
+    <div className="flex min-h-0 min-w-0 flex-col gap-4 lg:h-[calc(100dvh-8rem)] lg:overflow-hidden">
       <PageHeader
         icon={Vault}
         title="Challenge Vault"
@@ -444,7 +444,7 @@ export default function ChallengeVault() {
             aria-selected={vaultTab === item.id}
             onClick={() => setVaultTab(item.id)}
             className={cn(
-              "shrink-0 rounded-xl px-4 py-2 text-sm font-semibold transition-colors",
+              "min-h-11 shrink-0 rounded-xl px-4 py-2 text-sm font-semibold transition-colors lg:min-h-0",
               vaultTab === item.id ? "bg-ruby/15 text-ruby-bright" : "text-ink-muted hover:text-ink",
             )}
           >
@@ -454,7 +454,7 @@ export default function ChallengeVault() {
       </div>
 
       {vaultTab === "stats" ? (
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
+        <div className="min-h-0 min-w-0 flex-1 space-y-4 lg:overflow-y-auto lg:pr-1">
           <MobileVaultStats stats={stats} />
           <CompactStatGrid label="Challenge statistics" className="hidden grid-cols-2 sm:grid lg:grid-cols-5">
             <StatCard label="Open challenges" value={stats.open} icon={AlertTriangle} tone="amber" />
@@ -549,7 +549,7 @@ export default function ChallengeVault() {
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+      <div className="min-h-0 min-w-0 flex-1 lg:overflow-y-auto lg:pr-1">
         {challengesQuery.isPending ? (
           <Card className="p-8 text-center text-sm text-ink-muted">Loading challenges…</Card>
         ) : challengesQuery.isError ? (

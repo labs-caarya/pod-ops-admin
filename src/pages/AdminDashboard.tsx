@@ -155,7 +155,7 @@ export default function AdminDashboard() {
   const applicantsLoading = studioQuery.isPending || industryQuery.isPending;
 
   return (
-    <div className="flex h-[calc(100dvh-6rem)] min-h-0 flex-col gap-4 overflow-hidden lg:h-[calc(100dvh-8rem)]">
+    <div className="flex min-h-0 min-w-0 flex-col gap-4 lg:h-[calc(100dvh-8rem)] lg:overflow-hidden">
       <PageHeader
         icon={LayoutDashboard}
         title={crewManager ? "Crew dashboard" : "Network dashboard"}
@@ -172,7 +172,7 @@ export default function AdminDashboard() {
             aria-selected={dashboardTab === item.id}
             onClick={() => setDashboardTab(item.id)}
             className={cn(
-              "shrink-0 rounded-xl px-4 py-2 text-sm font-semibold transition-colors",
+              "min-h-11 shrink-0 rounded-xl px-4 py-2 text-sm font-semibold transition-colors lg:min-h-0",
               dashboardTab === item.id ? "bg-ruby/15 text-ruby-bright" : "text-ink-muted hover:text-ink",
             )}
           >
@@ -181,7 +181,7 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
+      <div className="min-h-0 min-w-0 flex-1 space-y-4 lg:overflow-y-auto lg:pr-1">
         {dashboardTab === "pod-ops" ? (
         <>
         {dashboardQuery.isPending ? (

@@ -40,22 +40,25 @@ export function Drawer({
   if (!open) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex justify-end">
+    <div className="fixed inset-x-0 top-0 z-50 flex h-dvh justify-end">
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
         className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-[fade_0.2s_ease]"
         onClick={onClose}
       />
       <div
         className={cn(
-          "relative flex h-full w-full flex-col border-l border-line bg-base-2 shadow-2xl",
+          "relative flex h-full min-w-0 w-full max-w-none flex-col border-line bg-base-2 shadow-2xl sm:border-l",
           "animate-[slidein_0.25s_ease]",
           width,
           panelClassName,
         )}
         style={{ animationFillMode: "both" }}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
-          <div>
+        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-line px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 sm:px-5 sm:py-4">
+          <div className="min-w-0 break-words">
             <h2 className="font-display text-lg font-bold text-ink">{title}</h2>
             {subtitle && <p className="mt-0.5 text-sm text-ink-muted">{subtitle}</p>}
           </div>
@@ -63,13 +66,13 @@ export function Drawer({
             type="button"
             aria-label="Close panel"
             onClick={onClose}
-            className="focus-ring rounded-lg p-1.5 text-ink-muted hover:bg-surface-2 hover:text-ink"
+            className="focus-ring grid size-11 shrink-0 place-items-center rounded-lg text-ink-muted hover:bg-surface-2 hover:text-ink"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div className={cn("flex-1 overflow-y-auto px-5 py-5", bodyClassName)}>{children}</div>
-        {footer && <div className={cn("border-t border-line bg-surface px-5 py-4", footerClassName)}>{footer}</div>}
+        <div className={cn("min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 sm:py-5", bodyClassName)}>{children}</div>
+        {footer && <div className={cn("shrink-0 border-t border-line bg-surface px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5 sm:py-4", footerClassName)}>{footer}</div>}
       </div>
       <style>{`
         @keyframes slidein { from { transform: translateX(24px); opacity: 0 } to { transform: translateX(0); opacity: 1 } }
