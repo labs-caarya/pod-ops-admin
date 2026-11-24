@@ -127,6 +127,8 @@ export interface Profile {
     experienceType?: string;
   };
   roles: string[];
+  roleIds?: string[];
+  roleSuggestions?: Array<{ label: string; normalizedLabel?: string; closestRoleId: string }>;
   status: string;
   lookingFor?: string[];
   engagementGigs?: string[];
@@ -144,6 +146,36 @@ export interface Profile {
   createdAt?: string;
   updatedAt?: string;
   submittedAt: string;
+}
+
+export interface TalentRoleOption {
+  roleId: string;
+  label: string;
+  domainId: string;
+  domainFamily: string;
+  domainName: string;
+  description?: string;
+  aliases?: string[];
+  status: "active" | "archived";
+}
+
+export interface TalentRoleDomain {
+  domainId: string;
+  domainFamily: string;
+  name: string;
+  description?: string;
+}
+
+export interface TalentRoleSuggestion {
+  id: string;
+  rawLabel: string;
+  normalizedLabel: string;
+  closestRoleId: string;
+  affectedCount: number;
+  affectedProfileIds: string[];
+  status: "pending" | "mapped" | "created" | "rejected";
+  resolvedRoleId?: string | null;
+  updatedAt?: string;
 }
 
 export interface PodPortfolioEntry extends Omit<ManagedPod, "clubs"> {
@@ -510,6 +542,31 @@ export async function listIndustryApplicants(): Promise<Profile[]> {
   }
   const data = unwrapData<Profile[]>(payload);
   return Array.isArray(data) ? data : [];
+}
+
+export async function listTalentRoleCatalogue(): Promise<{ domains: TalentRoleDomain[]; roles: TalentRoleOption[] }> {
+  const payload = await requestJson("/admin/talent-roles");
+  const data = unwrapData<{ domains: TalentRoleDomain[]; roles: TalentRoleOption[] }>(payload);
+  return { domains: data?.domains || [], roles: data?.roles || [] };
+}
+
+export async function listTalentRoleSuggestions(): Promise<TalentRoleSuggestion[]> {
+  const payload = await requestJson("/admin/talent-roles/suggestions");
+  const data = unwrapData<TalentRoleSuggestion[]>(payload);
+  return Array.isArray(data) ? data : [];
+}
+
+export async function reviewTalentRoleSuggestion(
+  id: string,
+  input: { action: "map"; targetRoleId: string } | { action: "create"; label: string; domainId: string } | { action: "reject" },
+): Promise<TalentRoleSuggestion> {
+  const payload = await requestJson(`/admin/talent-roles/suggestions/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+  const data = unwrapData<TalentRoleSuggestion>(payload);
+  if (!data) throw new Error("Role review response was incomplete.");
+  return data;
 }
 
 export async function listShortlistingCompanies(profileId: string): Promise<ShortlistingCompany[]> {

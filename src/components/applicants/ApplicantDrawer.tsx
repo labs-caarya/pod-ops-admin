@@ -87,6 +87,14 @@ export default function ApplicantDrawer({ profile, onClose }: ApplicantDrawerPro
                 ))}
               </div>
             )}
+            {profile.roleSuggestions?.length ? (
+              <div className="mt-2 rounded-lg border border-amber/30 bg-amber/5 px-3 py-2">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-amber">Pending role review</p>
+                <p className="mt-1 text-xs text-ink-muted">
+                  Original wording: {profile.roleSuggestions.map((item) => item.label).join(", ")}
+                </p>
+              </div>
+            ) : null}
           </div>
         </div>
 

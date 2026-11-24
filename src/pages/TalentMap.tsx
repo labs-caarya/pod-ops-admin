@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Users, Plus, Search, UserCheck, UserPlus, Coffee, Layers } from "lucide-react";
+import { Users, Plus, Search, UserCheck, UserPlus, Coffee, Layers, Tags } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatCard } from "@/components/ui/StatCard";
 import { Card } from "@/components/ui/Card";
@@ -13,6 +13,7 @@ import { makeId } from "@/lib/utils";
 import type { TalentMember, TalentRole } from "@/lib/types";
 import { TalentGrid } from "@/components/talent/TalentGrid";
 import { TalentDrawer } from "@/components/talent/TalentDrawer";
+import { RoleCataloguePanel } from "@/components/talent/RoleCataloguePanel";
 
 export default function TalentMap() {
   const talent = useQuery(talentMembersQueryOptions()).data ?? [];
@@ -22,6 +23,7 @@ export default function TalentMap() {
   const [sourceFilter, setSourceFilter] = useState("all");
   const [roleFilter, setRoleFilter] = useState<TalentRole | null>(null);
   const [editing, setEditing] = useState<TalentMember | "new" | null>(null);
+  const [view, setView] = useState<"talent" | "roles">("talent");
 
   const filtered = useMemo(() => {
     return talent.filter((m) => {
@@ -71,12 +73,15 @@ export default function TalentMap() {
         icon={Users}
         title="Talent Map"
         description="Map students by role and service offerings — developers, designers, nano-influencers and more."
-        actions={
-          <Button onClick={() => setEditing("new")}>
-            <Plus className="h-4 w-4" /> Add talent
+        actions={<div className="flex gap-2">
+          <Button variant={view === "roles" ? "primary" : "secondary"} onClick={() => setView((current) => current === "roles" ? "talent" : "roles")}>
+            <Tags className="h-4 w-4" /> {view === "roles" ? "Talent map" : "Role catalogue"}
           </Button>
-        }
+          {view === "talent" ? <Button onClick={() => setEditing("new")}><Plus className="h-4 w-4" /> Add talent</Button> : null}
+        </div>}
       />
+
+      {view === "roles" ? <RoleCataloguePanel /> : <>
 
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="Available" value={stats.available} icon={UserCheck} tone="good" />
@@ -129,6 +134,7 @@ export default function TalentMap() {
           onClose={() => setEditing(null)}
         />
       )}
+      </>}
     </div>
   );
 }
