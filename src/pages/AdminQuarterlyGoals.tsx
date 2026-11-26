@@ -1,292 +1,177 @@
-import { Link, useSearchParams } from "react-router-dom";
-import { useMemo, useState, type ReactNode } from "react";
-import { useQuery } from "@tanstack/react-query";
-import {
-  ArrowUpRight,
-  BookOpen,
-  Briefcase,
-  Building2,
-  CalendarDays,
-  ChevronDown,
-  Flag,
-  GraduationCap,
-  Handshake,
-  Megaphone,
-  Rocket,
-  Users,
-} from "lucide-react";
-import {
-  dashboardQueryOptions,
-  futureCraftApplicantsQueryOptions,
-  industryApplicantsQueryOptions,
-  networkPartnersQueryOptions,
-  podPortfolioQueryOptions,
-} from "@/lib/adminQueries";
-import { buildTrackerApplicants } from "@/lib/applicantTracks";
-import {
-  buildQuarterlySnapshot,
-  currentQuarterMeta,
-  emptyQuarterlyCounts,
-  QUARTERLY_SECTIONS,
-  type QuarterlyCounts,
-  type QuarterlyGoalSectionId,
-} from "@/lib/quarterlyGoals";
-import type { PodInsight, PodPortfolioEntry, Profile } from "@/lib/api";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Flag } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { requestJson, unwrapData } from "@/lib/api";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
-import { PodQuarterlyProgressCard } from "@/components/pods/QuarterlyTargetsBreakdown";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/Button";
+import { podPortfolioQueryOptions } from "@/lib/adminQueries";
 
-const TABS = [
-  { id: "progress", label: "Progress by pods" },
-  { id: "targets", label: "Targets" },
-] as const;
+interface Goal {
+  id: string;
+  title: string;
+  description: string;
+  section: string;
+  target: number;
+  unit: string;
+  cadence: string;
+  roles: string[];
+  metric: string;
+  href: string;
+}
 
-type GoalsTab = (typeof TABS)[number]["id"];
+interface Options {
+  quarter: string;
+  sections: string[];
+  roles: string[];
+  metrics: { id: string; label: string }[];
+}
 
-const SECTION_ICONS: Record<QuarterlyGoalSectionId, typeof Flag> = {
-  talent: GraduationCap,
-  industry: Briefcase,
-  marketing: Megaphone,
-  distribution: Handshake,
-  "campus-companies": Building2,
-  community: CalendarDays,
+interface Playbook { draft: Goal[]; published: Goal[] }
+
+const roleLabels: Record<string, string> = {
+  exec: "Exec Lead", ops: "Ops Lead", marketing: "Marketing Lead",
+  tdl: "Talent Development Lead", prl: "Partner Relations Lead", spaa: "Strategic Partnership Associate",
 };
 
-function parseTab(value: string | null): GoalsTab {
-  return TABS.some((tab) => tab.id === value) ? (value as GoalsTab) : "progress";
-}
-
-function sameText(left?: string, right?: string) {
-  return Boolean(left?.trim() && right?.trim() && left.trim().toLowerCase() === right.trim().toLowerCase());
-}
-
-function looksFor(profile: Profile, optionId: string) {
-  return (profile.lookingFor ?? []).includes(optionId);
-}
-
-function countsForPod(
-  pod: PodPortfolioEntry,
-  insight: PodInsight | undefined,
-  studio: number,
-  castle: number,
-  fws: number,
-  nano: number,
-  campusCompanies: number,
-): QuarterlyCounts {
-  return {
-    ...emptyQuarterlyCounts(),
-    observership: studio,
-    castle,
-    placements: Math.max(fws, insight?.weekly.placements ?? 0),
-    industryPartners: insight?.snapshot.activePartners ?? 0,
-    outreach: insight?.snapshot.contactsInConversation ?? 0,
-    research: (insight?.weekly.researchCreated ?? 0) + (insight?.weekly.researchScored ?? 0),
-    academicPartners: pod.clubs.length,
-    brandEngagementSpecialists: insight?.snapshot.talentMapped ?? 0,
-    nanoInfluencers: nano,
-    campusCompanies,
-  };
+async function load<T>(path: string, init?: RequestInit) {
+  const data = unwrapData<T>(await requestJson(`/quarterly-goals/manage${path}`, init));
+  if (!data) throw new Error("Quarterly Goals returned an incomplete response.");
+  return data;
 }
 
 export default function AdminQuarterlyGoals() {
-  const quarter = currentQuarterMeta();
-  const [params, setParams] = useSearchParams();
-  const tab = parseTab(params.get("tab"));
-  const portfolioQuery = useQuery(podPortfolioQueryOptions());
-  const dashboardQuery = useQuery(dashboardQueryOptions());
-  const studioQuery = useQuery(futureCraftApplicantsQueryOptions());
-  const industryQuery = useQuery(industryApplicantsQueryOptions());
-  const partnersQuery = useQuery(networkPartnersQueryOptions());
+  const { user } = useAuth();
+  const allowed = user?.accountType === "super_admin" || user?.accountType === "pod_ops_admin"
+    || (!user?.accountType && user?.permissions?.some((permission) => permission === "*" || permission === "pod_ops:admin"));
+  const options = useQuery({ queryKey: ["quarterly-goals-options", user?.id], queryFn: () => load<Options>(""), enabled: Boolean(allowed) });
+  const [selected, setSelected] = useState("");
+  if (!allowed) return <p role="alert">You don’t have access to manage quarterly goals.</p>;
+  if (options.isError) return <p role="alert">{options.error.message}</p>;
+  if (!options.data) return <p role="status">Loading quarterly goals…</p>;
+  const quarter = selected || options.data.quarter;
 
-  const applicants = useMemo(
-    () => buildTrackerApplicants(studioQuery.data || [], industryQuery.data || []),
-    [industryQuery.data, studioQuery.data],
-  );
-
-  const rows = useMemo(() => {
-    const pods = portfolioQuery.data ?? [];
-    const insights = dashboardQuery.data?.insights ?? [];
-    return pods.map((pod) => {
-      const insight = insights.find((item) => item.collegeId === pod.id);
-      const podApplicants = applicants.filter((applicant) => (
-        sameText(applicant.podName, pod.name)
-        || sameText(applicant.podName, pod.collegeName)
-        || sameText(applicant.college, pod.collegeName)
-        || sameText(applicant.college, pod.name)
-      ));
-      const industry = (industryQuery.data ?? []).filter((profile) => (
-        sameText(profile.personal?.collegeName, pod.collegeName) || sameText(profile.personal?.collegeName, pod.name)
-      ));
-      const snapshot = buildQuarterlySnapshot(countsForPod(
-        pod,
-        insight,
-        podApplicants.filter((row) => row.track === "experience-studio").length,
-        podApplicants.filter((row) => row.track === "castle").length + industry.filter((profile) => looksFor(profile, "first-experience")).length,
-        podApplicants.filter((row) => row.track === "fws").length,
-        industry.filter((profile) => profile.nanoInfluencer?.interested === true).length,
-        (partnersQuery.data ?? []).filter((partner) => partner.podId === pod.id && /campus|startup|student/i.test(`${partner.category} ${partner.spaType}`)).length,
-      ));
-      return { pod, snapshot };
-    }).sort((left, right) => left.snapshot.percent - right.snapshot.percent);
-  }, [applicants, dashboardQuery.data?.insights, industryQuery.data, partnersQuery.data, portfolioQuery.data]);
-
-  function selectTab(next: GoalsTab) {
-    const nextParams = new URLSearchParams(params);
-    if (next === "progress") nextParams.delete("tab");
-    else nextParams.set("tab", next);
-    setParams(nextParams, { replace: true });
-  }
-
-  const loading = portfolioQuery.isPending || dashboardQuery.isPending || studioQuery.isPending || industryQuery.isPending;
-
-  return (
-    <div className="flex h-[calc(100dvh-6rem)] min-h-0 flex-col gap-4 overflow-hidden lg:h-[calc(100dvh-8rem)]">
-      <PageHeader
-        icon={Flag}
-        title="Quarterly Targets"
-        description="Targets we recommend for every pod to reach financial stability."
-        className="mb-0 shrink-0"
-      />
-
-      <div className="flex shrink-0 gap-1 overflow-x-auto rounded-2xl border border-line bg-surface-2 p-1" role="tablist" aria-label="Quarterly targets views">
-        {TABS.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            role="tab"
-            aria-selected={tab === item.id}
-            onClick={() => selectTab(item.id)}
-            className={cn(
-              "shrink-0 rounded-xl px-4 py-2 text-sm font-semibold transition-colors",
-              tab === item.id ? "bg-ruby/15 text-ruby-bright" : "text-ink-muted hover:text-ink",
-            )}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="min-h-0 flex-1 overflow-y-auto pr-1">
-        {tab === "progress" ? (
-          <div className="space-y-4 pb-6">
-            <p className="text-sm text-ink-muted">
-              {quarter.label} · {quarter.rangeLabel} · live snapshot from applicants, partners, talent mapped, and Rolodex conversation.
-            </p>
-            {loading ? (
-              <Card className="p-6 text-sm text-ink-muted">Loading pod progress…</Card>
-            ) : rows.length ? (
-              <div className="space-y-3">
-                {rows.map(({ pod, snapshot }) => (
-                  <PodQuarterlyProgressCard key={pod.id} pod={pod} snapshot={snapshot} />
-                ))}
-              </div>
-            ) : (
-              <Card className="p-6 text-sm text-ink-muted">No pods are registered yet.</Card>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-8 pb-6">
-            <p className="text-sm text-ink-muted">
-              {quarter.label} · {quarter.rangeLabel} · {quarter.playbookWeeks} weeks in the playbook. These are the generic targets any pod should hit.
-            </p>
-            {QUARTERLY_SECTIONS.map((section) => {
-              const Icon = SECTION_ICONS[section.id];
-              return (
-                <MobileCollapsedSection
-                  key={section.id}
-                  id={section.id}
-                  header={
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-ruby/25 bg-ruby/10 text-ruby-bright">
-                        <Icon className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <h2 className="font-display text-lg font-black tracking-tight text-ink sm:text-xl">{section.title}</h2>
-                        <p className="mt-1 text-sm leading-relaxed text-ink-muted">{section.summary}</p>
-                      </div>
-                    </div>
-                  }
-                >
-                  <div className="grid gap-4">
-                    {section.goals.map((goal) => (
-                      <Card key={goal.id} id={goal.id} className="scroll-mt-24 p-4 sm:p-5">
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                          <div className="min-w-0 flex-1">
-                            <h3 className="font-display text-lg font-bold text-ink">{goal.title}</h3>
-                            {goal.cadence ? <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-ruby-bright">{goal.cadence}</p> : null}
-                            <p className="mt-2 text-sm leading-relaxed text-ink-muted">{goal.description}</p>
-                          </div>
-                          <Badge tone="ruby">{goal.target} {goal.unit}</Badge>
-                        </div>
-                        {goal.helpsPod || goal.helpsStudents ? (
-                          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                            {goal.helpsPod ? (
-                              <div className="rounded-xl border border-line bg-surface-2 p-3">
-                                <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-ink-muted">
-                                  <Rocket className="h-3.5 w-3.5 text-ruby-bright" /> How this helps the pod
-                                </p>
-                                <p className="mt-1.5 text-sm leading-relaxed text-ink">{goal.helpsPod}</p>
-                              </div>
-                            ) : null}
-                            {goal.helpsStudents ? (
-                              <div className="rounded-xl border border-line bg-surface-2 p-3">
-                                <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-ink-muted">
-                                  <Users className="h-3.5 w-3.5 text-ruby-bright" /> How this helps the students
-                                </p>
-                                <p className="mt-1.5 text-sm leading-relaxed text-ink">{goal.helpsStudents}</p>
-                              </div>
-                            ) : null}
-                          </div>
-                        ) : null}
-                        <div className="mt-4 flex flex-wrap gap-2">
-                          <Link to={goal.href} className={cn("focus-ring inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3 py-1.5 text-xs font-semibold text-ink hover:border-ruby/40")}>
-                            {goal.trackHint}
-                            <ArrowUpRight className="h-3.5 w-3.5" />
-                          </Link>
-                          {goal.knowledgeHref ? (
-                            <Link to={goal.knowledgeHref} className="focus-ring inline-flex items-center gap-1.5 rounded-full border border-ruby/30 bg-ruby/10 px-3 py-1.5 text-xs font-semibold text-ruby-bright hover:bg-ruby/15">
-                              <BookOpen className="h-3.5 w-3.5" />
-                              Knowledge Space
-                            </Link>
-                          ) : null}
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                </MobileCollapsedSection>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  return <>
+    <PageHeader icon={Flag} title="Quarterly Goals" description="Applies to all pods." />
+    <PodProgress />
+    <label className="mb-4 grid max-w-xs gap-1">Quarter
+      <input className="rounded-lg border border-line bg-surface p-2" value={quarter} onChange={(event) => setSelected(event.target.value)} placeholder="2026-Q4" />
+    </label>
+    {/^20\d{2}-Q[1-4]$/.test(quarter)
+      ? <QuarterEditor key={quarter} options={options.data} quarter={quarter} />
+      : <p>Enter a quarter in YYYY-Q1 through YYYY-Q4 format.</p>}
+  </>;
 }
 
-function MobileCollapsedSection({
-  id,
-  header,
-  children,
-}: {
-  id: string;
-  header: ReactNode;
-  children: ReactNode;
-}) {
-  const [open, setOpen] = useState(false);
-  return (
-    <section id={id} className="scroll-mt-24 rounded-2xl border border-line p-3 sm:border-0 sm:p-0">
-      <button
-        type="button"
-        className="focus-ring flex w-full items-start gap-2 rounded-xl text-left sm:pointer-events-none sm:cursor-default"
-        aria-expanded={open}
-        onClick={() => setOpen((value) => !value)}
-      >
-        <span className="min-w-0 flex-1">{header}</span>
-        <ChevronDown className={cn("mt-2 h-5 w-5 shrink-0 text-ink-muted transition-transform sm:hidden", open && "rotate-180")} />
-      </button>
-      <div className={cn("mt-3", open ? "block" : "hidden", "sm:block")}>{children}</div>
-    </section>
-  );
+function PodProgress() {
+  const [pod, setPod] = useState("");
+  const portfolio = useQuery(podPortfolioQueryOptions());
+  const progress = useQuery({
+    queryKey: ["quarterly-goals-pod", pod],
+    queryFn: () => load<{ goals: Goal[]; counts: Record<string, number | null> }>(`/pod/${encodeURIComponent(pod)}`),
+    enabled: Boolean(pod),
+    refetchInterval: 30_000,
+  });
+  return <Card className="mb-4 space-y-2 p-4">
+    <label className="block">Current quarter progress by pod
+      <select className="ml-2 rounded-lg border border-line bg-surface p-2" value={pod} onChange={(event) => setPod(event.target.value)}>
+        <option value="">Select a pod</option>
+        {(portfolio.data ?? []).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+      </select>
+    </label>
+    {portfolio.isError && <p role="alert">Could not load pods.</p>}
+    {pod && progress.isPending && <p role="status">Loading progress…</p>}
+    {pod && progress.isError && <p role="alert">{progress.error.message}</p>}
+    {progress.data && (progress.data.goals.length ? <ul>
+      {progress.data.goals.map((goal) => <li key={goal.id}>{goal.title} · {progress.data.counts[goal.metric] ?? "Unavailable"} / {goal.target}</li>)}
+    </ul> : <p>Quarterly goals are yet to be added.</p>)}
+  </Card>;
+}
+
+function QuarterEditor({ options, quarter }: { options: Options; quarter: string }) {
+  const cache = useQueryClient();
+  const key = ["quarterly-playbook-admin", quarter];
+  const query = useQuery({ queryKey: key, queryFn: () => load<Playbook>(`/${quarter}`) });
+  const [edits, setEdits] = useState<Goal[] | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [preview, setPreview] = useState(false);
+  const [message, setMessage] = useState("");
+  if (query.isError) return <p role="alert">{query.error.message}</p>;
+  if (!query.data) return <p role="status">Loading playbook…</p>;
+  const goals = edits ?? query.data.draft;
+
+  const change = (id: string, fields: Partial<Goal>) => setEdits(goals.map((goal) => goal.id === id ? { ...goal, ...fields } : goal));
+  const moveUp = (index: number) => {
+    const next = [...goals];
+    [next[index - 1], next[index]] = [next[index], next[index - 1]];
+    setEdits(next);
+  };
+  const save = async (publish: boolean) => {
+    if (publish && !window.confirm("Publish this playbook to all pods? This replaces the currently published goals for this quarter.")) return;
+    setBusy(true);
+    setMessage("");
+    try {
+      const saved = await load<Playbook>(`/${quarter}`, {
+        method: "PUT", body: JSON.stringify({ goals, publish }),
+      });
+      cache.setQueryData(key, saved);
+      if (publish) void cache.invalidateQueries({ queryKey: ["quarterly-goals-pod"] });
+      setEdits(null);
+      setMessage(publish ? "Published for all pods." : "Draft saved.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not save quarterly goals.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const fieldClass = "w-full rounded-lg border border-line bg-surface p-2";
+  return <div className="space-y-4">
+    <p>{query.data.published.length ? `${query.data.published.length} goals published.` : "Quarterly goals are yet to be added."}</p>
+    <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); void save(false); }}>
+      <fieldset disabled={busy} className="space-y-4">
+        {goals.map((goal, index) => <Card key={goal.id} className="space-y-3 p-4">
+          {preview ? <>
+            <h2 className="font-semibold">{goal.title}</h2>
+            <p>{goal.description}</p>
+            <p>{goal.target} {goal.unit}{goal.cadence && ` · ${goal.cadence}`}</p>
+            <p>{goal.roles.map((role) => roleLabels[role] ?? role).join(", ")}</p>
+          </> : <>
+            <label className="block">Title<input className={fieldClass} required value={goal.title} onChange={(e) => change(goal.id, { title: e.target.value })} /></label>
+            <label className="block">Description<textarea className={fieldClass} value={goal.description} onChange={(e) => change(goal.id, { description: e.target.value })} /></label>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label>Section<select className={fieldClass} value={goal.section} onChange={(e) => change(goal.id, { section: e.target.value })}>{options.sections.map((section) => <option key={section}>{section}</option>)}</select></label>
+              <label>Progress metric<select className={fieldClass} value={goal.metric} onChange={(e) => change(goal.id, { metric: e.target.value })}>{options.metrics.map((metric) => <option key={metric.id} value={metric.id}>{metric.label}</option>)}</select></label>
+              <label>Target<input className={fieldClass} type="number" min={1} required value={goal.target || ""} onChange={(e) => change(goal.id, { target: Number(e.target.value) })} /></label>
+              <label>Unit<input className={fieldClass} required value={goal.unit} onChange={(e) => change(goal.id, { unit: e.target.value })} /></label>
+              <label>Cadence<input className={fieldClass} value={goal.cadence} onChange={(e) => change(goal.id, { cadence: e.target.value })} /></label>
+              <label>V6 workspace path<input className={fieldClass} placeholder="/research" value={goal.href} onChange={(e) => change(goal.id, { href: e.target.value })} /></label>
+            </div>
+            <fieldset className="flex flex-wrap gap-3">
+              <legend>Responsible roles</legend>
+              {options.roles.map((role) => <label key={role} className="flex items-center gap-2">
+                <input type="checkbox" checked={goal.roles.includes(role)} onChange={(e) => change(goal.id, { roles: e.target.checked ? [...goal.roles, role] : goal.roles.filter((item) => item !== role) })} />
+                {roleLabels[role] ?? role}
+              </label>)}
+            </fieldset>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" disabled={index === 0} onClick={() => moveUp(index)}>Move up</Button>
+              <Button type="button" onClick={() => setEdits(goals.filter((item) => item.id !== goal.id))}>Remove</Button>
+            </div>
+          </>}
+        </Card>)}
+        <div className="flex flex-wrap gap-2">
+          {!preview && <Button type="button" disabled={goals.length >= 100} onClick={() => setEdits([...goals, {
+            id: crypto.randomUUID(), title: "", description: "", section: options.sections[0], target: 1,
+            unit: "", cadence: "", roles: [], metric: options.metrics[0].id, href: "",
+          }])}>Add goal</Button>}
+          <Button type="button" onClick={() => setPreview(!preview)}>{preview ? "Back to editing" : "Preview draft"}</Button>
+          <Button type="submit">Save draft</Button>
+          <Button type="button" onClick={() => void save(true)}>Publish to all pods</Button>
+        </div>
+      </fieldset>
+      {message && <p role="status">{message}</p>}
+    </form>
+  </div>;
 }

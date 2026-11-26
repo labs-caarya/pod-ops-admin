@@ -43,7 +43,6 @@ import { cn } from "@/lib/utils";
 import { PodLeaderGoalsPanel } from "@/components/pods/PodLeaderGoalsPanel";
 import { PodSuccessMeetingsPanel } from "@/components/pods/PodSuccessMeetingsPanel";
 import { PodQuarterlyGoalsCard } from "@/components/pods/PodQuarterlyGoalsCard";
-import { buildQuarterlySnapshot, emptyQuarterlyCounts } from "@/lib/quarterlyGoals";
 
 const TABS = [
   { id: "summary", label: "Summary" },
@@ -131,17 +130,6 @@ export default function AdminPodDetail() {
   const artifacts = activationQuery.data?.artifacts || [];
   const snapshot = buildActivationSnapshot(pod.id, progress, artifacts);
   const insight = (dashboardQuery.data?.insights || []).find((item) => item.collegeId === pod.id);
-  const quarterlySnapshot = buildQuarterlySnapshot({
-    ...emptyQuarterlyCounts(),
-    observership: applicants.filter((row) => row.track === "experience-studio").length,
-    castle: applicants.filter((row) => row.track === "castle").length,
-    placements: Math.max(applicants.filter((row) => row.track === "fws").length, insight?.weekly.placements ?? 0),
-    industryPartners: insight?.snapshot.activePartners ?? 0,
-    outreach: insight?.snapshot.contactsInConversation ?? 0,
-    research: (insight?.weekly.researchCreated ?? 0) + (insight?.weekly.researchScored ?? 0),
-    academicPartners: pod.clubs.length,
-    brandEngagementSpecialists: insight?.snapshot.talentMapped ?? 0,
-  });
 
   return (
     <div className="flex h-[calc(100dvh-6rem)] min-h-0 flex-col gap-4 overflow-hidden lg:h-[calc(100dvh-8rem)]">
@@ -177,7 +165,7 @@ export default function AdminPodDetail() {
 
       <div className="min-h-0 flex-1 overflow-y-auto pr-1">
         {tab === "summary" ? (
-          <SummaryTab pod={pod} goals={goals} goalsLoading={goalsQuery.isPending} quarterlySnapshot={quarterlySnapshot} />
+          <SummaryTab pod={pod} goals={goals} goalsLoading={goalsQuery.isPending} />
         ) : null}
         {tab === "talent" ? (
           <TalentTab
@@ -228,12 +216,10 @@ function SummaryTab({
   pod,
   goals,
   goalsLoading,
-  quarterlySnapshot,
 }: {
   pod: PodPortfolioEntry;
   goals: PodLeaderGoal[];
   goalsLoading: boolean;
-  quarterlySnapshot: ReturnType<typeof buildQuarterlySnapshot>;
 }) {
   const sprintGoals = sortSprintGoals(goals);
 
@@ -250,7 +236,7 @@ function SummaryTab({
         <Stat label="Clubs" value={pod.clubs.length} />
       </div>
 
-      <PodQuarterlyGoalsCard snapshot={quarterlySnapshot} />
+      <PodQuarterlyGoalsCard collegeId={pod.id} />
 
       <Card className="p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
